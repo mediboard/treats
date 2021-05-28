@@ -2,6 +2,25 @@ from app import db
 
 import enum
 
+
+class resonsible_party_type(enum.Enum):
+	SPONSER= 'Sponser'
+	PRINCIPLE_INVESTIGATOR= 'Principal Investigator'
+	SPONSER_INVESTIGATOR= 'Sponsor-Investigator'
+
+
+class measure_param(enum.Enum):
+	MEAN='Mean'
+	NUMBER='Number'
+	COUNT_OF_PARTICIPANTS='Count of Participants'
+	LEAST_SQUARES_MEAN='Least Squares Mean'
+	GEOMETRIC_MEAN='Geometric Mean'
+	COUNT_OF_UNITS='Count of Units'
+	GEOMETRIC_LEAST_SQUARES_MEAN='Geometric Least Squares Mean'
+	LOG_MEAN='Log Mean'
+	NA='NA'
+
+
 class study_type(enum.Enum):
 	INTERVENTIONAL= 'Interventional'
 	OBSERVATIONAL= 'Observational'
@@ -62,15 +81,39 @@ class non_inferiority_type(enum.Enum):
 	NON_INFERIORITY_OR_EQUIVALENCE_LEGACY='Non-Inferiority or Equivalence (legacy)'
 
 
+class dispersion_param(enum.Enum):
+	STANDARD_DEVIATION='Standard Deviation'
+	CONFIDENCE_INTERVAL_95='95% Confidence Interval'
+	STANDARD_ERROR='Standard Error'
+	FULL_RANGE='Full Range'
+	GEOMETRIC_COEFFICIENT_OF_VARIATION= 'Geometric Coefficient of Variation'
+	INTER_QUARTILE_RANGE='Inter-Quartile Range'
+	CONFIDENCE_INTERVAL_90='90% Confidence Interval'
+	CONFIDENCE_INTERVAL_80='80% Confidence Interval'
+	CONFIDENCE_INTERVAL_97='97% Confidence Interval'
+	CONFIDENCE_INTERVAL_99='99% Confidence Interval'
+	CONFIDENCE_INTERVAL_60='60% Confidence Interval'
+	CONFIDENCE_INTERVAL_96='96% Confidence Interval'
+	CONFIDENCE_INTERVAL_98='98% Confidence Interval'
+	CONFIDENCE_INTERVAL_70='70% Confidence Interval'
+	CONFIDENCE_INTERVAL_85='85% Confidence Interval'
+	CONFIDENCE_INTERVAL_75='75% Confidence Interval'
+	CONFIDENCE_INTERVAL_94='94% Confidence Interval'
+	CONFIDENCE_INTERVAL_100='100% Confidence Interval'
+	NA='NA'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
 
 	id = db.Column(db.String(11), primary_key=True)
 	upload_date = db.Column(db.Date)
-	name = db.Column(db.String(300))
+	short_title = db.Column(db.String(300))
+	official_title = db.Column(db.String(600))
 	description = db.Column(db.String(5000))
-	responsible_party = db.Column(db.String(100))
+	responsible_party = db.Column(db.Enum(resonsible_party_type))
+	sponser = db.Column(db.String(160))
 	type = db.Column(db.Enum(study_type))
 	purpose = db.Column(db.Enum(purpose))
 	intervention_type = db.Column(db.Enum(intervention_type))
@@ -101,7 +144,6 @@ class Condition(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(50), index=True, unique=True)
-
 	studies = db.relationship('StudyCondition', lazy='dynamic')
 
 
@@ -122,7 +164,10 @@ class Measure(db.Model):
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	title = db.Column(db.String(254))
 	description = db.Column(db.String(999))
+	dispersion = db.Column(db.Enum(dispersion_param))
 	type = db.Column(db.Enum(measure_type))
+	param = db.Column(db.Enum(measure_param))
+	units = db.Column(db.String(40))
 
 
 class Company(db.Model):
