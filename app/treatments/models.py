@@ -3,6 +3,23 @@ from app import db
 import enum
 
 
+class baseline_type(enum.Enum):
+	RACE='Race'
+	GENDER='Gender'
+	ETHNICITY='ETHNICITY'
+	AGE='AGE'
+	OTHER='OTHER'
+
+class baseline_subtype(enum.Enum):
+	WHITE='White'
+	BLACK='Black'
+	ASIAN='Asian'
+	INDIAN='Indian'
+	PACIFIC='Pacific'
+	MALE='Male'
+	FEMALE='Female'
+
+
 class resonsible_party_type(enum.Enum):
 	SPONSER= 'Sponser'
 	PRINCIPLE_INVESTIGATOR= 'Principal Investigator'
@@ -242,3 +259,20 @@ class Comparison(db.Model):
 	analytic = db.Column(db.Integer, db.ForeignKey('analytics.id'))
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
+
+class Baseline(db.Model):
+
+	__tablename__ = 'baselines'
+
+	id = db.Column(db.Integer, primary_key=True)
+	base = db.Column(db.String(100))
+	clss = db.Column(db.String(100))
+	category = db.Column(db.String(50))
+	param_type = db.Column(db.Enum(measure_param))
+	dispersion = db.Column(db.Enum(dispersion_param))
+	unit = db.Column(db.String(40))
+	value = db.Column(db.Float)
+	spread = db.Column(db.Float)
+	upper = db.Column(db.Float)
+	type = db.Column(db.Enum(baseline_type))
+	sub_type = db.Column(db.Enum(baseline_subtype))
