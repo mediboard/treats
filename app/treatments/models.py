@@ -18,6 +18,7 @@ class baseline_subtype(enum.Enum):
 	PACIFIC='Pacific'
 	MALE='Male'
 	FEMALE='Female'
+	NA='NA'
 
 
 class resonsible_party_type(enum.Enum):
