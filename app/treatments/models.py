@@ -143,7 +143,7 @@ class Study(db.Model):
 	conditions = db.relationship('StudyCondition', lazy='dynamic')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
-
+	baselines = db.relationship('Baseline', lazy='dynamic')
 
 
 class Criteria(db.Model):
@@ -278,3 +278,4 @@ class Baseline(db.Model):
 	lower = db.Column(db.Float)
 	type = db.Column(db.Enum(baseline_type))
 	sub_type = db.Column(db.Enum(baseline_subtype))
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
