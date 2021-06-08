@@ -144,6 +144,7 @@ class Study(db.Model):
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
+	groups = db.relationship('Group', lazy='dynamic')
 
 
 class Criteria(db.Model):
@@ -215,12 +216,15 @@ class Group(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(100))
+	study_id = db.Column(db.String(7))
 	description = db.Column(db.String(999))
 	type = db.Column(db.Enum(group_type))
 	participants = db.Column(db.Integer)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
+	baselines = db.relationship('Baseline', lazy='dynamic')
 
 
 class Administration(db.Model):
@@ -279,3 +283,6 @@ class Baseline(db.Model):
 	type = db.Column(db.Enum(baseline_type))
 	sub_type = db.Column(db.Enum(baseline_subtype))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+
