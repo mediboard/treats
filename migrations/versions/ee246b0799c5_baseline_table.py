@@ -28,6 +28,7 @@ def upgrade():
     sa.Column('value', sa.Float(), nullable=True),
     sa.Column('spread', sa.Float(), nullable=True),
     sa.Column('upper', sa.Float(), nullable=True),
+    sa.Column('lower', sa.Float(), nullable=True),
     sa.Column('type', sa.Enum('RACE', 'GENDER', 'ETHNICITY', 'AGE', 'OTHER', name='baseline_type'), nullable=True),
     sa.Column('sub_type', sa.Enum('WHITE', 'BLACK', 'ASIAN', 'INDIAN', 'PACIFIC', 'MALE', 'FEMALE', 'NA', name='baseline_subtype'), nullable=True),
     sa.PrimaryKeyConstraint('id')

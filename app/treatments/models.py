@@ -275,5 +275,6 @@ class Baseline(db.Model):
 	value = db.Column(db.Float)
 	spread = db.Column(db.Float)
 	upper = db.Column(db.Float)
+	lower = db.Column(db.Float)
 	type = db.Column(db.Enum(baseline_type))
 	sub_type = db.Column(db.Enum(baseline_subtype))
