@@ -10,6 +10,42 @@ class baseline_type(enum.Enum):
 	AGE='AGE'
 	OTHER='OTHER'
 
+
+class effect_collection_method(enum.Enum):
+	SYSTEMATIC_ASSESSMENT='Systematic Assessment',
+	NON_SYSTEMATIC_ASSESSMENT='Non-Systematic Assessment'
+
+
+class organ_system(enum.Enum):
+	BLOOD_AND_LYMPHATIC_SYSTEM_DISORDERS='Blood and lymphatic system disorders',
+	CARDIAC_DISORDERS='Cardiac disorders',
+	CONGENITAL_FAMILIAL_AND_GENETIC_DISORDERS='Congenital, familial and genetic disorders',
+	EAR_AND_LABYRINTH_DISORDERS='Ear and labyrinth disorders',
+	ENDOCRINE_DISORDERS='Endocrine disorders',
+	EYE_DISORDERS='Eye disorders',
+	GASTROINTESTINAL_DISORDERS='Gastrointestinal disorders',
+	GENERAL_DISORDERS='General disorders',
+	HEPATOBILIARY_DISORDERS='Hepatobiliary disorders',
+	IMMUNE_SYSTEM_DISORDERS='Immune system disorders',
+	INFECTIONS_AND_INFESTATIONS='Infections and infestations',
+	INJURY_POISONING_AND_PROCEDURAL_COMPLICATIONS='Injury, poisoning and procedural complications',
+	INVESTIGATIONS='Investigations',
+	METABOLISM_AND_NUTRITION_DISORDERS='Metabolism and nutrition disorders',
+	MUSCULOSKELETAL_AND_CONNECTIVE_TISSUE_DISORDERS='Musculoskeletal and connective tissue disorders',
+	NEOPLASMS_BENIGN_MALIGNANT_AND_UNSPECIFIED='Neoplasms benign, malignant and unspecified (incl cysts and polyps)',
+	NERVOUS_SYSTEM_DISORDERS='Nervous system disorders',
+	PREGNANCY_PUERPERIUM_AND_PERINATAL_CONDITIONS='Pregnancy, puerperium and perinatal conditions',
+	PRODUCT_ISSUES='Product Issues',
+	PSYCHIATRIC_DISORDERS='Psychiatric disorders',
+	RENAL_AND_URINARY_DISORDERS='Renal and urinary disorders',
+	REPRODUCTIVE_SYSTEM_AND_BREAST_DISORDERS='Reproductive system and breast disorders',
+	RESPIRATORY_THORACIC_AND_MEDIASTINAL_DISORDERS='Respiratory, thoracic and mediastinal disorders',
+	SKIN_AND_SUBCUTANEOUS_TISSUE_DISORDERS='Skin and subcutaneous tissue disorders',
+	SOCIAL_CIRCUMSTANCES='Social circumstances',
+	SURGICAL_AND_MEDICAL_PROCEDURES='Surgical and medical procedures',
+	VASCUALR_DISORDERS='Vascular disorders',
+
+
 class baseline_subtype(enum.Enum):
 	WHITE='White'
 	BLACK='Black'
@@ -206,11 +242,12 @@ class Treatment(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	company = db.Column(db.Integer, db.ForeignKey('companies.id'))
 	name = db.Column(db.String(100))
+	from_study = db.Column(db.Boolean)
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 
 
-class Group(db.Model):
+class Group(db.Model): # These are just the outcome groups for now
 
 	__tablename__ = 'groups'
 
@@ -218,13 +255,28 @@ class Group(db.Model):
 	title = db.Column(db.String(100))
 	study_id = db.Column(db.String(7))
 	description = db.Column(db.String(999))
-	type = db.Column(db.Enum(group_type))
-	participants = db.Column(db.Integer)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
+	effects = db.relationship('Effect', lazy='dynamic')
+
+
+class Outcome(db.Model):
+
+	__tablename__ = 'outcomes'
+
+	id = db.Column(db.Integer, primary_key=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	administration = db.Column(db.Integer, db.ForeignKey('administrations.id'))
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
+	title = db.Column(db.String(225))
+	value = db.Column(db.Float)
+	dispersion = db.Column(db.Float)
+	upper = db.Column(db.Float)
+	lower = db.Column(db.Float)
+	no_participants = db.Column(db.Integer)
 
 
 class Administration(db.Model):
@@ -235,6 +287,8 @@ class Administration(db.Model):
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 	description = db.Column(db.String(1000))
+
+	comparisons = db.relationship('Administration', lazy='dynamic')
 
 
 class Analytics(db.Model):
@@ -262,7 +316,7 @@ class Analytics(db.Model):
 class Comparison(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	analytic = db.Column(db.Integer, db.ForeignKey('analytics.id'))
-	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
+	administration = db.Column(db.Integer, db.ForeignKey('administrations.id'))
 
 
 class Baseline(db.Model):
@@ -286,3 +340,15 @@ class Baseline(db.Model):
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
 
+class Effect(db.Model):
+
+	__tablename__ = 'effects'
+
+	id = db.Column(db.Integer, primary_key=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
+	name = db.Column(db.String(100))
+	organ_system = db.Column(db.Enum(organ_system))
+	assessment = db.Column(db.Enum(effect_collection_method))
+	no_effected = db.Column(db.Float)
+	collection_threshold = db.Column(db.Float)
