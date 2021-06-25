@@ -1,8 +1,8 @@
 """init
 
-Revision ID: c04880c5849b
+Revision ID: 5063cd84cb56
 Revises: 
-Create Date: 2021-06-23 07:03:02.795193
+Create Date: 2021-06-24 06:25:53.412753
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c04880c5849b'
+revision = '5063cd84cb56'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,7 +25,7 @@ def upgrade():
     )
     op.create_table('conditions',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=50), nullable=True),
+    sa.Column('name', sa.String(length=150), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_conditions_name'), 'conditions', ['name'], unique=True)
@@ -35,13 +35,15 @@ def upgrade():
     sa.Column('short_title', sa.String(length=300), nullable=True),
     sa.Column('official_title', sa.String(length=600), nullable=True),
     sa.Column('description', sa.String(length=5000), nullable=True),
-    sa.Column('responsible_party', sa.Enum('SPONSER', 'PRINCIPLE_INVESTIGATOR', 'SPONSER_INVESTIGATOR', name='resonsible_party_type'), nullable=True),
-    sa.Column('sponser', sa.String(length=160), nullable=True),
+    sa.Column('responsible_party', sa.String(length=160), nullable=True),
+    sa.Column('sponsor', sa.String(length=160), nullable=True),
     sa.Column('type', sa.Enum('INTERVENTIONAL', 'OBSERVATIONAL', 'PATIENT_REGISTRY', 'EXPANDED_ACCESS', name='study_type'), nullable=True),
     sa.Column('purpose', sa.Enum('TREATMENT', 'PREVENTION', 'BASIC_SCIENCE', 'OTHER', 'SUPPORTIVE_CARE', 'DIAGNOSTIC', 'HEALTH_SERVICES_RESEARCH', 'SCREENING', 'DEVICE_FEASIBILITY', 'NA', name='purpose'), nullable=True),
     sa.Column('intervention_type', sa.Enum('PARALLEL_ASSIGNMENT', 'SINGLE_GROUP_ASSIGNMENT', 'CROSSOVER_ASSIGNMENT', 'FACTORIAL_ASSIGNMENT', 'SEQUENTIAL_ASSIGNMENT', 'NA', name='intervention_type'), nullable=True),
     sa.Column('min_age', sa.Integer(), nullable=True),
+    sa.Column('min_age_units', sa.Enum('YEARS', 'MONTHS', 'WEEKS', 'DAYS', 'HOURS', 'MINUTES', 'NA', name='age_units'), nullable=True),
     sa.Column('max_age', sa.Integer(), nullable=True),
+    sa.Column('max_age_units', sa.Enum('YEARS', 'MONTHS', 'WEEKS', 'DAYS', 'HOURS', 'MINUTES', 'NA', name='age_units'), nullable=True),
     sa.Column('gender', sa.Enum('ALL', 'FEMALE', 'MALE', 'NA', name='gender'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -57,7 +59,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=True),
     sa.Column('study_id', sa.String(length=7), nullable=True),
-    sa.Column('description', sa.String(length=999), nullable=True),
+    sa.Column('description', sa.String(length=1500), nullable=True),
     sa.Column('study', sa.String(length=11), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -65,11 +67,11 @@ def upgrade():
     op.create_table('measures',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('study', sa.String(length=11), nullable=True),
-    sa.Column('title', sa.String(length=254), nullable=True),
-    sa.Column('description', sa.String(length=999), nullable=True),
+    sa.Column('title', sa.String(length=256), nullable=True),
+    sa.Column('description', sa.String(length=1005), nullable=True),
     sa.Column('dispersion', sa.Enum('STANDARD_DEVIATION', 'CONFIDENCE_INTERVAL_95', 'STANDARD_ERROR', 'FULL_RANGE', 'GEOMETRIC_COEFFICIENT_OF_VARIATION', 'INTER_QUARTILE_RANGE', 'CONFIDENCE_INTERVAL_90', 'CONFIDENCE_INTERVAL_80', 'CONFIDENCE_INTERVAL_97', 'CONFIDENCE_INTERVAL_99', 'CONFIDENCE_INTERVAL_60', 'CONFIDENCE_INTERVAL_96', 'CONFIDENCE_INTERVAL_98', 'CONFIDENCE_INTERVAL_70', 'CONFIDENCE_INTERVAL_85', 'CONFIDENCE_INTERVAL_75', 'CONFIDENCE_INTERVAL_94', 'CONFIDENCE_INTERVAL_100', 'NA', name='dispersion_param'), nullable=True),
     sa.Column('type', sa.Enum('PRIMARY', 'SECONDARY', 'OTHER', name='measure_type'), nullable=True),
-    sa.Column('param', sa.Enum('MEAN', 'NUMBER', 'COUNT_OF_PARTICIPANTS', 'LEAST_SQUARES_MEAN', 'GEOMETRIC_MEAN', 'COUNT_OF_UNITS', 'GEOMETRIC_LEAST_SQUARES_MEAN', 'LOG_MEAN', 'NA', name='measure_param'), nullable=True),
+    sa.Column('param', sa.Enum('MEAN', 'NUMBER', 'MEDIAN', 'COUNT_OF_PARTICIPANTS', 'LEAST_SQUARES_MEAN', 'GEOMETRIC_MEAN', 'COUNT_OF_UNITS', 'GEOMETRIC_LEAST_SQUARES_MEAN', 'LOG_MEAN', 'NA', name='measure_param'), nullable=True),
     sa.Column('units', sa.String(length=40), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -85,7 +87,7 @@ def upgrade():
     op.create_table('treatments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company', sa.Integer(), nullable=True),
-    sa.Column('name', sa.String(length=100), nullable=True),
+    sa.Column('name', sa.String(length=162), nullable=True),
     sa.Column('from_study', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['company'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -94,7 +96,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('group', sa.Integer(), nullable=True),
     sa.Column('treatment', sa.Integer(), nullable=True),
-    sa.Column('description', sa.String(length=1000), nullable=True),
+    sa.Column('description', sa.String(length=1500), nullable=True),
     sa.ForeignKeyConstraint(['group'], ['groups.id'], ),
     sa.ForeignKeyConstraint(['treatment'], ['treatments.id'], ),
     sa.PrimaryKeyConstraint('id')

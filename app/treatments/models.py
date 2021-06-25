@@ -66,6 +66,7 @@ class resonsible_party_type(enum.Enum):
 class measure_param(enum.Enum):
 	MEAN='Mean'
 	NUMBER='Number'
+	MEDIAN='Median'
 	COUNT_OF_PARTICIPANTS='Count of Participants'
 	LEAST_SQUARES_MEAN='Least Squares Mean'
 	GEOMETRIC_MEAN='Geometric Mean'
@@ -95,7 +96,7 @@ class purpose(enum.Enum):
 	NA='NA'
 
 class gender(enum.Enum):
-	ALL='ALL'
+	ALL='All'
 	FEMALE='Female'
 	MALE='Male'
 	NA='NA'
@@ -157,6 +158,16 @@ class dispersion_param(enum.Enum):
 	NA='NA'
 
 
+class age_units(enum.Enum):
+	YEARS='years',
+	MONTHS='Months',
+	WEEKS='Weeks',
+	DAYS='Days',
+	HOURS='Hours',
+	MINUTES='Minutes',
+	NA='NA'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
@@ -166,13 +177,15 @@ class Study(db.Model):
 	short_title = db.Column(db.String(300))
 	official_title = db.Column(db.String(600))
 	description = db.Column(db.String(5000))
-	responsible_party = db.Column(db.Enum(resonsible_party_type))
-	sponser = db.Column(db.String(160))
+	responsible_party = db.Column(db.String(160))
+	sponsor = db.Column(db.String(160))
 	type = db.Column(db.Enum(study_type))
 	purpose = db.Column(db.Enum(purpose))
 	intervention_type = db.Column(db.Enum(intervention_type))
-	min_age= db.Column(db.Integer)
+	min_age = db.Column(db.Integer)
+	min_age_units = db.Column(db.Enum(age_units))
 	max_age = db.Column(db.Integer)
+	max_age_units = db.Column(db.Enum(age_units))
 	gender = db.Column(db.Enum(gender))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
@@ -198,7 +211,7 @@ class Condition(db.Model):
 	__tablename__ = 'conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
-	name = db.Column(db.String(50), index=True, unique=True)
+	name = db.Column(db.String(150), index=True, unique=True)
 	studies = db.relationship('StudyCondition', lazy='dynamic')
 
 
@@ -217,8 +230,8 @@ class Measure(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	title = db.Column(db.String(254))
-	description = db.Column(db.String(999))
+	title = db.Column(db.String(256))
+	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.Enum(dispersion_param))
 	type = db.Column(db.Enum(measure_type))
 	param = db.Column(db.Enum(measure_param))
@@ -240,9 +253,9 @@ class Treatment(db.Model):
 	__tablename__ = 'treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
-	company = db.Column(db.Integer, db.ForeignKey('companies.id'))
-	name = db.Column(db.String(100))
+	name = db.Column(db.String(162))
 	from_study = db.Column(db.Boolean)
+	no_studies = db.Column(db.Integer)
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 
@@ -254,7 +267,7 @@ class Group(db.Model): # These are just the outcome groups for now
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(100))
 	study_id = db.Column(db.String(7))
-	description = db.Column(db.String(999))
+	description = db.Column(db.String(1500))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	administrations = db.relationship('Administration', lazy='dynamic')
@@ -269,7 +282,7 @@ class Outcome(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	administration = db.Column(db.Integer, db.ForeignKey('administrations.id'))
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
 	title = db.Column(db.String(225))
 	value = db.Column(db.Float)
@@ -286,9 +299,7 @@ class Administration(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
-	description = db.Column(db.String(1000))
-
-	comparisons = db.relationship('Administration', lazy='dynamic')
+	description = db.Column(db.String(1500))
 
 
 class Analytics(db.Model):
