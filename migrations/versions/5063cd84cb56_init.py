@@ -110,7 +110,7 @@ def upgrade():
     sa.Column('p_value', sa.Float(), nullable=True),
     sa.Column('param_type', sa.String(length=100), nullable=True),
     sa.Column('is_non_inferiority', sa.Boolean(), nullable=True),
-    sa.Column('non_inferiority_type', sa.Enum('SUPERIORITY_OR_OTHER', 'SUPERIORITY', 'OTHER', 'SUPERIORITY_OR_OTHER_LEGACY', 'NON_INFERIORITY_OR_EQUIVALENCE', 'NON_INFERIORITY', 'NON_INFERIORITY_OR_EQUIVALENCE_LEGACY', name='non_inferiority_type'), nullable=True),
+    sa.Column('non_inferiority_type', sa.Enum('SUPERIORITY_OR_OTHER', 'SUPERIORITY', 'OTHER', 'SUPERIORITY_OR_OTHER_LEGACY', 'NON_INFERIORITY_OR_EQUIVALENCE', 'NON_INFERIORITY', 'NON_INFERIORITY_OR_EQUIVALENCE_LEGACY', 'EQUIVALENCE', 'NA', name='non_inferiority_type'), nullable=True),
     sa.Column('non_inferiority_comment', sa.String(length=500), nullable=True),
     sa.Column('param_value', sa.Float(), nullable=True),
     sa.Column('ci_pct', sa.Integer(), nullable=True),
@@ -124,7 +124,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('base', sa.String(length=100), nullable=True),
     sa.Column('clss', sa.String(length=100), nullable=True),
-    sa.Column('category', sa.String(length=50), nullable=True),
+    sa.Column('category', sa.String(length=100), nullable=True),
     sa.Column('param_type', sa.Enum('MEAN', 'NUMBER', 'COUNT_OF_PARTICIPANTS', 'LEAST_SQUARES_MEAN', 'GEOMETRIC_MEAN', 'COUNT_OF_UNITS', 'GEOMETRIC_LEAST_SQUARES_MEAN', 'LOG_MEAN', 'NA', name='measure_param'), nullable=True),
     sa.Column('dispersion', sa.Enum('STANDARD_DEVIATION', 'CONFIDENCE_INTERVAL_95', 'STANDARD_ERROR', 'FULL_RANGE', 'GEOMETRIC_COEFFICIENT_OF_VARIATION', 'INTER_QUARTILE_RANGE', 'CONFIDENCE_INTERVAL_90', 'CONFIDENCE_INTERVAL_80', 'CONFIDENCE_INTERVAL_97', 'CONFIDENCE_INTERVAL_99', 'CONFIDENCE_INTERVAL_60', 'CONFIDENCE_INTERVAL_96', 'CONFIDENCE_INTERVAL_98', 'CONFIDENCE_INTERVAL_70', 'CONFIDENCE_INTERVAL_85', 'CONFIDENCE_INTERVAL_75', 'CONFIDENCE_INTERVAL_94', 'CONFIDENCE_INTERVAL_100', 'NA', name='dispersion_param'), nullable=True),
     sa.Column('unit', sa.String(length=40), nullable=True),
@@ -135,8 +135,6 @@ def upgrade():
     sa.Column('type', sa.Enum('RACE', 'GENDER', 'ETHNICITY', 'AGE', 'OTHER', name='baseline_type'), nullable=True),
     sa.Column('sub_type', sa.Enum('WHITE', 'BLACK', 'ASIAN', 'INDIAN', 'PACIFIC', 'MALE', 'FEMALE', 'NA', name='baseline_subtype'), nullable=True),
     sa.Column('study', sa.String(length=11), nullable=True),
-    sa.Column('group', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['group'], ['groups.id'], ),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

@@ -134,6 +134,8 @@ class non_inferiority_type(enum.Enum):
 	NON_INFERIORITY_OR_EQUIVALENCE='Non-Inferiority or Equivalence'
 	NON_INFERIORITY='Non-Inferiority'
 	NON_INFERIORITY_OR_EQUIVALENCE_LEGACY='Non-Inferiority or Equivalence (legacy)'
+	EQUIVAlENCE='Equivalence'
+	NA='NA'
 
 
 class dispersion_param(enum.Enum):
@@ -269,7 +271,6 @@ class Group(db.Model): # These are just the outcome groups for now
 	study_id = db.Column(db.String(7))
 	description = db.Column(db.String(1500))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
@@ -301,6 +302,8 @@ class Administration(db.Model):
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 	description = db.Column(db.String(1500))
 
+	outcomes = db.relationship('Outcome', lazy='dynamic')
+
 
 class Analytics(db.Model):
 
@@ -325,9 +328,10 @@ class Analytics(db.Model):
 
 
 class Comparison(db.Model):
+	
 	id = db.Column(db.Integer, primary_key=True)
 	analytic = db.Column(db.Integer, db.ForeignKey('analytics.id'))
-	administration = db.Column(db.Integer, db.ForeignKey('administrations.id'))
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
 
 class Baseline(db.Model):
@@ -337,7 +341,7 @@ class Baseline(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	base = db.Column(db.String(100))
 	clss = db.Column(db.String(100))
-	category = db.Column(db.String(50))
+	category = db.Column(db.String(100))
 	param_type = db.Column(db.Enum(measure_param))
 	dispersion = db.Column(db.Enum(dispersion_param))
 	unit = db.Column(db.String(40))
@@ -348,7 +352,6 @@ class Baseline(db.Model):
 	type = db.Column(db.Enum(baseline_type))
 	sub_type = db.Column(db.Enum(baseline_subtype))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
 
 class Effect(db.Model):
@@ -363,3 +366,27 @@ class Effect(db.Model):
 	assessment = db.Column(db.Enum(effect_collection_method))
 	no_effected = db.Column(db.Float)
 	collection_threshold = db.Column(db.Float)
+
+
+class EffectGroup(db.Model):
+
+	__tablename__ = 'effectsgroups'
+
+	id = db.Column(db.Integer, primary_key=True)
+	title = db.Column(db.String(101))
+	description = db.Column(db.String(1500))
+	study_id = db.Column(db.String(7))
+
+	effects = db.relationship('Effect', lazy='dynamic')
+
+
+class EffectAdministration(db.Model):
+
+	__tablename__ = 'effectsadministrations'
+
+	id = db.Column(db.Integer, primary_key=True)
+	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+
+
+
