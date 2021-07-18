@@ -253,8 +253,6 @@ class Company(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(100))
 
-	treatments = db.relationship('Treatment', lazy='dynamic')
-
 
 class Treatment(db.Model):
 
@@ -277,10 +275,9 @@ class Group(db.Model): # These are just the outcome groups for now
 	study_id = db.Column(db.String(7))
 	description = db.Column(db.String(1500))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
-	baselines = db.relationship('Baseline', lazy='dynamic')
-	effects = db.relationship('Effect', lazy='dynamic')
 
 
 class Outcome(db.Model):
@@ -307,8 +304,6 @@ class Administration(db.Model):
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 	description = db.Column(db.String(1500))
-
-	outcomes = db.relationship('Outcome', lazy='dynamic')
 
 
 class Analytics(db.Model):
@@ -366,7 +361,7 @@ class Effect(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
+	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
 	name = db.Column(db.String(100))
 	organ_system = db.Column(db.Enum(organ_system))
 	effect_type = db.Column(db.Enum(effect_type))
