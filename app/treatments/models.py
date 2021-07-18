@@ -11,9 +11,15 @@ class baseline_type(enum.Enum):
 	OTHER='OTHER'
 
 
+class effect_type(enum.Enum):
+	SERIOUS='Serious'
+	OTHER='Other'
+
+
 class effect_collection_method(enum.Enum):
 	SYSTEMATIC_ASSESSMENT='Systematic Assessment',
-	NON_SYSTEMATIC_ASSESSMENT='Non-Systematic Assessment'
+	NON_SYSTEMATIC_ASSESSMENT='Non-Systematic Assessment',
+	NA='NA'
 
 
 class organ_system(enum.Enum):
@@ -43,7 +49,7 @@ class organ_system(enum.Enum):
 	SKIN_AND_SUBCUTANEOUS_TISSUE_DISORDERS='Skin and subcutaneous tissue disorders',
 	SOCIAL_CIRCUMSTANCES='Social circumstances',
 	SURGICAL_AND_MEDICAL_PROCEDURES='Surgical and medical procedures',
-	VASCUALR_DISORDERS='Vascular disorders',
+	VASCULAR_DISORDERS='Vascular disorders',
 
 
 class baseline_subtype(enum.Enum):
@@ -255,7 +261,7 @@ class Treatment(db.Model):
 	__tablename__ = 'treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
-	name = db.Column(db.String(162))
+	name = db.Column(db.String(400))
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
 
@@ -363,6 +369,7 @@ class Effect(db.Model):
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	name = db.Column(db.String(100))
 	organ_system = db.Column(db.Enum(organ_system))
+	effect_type = db.Column(db.Enum(effect_type))
 	assessment = db.Column(db.Enum(effect_collection_method))
 	no_effected = db.Column(db.Float)
 	collection_threshold = db.Column(db.Float)
