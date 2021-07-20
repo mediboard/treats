@@ -354,6 +354,27 @@ class Baseline(db.Model):
 	sub_type = db.Column(db.Enum(baseline_subtype))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
+	def is_demographic(self):
+		return (self.type != baseline_type.OTHER)
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'base': self.base,
+			'class': self.clss,
+			'category': self.category,
+			'param_type': str(self.param_type),
+			'dispersion': str(self.dispersion),
+			'unit': self.unit,
+			'value': self.value,
+			'spread': self.spread,
+			'upper': self.upper,
+			'lower': self.lower,
+			'type': str(self.type),
+			'sub_type': str(self.sub_type),
+			'study': self.study
+		}
+
 
 class Effect(db.Model):
 

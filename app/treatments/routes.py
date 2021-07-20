@@ -10,5 +10,5 @@ def main():
 @bp.route('/treatment/<string:name>/demographics')
 def get_treatment_demographics(name):
 	baselines = treatments.get_demographics(name)
-	return {'baselines': baselines}
+	return {'baselines': [x.to_dict() for x in baselines]}
 	
