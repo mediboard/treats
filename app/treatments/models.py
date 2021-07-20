@@ -390,6 +390,19 @@ class Effect(db.Model):
 	no_effected = db.Column(db.Float)
 	collection_threshold = db.Column(db.Float)
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'group': self.group,
+			'name': self.name,
+			'organ_system': str(self.organ_system),
+			'effect_type': str(self.effect_type),
+			'assessment': str(self.assessment),
+			'no_effected': self.no_effected,
+			'collection_threshold': self.collection_threshold
+		}
+
 
 class EffectGroup(db.Model):
 

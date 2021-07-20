@@ -1,4 +1,4 @@
-from app.treatments.models import Baseline, Treatment, Administration, Study, Group
+from app.treatments.models import Baseline, Treatment, Administration, Study, Group, Effect, EffectGroup, EffectAdministration
 from app import db
 from sqlalchemy.orm import aliased
 
@@ -12,3 +12,13 @@ def get_demographics(treatment_name):
 
 	return [baseline for baseline in baselines if baseline.is_demographic()]
 
+
+def get_effects(treatment_name):
+
+	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
+	admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
+	group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
+	effects = db.session.query(Effect).join(group_query, Effect.group == group_query.c.id)\
+		.filter(Effect.no_effected > 0).all()
+
+	return effects
