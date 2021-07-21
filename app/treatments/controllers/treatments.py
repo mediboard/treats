@@ -1,5 +1,5 @@
 from app.treatments.models import Baseline, Treatment, Administration, Study, Group,\
-	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition
+	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison
 from app import db
 from sqlalchemy.orm import aliased
 from sqlalchemy import func
@@ -37,3 +37,12 @@ def get_conditions_and_counts(treatment_name):
 		.group_by(Condition.id).all()
 
 	return conditions_and_counts
+
+
+def get_condition_scoring(treatment_name):
+	# The basic idea is aggregating the analytics with this treatment in the group
+	# We need to add in the concept of "mixed" and "direct" for a condition
+	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
+	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
+	group_query = db.session.query(Group).join(admin_query, Group.id == admin_query.c.group).subquery()
+	comp_query = db.session.query(Comparison).join(group_query, Comparison.group == group_query.c.id)
