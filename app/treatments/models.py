@@ -222,6 +222,12 @@ class Condition(db.Model):
 	name = db.Column(db.String(150), index=True, unique=True)
 	studies = db.relationship('StudyCondition', lazy='dynamic')
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+		}
+
 
 class StudyCondition(db.Model):
 

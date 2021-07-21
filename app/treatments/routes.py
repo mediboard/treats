@@ -7,6 +7,7 @@ def main():
 	return "Hello World	"
 
 
+# TODO: these all should have query strings appended to them
 @bp.route('/treatment/<string:name>/demographics')
 def get_treatment_demographics(name):
 	baselines = treatments.get_demographics(name)
@@ -17,4 +18,10 @@ def get_treatment_demographics(name):
 def get_treatment_effects(name):
 	effects = treatments.get_effects(name)
 	return {'effects': [x.to_dict() for x in effects]}
+
+
+@bp.route('/treatment/<string:name>/conditions')
+def get_treatment_conditions(name):
+	conditions_and_counts = treatments.get_conditions_and_counts(name)
+	return {'conditions': [{**x.to_dict(), 'no_studies': count} for x,count in conditions_and_counts]}
 	
