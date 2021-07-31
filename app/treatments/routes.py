@@ -24,4 +24,10 @@ def get_treatment_effects(name):
 def get_treatment_conditions(name):
 	conditions_and_counts = treatments.get_conditions_and_counts(name)
 	return {'conditions': [{**x.to_dict(), 'no_studies': count} for x,count in conditions_and_counts]}
+
+
+@bp.route('/treatment/<string:name>/scores')
+def get_condition_scores(name):
+	scores = treatments.get_condition_scoring(name)
+	return {'condition_scores': scores}
 	
