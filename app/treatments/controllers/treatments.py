@@ -82,11 +82,13 @@ def get_condition_scoring(treatment_name):
 		if (sum(bool_arr) == len(bool_arr)):
 			del analytics_tree[analytic_id]
 
-	# Let's split the analytics into mixed and singular
-	# What does a placebo analytic look like?? - name is None
-	# Find the singular ones
-	for analytic_id in analytics_tree.keys():
-		bool_arr = [!(None not in analytics_tree[comp] and treatment_name not in analytics_tree[comp])\
-		 	for comp in analytics_tree[analytic_id]]
-		if (sum(bool_arr) == len(bool_arr)):
+	# Split singular and mixed
+	# singular_analytics = []
+	# for analytic_id in analytics_tree.keys():
+	# 	bool_arr = [!None not in analytics_tree[comp] and treatment_name not in analytics_tree[comp] for comp in analytics_tree[analytic_id]]
+	# 	if (sum(bool_arr) == len(bool_arr)):
+	# 		singular_analytics.append(analytic)
+
+	mixed_analytics = [analytics_id for analytic_id in analytics_tree.keys() if analytic_id not in singular_analytics]
+
 	return {}

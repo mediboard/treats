@@ -222,6 +222,8 @@ class Condition(db.Model):
 	name = db.Column(db.String(150), index=True, unique=True)
 	studies = db.relationship('StudyCondition', lazy='dynamic')
 
+	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
+
 	def to_dict(self):
 		return {
 			'id': self.id,
@@ -270,6 +272,18 @@ class Treatment(db.Model):
 	no_studies = db.Column(db.Integer)
 
 	administrations = db.relationship('Administration', lazy='dynamic')
+	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
+
+
+class ConditionScore(db.Model):
+
+	__tablename__ = 'conditionscores'
+
+	id = db.Column(db.Integer, primary_key=True)
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
+	mixed_score = db.Column(db.Float)
+	singular_score = db.Column(db.Float)
 
 
 class Group(db.Model): # These are just the outcome groups for now
