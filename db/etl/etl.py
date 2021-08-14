@@ -10,7 +10,8 @@ def register_pipelines(context):
 
 
 def run_etl(pipeline_names):
-	conf = SparkConf().set("spark.jars", "jars/postgresql-42.2.23.jar")
+	conf = SparkConf().set("spark.jars", "jars/postgresql-42.2.23.jar")\
+		.set('spark.driver.memory', '4g')
 	sc = SparkContext("local", "etl", conf=conf)
 	register_pipelines(sc)
 
