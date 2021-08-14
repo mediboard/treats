@@ -1,8 +1,10 @@
+import os
+import sqlalchemy as sa
+from sqlalchemy import text
 from pipelines.pipeline import Pipeline
 
 from pyspark.sql import SparkSession
 from configparser import ConfigParser
-import os
 
 
 class ConditionScoresPipeline(Pipeline):
@@ -33,8 +35,6 @@ class ConditionScoresPipeline(Pipeline):
 
 		analytics_base = session.read.jdbc(url=db_url, table=table, properties=db_props)
 
-		# Select all the groups with no treatment first
-		# We can use a sql expression to filter them here
 		null_treatment_id = 2182
 		no_treat_groups = analytics_base.filter(f'treat_id = {null_treatment_id}').select('group_id').drop_duplicates()
 		one_treat_groups = analytics_base.select(['group_id', 'treat_id'])\
@@ -66,7 +66,6 @@ class ConditionScoresPipeline(Pipeline):
 		singular_treat_scores = single_analytic_conditions.groupBy('treat_id', 'cond_id').mean('p_value')\
 			.withColumnRenamed('avg(p_value)', 'singular_score')
 
-		# Get the mixed scores
 		mixed_scores = analytics_base.select('study','p_value', 'analytic_id', 'treat_id')\
 			.join(study_conditions, 'study')\
 			.drop_duplicates()\
@@ -79,6 +78,13 @@ class ConditionScoresPipeline(Pipeline):
 			['cond_id', 'treat_id'],
 			'full').withColumnRenamed('cond_id', 'condition')\
 			.withColumnRenamed('treat_id', 'treatment')
+
+		# Clear existing table
+		db_engine = sa.create_engine('postgresql://meditreats:meditreats@localhost:5432/meditreats')
+		db_connection = db_engine.connect()
+		result = db_connection.execute(text('TRUNCATE TABLE conditionscores'))
+		result.close()
+
 
 		mixed_and_singular.write.jdbc(
 			url=db_url, 
