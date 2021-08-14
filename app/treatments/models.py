@@ -285,6 +285,15 @@ class ConditionScore(db.Model):
 	mixed_score = db.Column(db.Float)
 	singular_score = db.Column(db.Float)
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'treatment': self.treatment,
+			'condition': self.condition,
+			'mixed_score': self.mixed_score,
+			'singular_score': self.singular_score
+		}
+
 
 class Group(db.Model): # These are just the outcome groups for now
 

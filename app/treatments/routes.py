@@ -29,5 +29,5 @@ def get_treatment_conditions(name):
 @bp.route('/treatment/<string:name>/scores')
 def get_condition_scores(name):
 	scores = treatments.get_condition_scoring(name)
-	return {'condition_scores': scores}
+	return {'condition_scores': [x.to_dict() for x in scores]}
 	
