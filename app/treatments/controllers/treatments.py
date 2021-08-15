@@ -42,6 +42,7 @@ def get_conditions_and_counts(treatment_name):
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
-	codntion_scores = db.session.query(ConditionScore).join(treatment_query, ConditionScore.treatment == treatment_query.c.id).all()
+	codntion_scores = db.session.query(ConditionScore, Condition).join(treatment_query, ConditionScore.treatment == treatment_query.c.id)\
+		.join(Condition, Condition.id == ConditionScore.condition).all()
 
 	return codntion_scores
