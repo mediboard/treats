@@ -1,8 +1,10 @@
 from app.treatments import bp
 from app.treatments.controllers import treatments
+from flask_cors import cross_origin
 
 
 @bp.route('/')
+@cross_origin(supports_credentials=True)
 def main():
 	return "Hello World	"
 
@@ -15,6 +17,7 @@ def get_treatment_demographics(name):
 
 
 @bp.route('/treatment/<string:name>/effects')
+@cross_origin(supports_credentials=True)
 def get_treatment_effects(name):
 	effects = treatments.get_effects(name)
 	return {'effects': [x.to_dict() for x in effects]}
@@ -30,4 +33,3 @@ def get_treatment_conditions(name):
 def get_condition_scores(name):
 	scores = treatments.get_condition_scoring(name)
 	return {'condition_scores': [{**x.to_dict(), 'name':y.name} for x,y in scores]}
-	

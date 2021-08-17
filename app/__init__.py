@@ -1,10 +1,12 @@
 from flask import Flask 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_cors import CORS
 
 
 db = SQLAlchemy()
 migrate = Migrate()
+cors = CORS()
 
 def create_app(config_file=None):
 	app = Flask(__name__, instance_relative_config=True)
@@ -17,6 +19,7 @@ def create_app(config_file=None):
 def initialize_extensions(app):
 	db.init_app(app)
 	migrate.init_app(app, db)
+	cors.init_app(app, support_credentials=True)
 
 
 def register_blueprints(app):
