@@ -417,6 +417,7 @@ class Effect(db.Model):
 	effect_type = db.Column(db.Enum(effect_type))
 	assessment = db.Column(db.Enum(effect_collection_method))
 	no_effected = db.Column(db.Float)
+	no_at_risk = db.Column(db.Integer)
 	collection_threshold = db.Column(db.Float)
 
 	def to_dict(self):
@@ -429,6 +430,7 @@ class Effect(db.Model):
 			'effect_type': str(self.effect_type),
 			'assessment': str(self.assessment),
 			'no_effected': self.no_effected,
+			'no_at_risk': self.no_at_risk,
 			'collection_threshold': self.collection_threshold
 		}
 
