@@ -20,8 +20,9 @@ def get_effects(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 	group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-	effects = db.session.query(Effect).join(group_query, Effect.group == group_query.c.id)\
-		.filter(Effect.no_effected > 0).all()
+	effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk))\
+		.join(group_query, Effect.group == group_query.c.id)\
+		.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
 
 	return effects
 
