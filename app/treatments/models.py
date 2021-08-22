@@ -198,6 +198,7 @@ class Study(db.Model):
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
 	conditions = db.relationship('StudyCondition', lazy='dynamic')
+	treatments = db.relationship('StudyTreatment', lazy='dynamic')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
@@ -238,6 +239,15 @@ class StudyCondition(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
+
+
+class StudyTreatment(db.Model):
+
+	__tablename__ = 'study_treatments'
+
+	id = db.Column(db.Integer, primary_key=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 
 
 class Measure(db.Model):
