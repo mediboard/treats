@@ -20,7 +20,7 @@ def get_treatment_demographics(name):
 @cross_origin(supports_credentials=True)
 def get_treatment_effects(name):
 	effects = treatments.get_effects(name)
-	return {'effects': [{'name':name, 'effected':effected, 'at_risk':at_risk} for name,effected,at_risk in effects]}
+	return {'effects': [{'name':name, 'effected':effected, 'at_risk':at_risk, 'no_studies':count} for name,effected,at_risk,count in effects]}
 
 
 @bp.route('/treatment/<string:name>/conditions')
