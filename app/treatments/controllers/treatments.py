@@ -1,9 +1,9 @@
 from app.treatments.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
-	ConditionScore
+	ConditionScore, StudyTreatment
 from app import db
 from sqlalchemy.orm import aliased
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 
 
 def get_demographics(treatment_name):
@@ -15,9 +15,25 @@ def get_demographics(treatment_name):
 
 	return [baseline for baseline in baselines if baseline.is_demographic()]
 
-
-def get_effects(treatment_name):
+'''
+Gets the effects for a treatment.
+Mode:
+- strict: Only use the effects from studies purely focues on the treatment
+- loose: Use any groups that have the treatment in it
+'''
+def get_effects(treatment_name, mode='strict'):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
+
+	if (mode == 'strict'):
+		study_query = db.session.query(StudyTreatment).join(treatment_query, StudyTreatment.treatment == treatment_query.c.id).subquery()
+		admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
+		group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
+		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+			.join(group_query, Effect.group == group_query.c.id)\
+			.join(study_query, Effect.study == study_query.c.study)\
+			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
+		return effects
+
 	admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 	group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
 	effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(Effect.study))\
