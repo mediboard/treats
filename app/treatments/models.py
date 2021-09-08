@@ -263,6 +263,18 @@ class Measure(db.Model):
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'title': self.title,
+			'description': self.description,
+			'dispersion': str(self.dispersion),
+			'type': str(self.type),
+			'param': str(self.param),
+			'units': self.units
+		}
+
 
 class Company(db.Model):
 
@@ -365,6 +377,24 @@ class Analytics(db.Model):
 	ci_upper = db.Column(db.Float)
 
 	groups = db.relationship('Comparison', lazy='dynamic')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'measure': self.measure,
+			'from_study': self.from_study,
+			'method': self.method,
+			'p_value': self.p_value,
+			'param_type': self.param_type,
+			'is_non_inferiority': self.is_non_inferiority,
+			'non_inferiority_type': str(self.non_inferiority_type),
+			'non_inferiority_comment': self.non_inferiority_comment,
+			'param_value': self.param_value,
+			'ci_pct': self.ci_pct,
+			'ci_lower': self.ci_lower,
+			'ci_upper': self.ci_upper
+		}
 
 
 class Comparison(db.Model):
