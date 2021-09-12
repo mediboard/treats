@@ -1,7 +1,7 @@
 from app.treatments.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
 	ConditionScore, StudyTreatment, Measure
-from app.treatments.models import baseline_type
+from app.treatments.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased
 from sqlalchemy import func, distinct
@@ -47,23 +47,25 @@ def get_effects(treatment_name, mode='strict'):
 
 
 # The goal of this is to get a spread of all the scoring from studies
-def get_scoring_spread(treatment_name):
+def get_scoring_spread(treatment_name, secondary_measures=False):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
-	# Do I go by the studies that have the treatment listed or just go directly to the groups themselves 
-	# It might be painful to let go, but maybe I should just go for the studies with the treatment directly listed to avoid false
-	# positives
-	# We will do the first case scenario for now
 	study_treat_query = db.session.query(StudyTreatment).join(treatment_query, StudyTreatment.treatment == treatment_query.c.id).subquery()
 	study_query = db.session.query(Study)\
 		.join(study_treat_query, Study.id == study_treat_query.c.study)\
 		.join(StudyTreatment, Study.id == StudyTreatment.study)\
 		.group_by(Study.id)\
 		.having(func.count(StudyTreatment.treatment) == 1).subquery()
-	# If the studies are this strictly filtered then the analytics should be good enough to use on their own
-	# Should be a x:1 of analytics to measures
+
+	if (secondary_measures):
+		analytics_and_measures = db.session.query(Analytics, Measure)\
+			.join(study_query, Analytics.study == study_query.c.id)\
+			.join(Measure, Analytics.measure == Measure.id).all()
+		return analytics_and_measures
+
 	analytics_and_measures = db.session.query(Analytics, Measure)\
 		.join(study_query, Analytics.study == study_query.c.id)\
-		.join(Measure, Analytics.measure == Measure.id).all()
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY).all()
 
 	return analytics_and_measures
 
