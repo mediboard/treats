@@ -1,5 +1,7 @@
 from app import db 
 
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
+from sqlalchemy import func, select
 import enum
 
 
@@ -221,14 +223,27 @@ class Condition(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(150), index=True, unique=True)
-	studies = db.relationship('StudyCondition', lazy='dynamic')
 
+	studies = db.relationship('StudyCondition', lazy='dynamic')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
+
+	@hybrid_property
+	def no_studies(self):
+		if self.studies:
+			return len(self.studies)
+		return 0
+
+	@no_studies.expression
+	def no_studies(cls):
+		return select(func.count(StudyCondition)).\
+			where(StudyCondition.condition==cls.id).\
+			label('no_studies')
 
 	def to_dict(self):
 		return {
 			'id': self.id,
 			'name': self.name,
+			'no_studies': self.no_studies()
 		}
 
 

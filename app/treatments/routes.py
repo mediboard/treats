@@ -28,7 +28,10 @@ def get_treatment_effects(name):
 @bp.route('/treatment/<string:name>/conditions')
 @cross_origin(supports_credentials=True)
 def get_treatment_conditions(name):
-	conditions_and_counts = treatments.get_conditions_and_counts(name)
+	conditions_and_analytics = treatments.get_conditions_and_counts(name, True)
+	conditions = [x.to_dict() for x in list(set([x for x,y in conditions_and_analytics]))]
+	print(conditions)
+
 	return {'conditions': [{**x.to_dict(), 'no_studies': count} for x,count in conditions_and_counts]}
 
 
