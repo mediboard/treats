@@ -235,15 +235,15 @@ class Condition(db.Model):
 
 	@no_studies.expression
 	def no_studies(cls):
-		return select(func.count(StudyCondition)).\
+		return select([func.count(StudyCondition.id)]).\
 			where(StudyCondition.condition==cls.id).\
+			group_by(cls.id).\
 			label('no_studies')
 
 	def to_dict(self):
 		return {
 			'id': self.id,
-			'name': self.name,
-			'no_studies': self.no_studies()
+			'name': self.name
 		}
 
 
@@ -411,6 +411,23 @@ class Analytics(db.Model):
 			'ci_upper': self.ci_upper
 		}
 
+	def to_small_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'measure': self.measure,
+			'from_study': self.from_study,
+			'method': self.method,
+			'p_value': self.p_value,
+			'param_type': self.param_type,
+			'is_non_inferiority': self.is_non_inferiority,
+			'non_inferiority_type': str(self.non_inferiority_type),
+			'param_value': self.param_value,
+			'ci_pct': self.ci_pct,
+			'ci_lower': self.ci_lower,
+			'ci_upper': self.ci_upper
+		}
+		
 
 class Comparison(db.Model):
 	

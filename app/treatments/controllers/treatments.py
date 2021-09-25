@@ -71,8 +71,8 @@ def get_scoring_spread(treatment_name, secondary_measures=False):
 	return analytics_and_measures
 
 
-# TODO: merge the two queries into one
-def get_conditions_and_counts(treatment_name, analytics=False):
+# TODO: this is super slow (4 sec execution) - speed this up
+def get_conditions(treatment_name, analytics=False):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
 	group_query = db.session.query(Group).join(admin_query, Group.id == admin_query.c.group).subquery()
@@ -80,20 +80,19 @@ def get_conditions_and_counts(treatment_name, analytics=False):
 
 	study_conditions_query = db.session.query(StudyCondition)\
 		.join(study_query, StudyCondition.study == study_query.c.id).subquery()
-	conditions_and_counts = db.session.query(Condition, func.count(study_conditions_query.c.study).label('no_studies')).select_from(study_conditions_query)\
-		.join(Condition, Condition.id == study_conditions_query.c.condition, isouter=True)\
-		.group_by(Condition.id).all()
 
 	if (analytics):
-		condition_analytics = db.session.query(Analytics)\
-			.filter(Analytics.study == study_conditions_query.c.study)\
+		condition_analytics_counts = db.session.query(Condition, Analytics)\
+			.join(study_conditions_query, study_conditions_query.c.condition == Condition.id)\
+			.add_columns(Condition.no_studies)\
+			.join(Analytics, Analytics.study == study_conditions_query.c.study)\
 			.join(Measure, Analytics.measure == Measure.id)\
-			.filter(Measure.type == measure_type.PRIMARY).all()
+			.filter(Measure.type == measure_type.PRIMARY)\
+			.all()
 
-		return (conditions_and_counts, condition_analytics)
+		return condition_analytics_counts
 
-	return conditions_and_counts
-
+	return conditions.all()
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()

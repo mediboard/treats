@@ -28,11 +28,16 @@ def get_treatment_effects(name):
 @bp.route('/treatment/<string:name>/conditions')
 @cross_origin(supports_credentials=True)
 def get_treatment_conditions(name):
-	conditions_and_analytics = treatments.get_conditions_and_counts(name, True)
-	conditions = [x.to_dict() for x in list(set([x for x,y in conditions_and_analytics]))]
-	print(conditions)
+	conditions_analytics_counts = treatments.get_conditions(name, True)
+	# First get the conditions indexable by id
+	id_2_condition = {}
+	for condition,analytic,count in conditions_analytics_counts:
+		if condition.id not in id_2_condition:
+			id_2_condition[condition.id] = {**condition.to_dict(), 'analytics': [], 'no_studies': count}
 
-	return {'conditions': [{**x.to_dict(), 'no_studies': count} for x,count in conditions_and_counts]}
+		id_2_condition[condition.id]['analytics'].append(analytic.to_small_dict())
+
+	return {'conditions': list(id_2_condition.values())}
 
 
 @bp.route('/treatment/<string:name>/scores')
