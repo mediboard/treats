@@ -80,19 +80,14 @@ def get_conditions(treatment_name, analytics=False):
 
 	study_conditions_query = db.session.query(StudyCondition)\
 		.join(study_query, StudyCondition.study == study_query.c.id).subquery()
+	condition_analytics = db.session.query(Condition, Analytics)\
+		.select_from(study_conditions_query)\
+		.join(Condition, study_conditions_query.c.condition == Condition.id)\
+		.join(Analytics, study_conditions_query.c.study == Analytics.study)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY).all()
 
-	if (analytics):
-		condition_analytics_counts = db.session.query(Condition, Analytics)\
-			.join(study_conditions_query, study_conditions_query.c.condition == Condition.id)\
-			.add_columns(Condition.no_studies)\
-			.join(Analytics, Analytics.study == study_conditions_query.c.study)\
-			.join(Measure, Analytics.measure == Measure.id)\
-			.filter(Measure.type == measure_type.PRIMARY)\
-			.all()
-
-		return condition_analytics_counts
-
-	return conditions.all()
+	return condition_analytics
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
