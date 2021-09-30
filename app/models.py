@@ -207,6 +207,29 @@ class Study(db.Model):
 	groups = db.relationship('Group', lazy='dynamic')
 
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'upload_date': self.upload_date,
+			'short_title': self.short_title,
+			'official_title': self.official_title,
+			'description': self.description,
+			'responsible_party': self.responsible_party,
+			'sponsor': self.sponsor,
+			'type': str(self.type),
+			'purpose': str(self.purpose),
+			'intervention_type': str(self.intervention_type),
+			'min_age': self.min_age,
+			'min_age_units': str(self.min_age_units),
+			'max_age': self.max_age,
+			'min_age_units': str(self.max_age_units),
+			'gender': str(self.gender),
+			'criteria': [x.to_dict() for x in self.criteria],
+			'measures': [x.to_dict() for x in self.measures],
+			
+		}
+
+
 class Criteria(db.Model):
 
 	__tablename__ = 'criteria'

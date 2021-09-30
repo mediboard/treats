@@ -6,3 +6,6 @@ from flask_cors import cross_origin
 @cross_origin(supports_credentials=True)
 def main():
 	return "Hello Studies"
+
+
+@bp.route('/<string:name>')
