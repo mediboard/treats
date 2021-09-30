@@ -226,7 +226,9 @@ class Study(db.Model):
 			'gender': str(self.gender),
 			'criteria': [x.to_dict() for x in self.criteria],
 			'measures': [x.to_dict() for x in self.measures],
-			
+			'analytics': [x.to_dict() for x in self.analytics],
+			'baselines': [x.to_dict() for x in self.baselines],
+			'groups': [x.to_dict() for x in self.groups]
 		}
 
 
