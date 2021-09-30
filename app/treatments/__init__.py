@@ -2,4 +2,4 @@ from flask import Blueprint
 
 bp = Blueprint('treatments', __name__)
 
-from app.treatments import routes, models, controllers
+from app.treatments import routes, controllers

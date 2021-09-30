@@ -1,7 +1,7 @@
-from app.treatments.models import Baseline, Treatment, Administration, Study, Group,\
+from app.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
 	ConditionScore, StudyTreatment, Measure
-from app.treatments.models import baseline_type, measure_type
+from app.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased, Bundle
 from sqlalchemy import func, distinct
@@ -71,7 +71,6 @@ def get_scoring_spread(treatment_name, secondary_measures=False):
 	return analytics_and_measures
 
 
-# TODO: this is super slow (4 sec execution) - speed this up
 def get_conditions(treatment_name, analytics=False):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
