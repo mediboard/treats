@@ -198,13 +198,13 @@ class Study(db.Model):
 	max_age_units = db.Column(db.Enum(age_units))
 	gender = db.Column(db.Enum(gender))
 
-	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='dynamic')
-	treatments = db.relationship('StudyTreatment', lazy='dynamic')
-	measures = db.relationship('Measure', lazy='dynamic')
-	analytics = db.relationship('Analytics', lazy='dynamic')
-	baselines = db.relationship('Baseline', lazy='dynamic')
-	groups = db.relationship('Group', lazy='dynamic')
+	criteria = db.relationship('Criteria', lazy='joined')
+	conditions = db.relationship('StudyCondition', lazy='joined')
+	treatments = db.relationship('StudyTreatment', lazy='joined')
+	measures = db.relationship('Measure', lazy='joined')
+	analytics = db.relationship('Analytics', lazy='joined')
+	baselines = db.relationship('Baseline', lazy='joined')
+	groups = db.relationship('Group', lazy='joined')
 
 
 	def to_dict(self):
@@ -228,7 +228,9 @@ class Study(db.Model):
 			'measures': [x.to_dict() for x in self.measures],
 			'analytics': [x.to_dict() for x in self.analytics],
 			'baselines': [x.to_dict() for x in self.baselines],
-			'groups': [x.to_dict() for x in self.groups]
+			'groups': [x.to_dict() for x in self.groups],
+			'conditions': [x.conditions.to_dict() for x in self.conditions],
+			'treatments': [x.treatments.to_dict() for x in self.treatments]
 		}
 
 
@@ -249,7 +251,7 @@ class Condition(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='dynamic')
+	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -333,8 +335,17 @@ class Treatment(db.Model):
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
 
+	studies = db.relationship('StudyTreatment', lazy='joined', backref='treatments')
 	administrations = db.relationship('Administration', lazy='dynamic')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+			'from_study': self.from_study,
+			'no_studies': self.no_studies
+		}
 
 
 class ConditionScore(db.Model):
@@ -369,6 +380,15 @@ class Group(db.Model): # These are just the outcome groups for now
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'title': self.title,
+			'study_id': self.study_id,
+			'description': self.description,
+			'study': self.study
+		}
 
 
 class Outcome(db.Model):

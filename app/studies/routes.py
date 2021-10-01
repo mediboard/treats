@@ -9,9 +9,9 @@ def main():
 	return "Hello Studies"
 
 
-@bp.route('/<string:name>')
+@bp.route('/<string:study_id>')
 @cross_origin(supports_credentials=True)
-def get_study(name):
-	study = controller.get_study(name)
-	return study.to_dict()
+def get_study(study_id):
+	studies = controller.get_study(study_id)
+	return {'studies': [study.to_dict() for study in studies]}
 
