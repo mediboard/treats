@@ -205,7 +205,6 @@ class Study(db.Model):
 	analytics = db.relationship('Analytics', lazy='joined')
 	baselines = db.relationship('Baseline', lazy='joined')
 	groups = db.relationship('Group', lazy='joined')
-	outcomes = db.relationship('Outcome', lazy='joined')
 
 
 	def to_dict(self):
@@ -306,6 +305,8 @@ class Measure(db.Model):
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
 
+	outcomes = db.relationship('Outcome', lazy='joined')
+
 	def to_dict(self):
 		return {
 			'id': self.id,
@@ -315,7 +316,8 @@ class Measure(db.Model):
 			'dispersion': str(self.dispersion),
 			'type': str(self.type),
 			'param': str(self.param),
-			'units': self.units
+			'units': self.units,
+			'outcomes': [x.to_dict() for x in self.outcomes]
 		}
 
 
@@ -406,6 +408,20 @@ class Outcome(db.Model):
 	upper = db.Column(db.Float)
 	lower = db.Column(db.Float)
 	no_participants = db.Column(db.Integer)
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'group': self.group,
+			'measure': self.measure,
+			'title': self.title,
+			'value': self.value,
+			'dispersion': self.dispersion,
+			'upper': self.upper,
+			'lower': self.lower,
+			'no_participants': self.no_participants
+		}
 
 
 class Administration(db.Model):

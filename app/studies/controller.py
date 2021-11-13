@@ -10,11 +10,10 @@ def get_study(study_id):
 		.filter_by(id = study_id)\
 		.options(
 			joinedload(Study.criteria),
-			joinedload(Study.measures),
+			joinedload(Study.measures).joinedload(Measure.outcomes),
 			joinedload(Study.analytics),
 			joinedload(Study.baselines),
 			joinedload(Study.groups),
-			joinedload(Study.outcomes),
 			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 			joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
 			raiseload('*')
