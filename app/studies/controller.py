@@ -14,6 +14,7 @@ def get_study(study_id):
 			joinedload(Study.analytics),
 			joinedload(Study.baselines),
 			joinedload(Study.groups),
+			joinedload(Study.outcomes),
 			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 			joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
 			raiseload('*')

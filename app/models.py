@@ -205,6 +205,7 @@ class Study(db.Model):
 	analytics = db.relationship('Analytics', lazy='joined')
 	baselines = db.relationship('Baseline', lazy='joined')
 	groups = db.relationship('Group', lazy='joined')
+	outcomes = db.relationship('Outcome', lazy='joined')
 
 
 	def to_dict(self):
