@@ -453,7 +453,7 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison', lazy='dynamic')
+	groups = db.relationship('Comparison', lazy='joined')
 
 	def to_dict(self):
 		return {
@@ -470,7 +470,8 @@ class Analytics(db.Model):
 			'param_value': self.param_value,
 			'ci_pct': self.ci_pct,
 			'ci_lower': self.ci_lower,
-			'ci_upper': self.ci_upper
+			'ci_upper': self.ci_upper,
+			'groups': [x.to_dict() for x in self.groups]
 		}
 
 	def to_small_dict(self):
@@ -487,7 +488,8 @@ class Analytics(db.Model):
 			'param_value': self.param_value,
 			'ci_pct': self.ci_pct,
 			'ci_lower': self.ci_lower,
-			'ci_upper': self.ci_upper
+			'ci_upper': self.ci_upper,
+			'groups': [x.to_dict() for x in self.groups]
 		}
 		
 
@@ -496,6 +498,13 @@ class Comparison(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	analytic = db.Column(db.Integer, db.ForeignKey('analytics.id'))
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'analytic': self.analytic,
+			'group': self.group
+		}
 
 
 class Baseline(db.Model):
