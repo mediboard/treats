@@ -206,7 +206,6 @@ class Study(db.Model):
 	baselines = db.relationship('Baseline', lazy='joined')
 	groups = db.relationship('Group', lazy='joined')
 
-
 	def to_dict(self):
 		return {
 			'id': self.id,
