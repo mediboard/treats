@@ -198,13 +198,13 @@ class Study(db.Model):
 	max_age_units = db.Column(db.Enum(age_units))
 	gender = db.Column(db.Enum(gender))
 
-	criteria = db.relationship('Criteria', lazy='joined')
-	conditions = db.relationship('StudyCondition', lazy='joined')
-	treatments = db.relationship('StudyTreatment', lazy='joined')
-	measures = db.relationship('Measure', lazy='joined')
-	analytics = db.relationship('Analytics', lazy='joined')
-	baselines = db.relationship('Baseline', lazy='joined')
-	groups = db.relationship('Group', lazy='joined')
+	criteria = db.relationship('Criteria', lazy='dynamic')
+	conditions = db.relationship('StudyCondition', lazy='dynamic')
+	treatments = db.relationship('StudyTreatment', lazy='dynamic')
+	measures = db.relationship('Measure', lazy='dynamic')
+	analytics = db.relationship('Analytics', lazy='dynamic')
+	baselines = db.relationship('Baseline', lazy='dynamic')
+	groups = db.relationship('Group', lazy='dynamic')
 
 	def to_dict(self):
 		return {
@@ -305,6 +305,7 @@ class Measure(db.Model):
 	units = db.Column(db.String(40))
 
 	outcomes = db.relationship('Outcome', lazy='joined')
+	analytics = db.relationship('Analytics', lazy='joined')
 
 	def to_dict(self):
 		return {
@@ -316,7 +317,8 @@ class Measure(db.Model):
 			'type': str(self.type),
 			'param': str(self.param),
 			'units': self.units,
-			'outcomes': [x.to_dict() for x in self.outcomes]
+			'outcomes': [x.to_dict() for x in self.outcomes],
+			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
 

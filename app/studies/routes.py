@@ -56,4 +56,3 @@ def get_conditions(study_id):
 def get_treatments(study_id):
 	treatments = controller.get_treatments(study_id)
 	return {'treatments': [treat.to_dict() for treat in treatments]}
-
