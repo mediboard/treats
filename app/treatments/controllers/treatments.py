@@ -72,17 +72,22 @@ def get_scoring_spread(treatment_name, secondary_measures=False):
 
 
 def get_conditions(treatment_name, analytics=False):
-	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
-	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
-	group_query = db.session.query(Group).join(admin_query, Group.id == admin_query.c.group).subquery()
-	study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
+	# treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
+	# study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
 
-	study_conditions_query = db.session.query(StudyCondition)\
-		.join(study_query, StudyCondition.study == study_query.c.id).subquery()
+	# study_conditions_query = db.session.query(StudyCondition)\
+	# 	.join(Study, StudyCondition.study == Study.id)\
+	# 	.join(StudyTreatment, Study.id == StudyTreatment.study)\
+	# 	.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+	# 	.filter(Treatment.name == treatment_name).subquery()
+
 	condition_analytics = db.session.query(Condition, Analytics)\
-		.select_from(study_conditions_query)\
-		.join(Condition, study_conditions_query.c.condition == Condition.id)\
-		.join(Analytics, study_conditions_query.c.study == Analytics.study)\
+		.join(StudyCondition, StudyCondition.condition == Condition.id)\
+		.join(Study, StudyCondition.study == Study.id)\
+		.join(StudyTreatment, Study.id == StudyTreatment.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.join(Analytics, StudyCondition.study == Analytics.study)\
 		.join(Measure, Analytics.measure == Measure.id)\
 		.filter(Measure.type == measure_type.PRIMARY).all()
 
