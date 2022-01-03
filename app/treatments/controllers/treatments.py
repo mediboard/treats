@@ -4,7 +4,7 @@ from app.models import Baseline, Treatment, Administration, Study, Group,\
 from app.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased, Bundle
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, desc
 import sqlalchemy as sa
 
 
@@ -38,8 +38,10 @@ def get_effects(treatment_name, mode='strict'):
 			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
 		return effects
 
-	admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
-	group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
+	admin_query = db.session.query(EffectAdministration)\
+		.join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
+	group_query = db.session.query(EffectGroup)\
+		.join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
 	effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(Effect.study))\
 		.join(group_query, Effect.group == group_query.c.id)\
 		.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
@@ -71,7 +73,7 @@ def get_scoring_spread(treatment_name, secondary_measures=False):
 	return analytics_and_measures
 
 
-def get_conditions(treatment_name, analytics=False):
+def get_conditions(treatment_name, analytics=False, top=5):
 	# treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	# study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
 
@@ -79,19 +81,34 @@ def get_conditions(treatment_name, analytics=False):
 	# 	.join(Study, StudyCondition.study == Study.id)\
 	# 	.join(StudyTreatment, Study.id == StudyTreatment.study)\
 	# 	.join(Treatment, Treatment.id == StudyTreatment.treatment)\
-	# 	.filter(Treatment.name == treatment_name).subquery()
+	# 	.filter(Treatment.name == treatment_name)\
+	# 	.group_by()
+	# 	.subquery()
 
-	condition_analytics = db.session.query(Condition, Analytics)\
+	agg_conditions = db.session.query(Condition.id.label('conditions_id'), func.count(Analytics.id).label('no_analytics'))\
 		.join(StudyCondition, StudyCondition.condition == Condition.id)\
-		.join(Study, StudyCondition.study == Study.id)\
-		.join(StudyTreatment, Study.id == StudyTreatment.study)\
+		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\
 		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
 		.filter(Treatment.name == treatment_name)\
 		.join(Analytics, StudyCondition.study == Analytics.study)\
-		.join(Measure, Analytics.measure == Measure.id)\
-		.filter(Measure.type == measure_type.PRIMARY).all()
+		.group_by(Condition.id)\
+		.order_by(desc('no_analytics'))\
+		.limit(top)\
+		.subquery() 
 
-	return condition_analytics
+	condition_analytics = db.session.query(Condition, Analytics)\
+		.join(agg_conditions, agg_conditions.c.conditions_id == Condition.id)\
+		.join(StudyCondition, Condition.id == StudyCondition.condition)\
+		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.join(Analytics, Analytics.study == StudyCondition.study)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.all()
+
+	return condition_analytics 
+
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()

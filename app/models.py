@@ -142,7 +142,7 @@ class non_inferiority_type(enum.Enum):
 	NON_INFERIORITY_OR_EQUIVALENCE='Non-Inferiority or Equivalence'
 	NON_INFERIORITY='Non-Inferiority'
 	NON_INFERIORITY_OR_EQUIVALENCE_LEGACY='Non-Inferiority or Equivalence (legacy)'
-	EQUIVAlENCE='Equivalence'
+	EQUIVALENCE='Equivalence'
 	NA='NA'
 
 
@@ -250,7 +250,7 @@ class Condition(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
+	studies = db.relationship('StudyCondition', lazy='dynamic', backref='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -454,9 +454,9 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison', lazy='joined')
+	groups = db.relationship('Comparison', lazy='dynamic')
 
-	def to_dict(self):
+	def to_core_dict(self):
 		return {
 			'id': self.id,
 			'study': self.study,
@@ -472,6 +472,11 @@ class Analytics(db.Model):
 			'ci_pct': self.ci_pct,
 			'ci_lower': self.ci_lower,
 			'ci_upper': self.ci_upper,
+		}
+
+	def to_dict(self):
+		return {
+			**self.to_core_dict(),
 			'groups': [x.to_dict() for x in self.groups]
 		}
 
@@ -490,7 +495,6 @@ class Analytics(db.Model):
 			'ci_pct': self.ci_pct,
 			'ci_lower': self.ci_lower,
 			'ci_upper': self.ci_upper,
-			'groups': [x.to_dict() for x in self.groups]
 		}
 		
 
