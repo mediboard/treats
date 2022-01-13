@@ -2,6 +2,7 @@ from app.treatments import bp
 from app.treatments.controllers import treatments
 from app.utils import removekey_oop
 from flask_cors import cross_origin
+from flask import request
 import sys
 
 
@@ -28,19 +29,31 @@ def get_treatment_effects(name):
 @bp.route('/<string:name>/conditions')
 @cross_origin(supports_credentials=True)
 def get_treatment_conditions(name):
-	conditions_analytics = treatments.get_conditions(name, True)
-	print(len(conditions_analytics))
-	# First get the conditions indexable by id
+	conditions_ranked = treatments.get_conditions(name)
+
+	return {'conditions': [{**condition[0].to_dict(), 'no_studies': condition[1]} for condition in conditions_ranked]}
+
+
+@bp.route('/<string:name>/conditionanalytics')
+@cross_origin(supports_credentials=True)
+def get_treatment_condition_analytics(name):
+	conditions_analytics = treatments.get_condition_analytics(name, True)
 	id_2_condition = {}
-	print('start')
 	for condition,analytic in conditions_analytics:
 		if condition.id not in id_2_condition:
 			id_2_condition[condition.id] = {**condition.to_dict(), 'analytics': []}
 
 		id_2_condition[condition.id]['analytics'].append(analytic.to_small_dict())
-	print('end')
 
 	return {'conditions': list(id_2_condition.values())}
+
+
+@bp.route('/<string:name>/analytics')
+@cross_origin(supports_credentials=True)
+def get_treatment_analytics(name):
+	analytics = treatments.get_analytics(name, request.args)
+
+	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
 
 
 @bp.route('/<string:name>/scores')

@@ -73,7 +73,21 @@ def get_scoring_spread(treatment_name, secondary_measures=False):
 	return analytics_and_measures
 
 
-def get_conditions(treatment_name, analytics=False, top=5):
+def get_conditions(treatment_name):
+	conditions = db.session.query(Condition, func.count(Study.id).label('no_studies'))\
+		.join(StudyCondition, StudyCondition.condition == Condition.id)\
+		.join(StudyTreatment, StudyTreatment.study == StudyCondition.study)\
+		.join(Treatment, StudyTreatment.treatment == Treatment.id)\
+		.where(Treatment.name == treatment_name)\
+		.join(Study, Study.id == StudyTreatment.study)\
+		.group_by(Condition.id)\
+		.order_by(desc('no_studies'))\
+		.all()
+
+	return conditions
+
+
+def get_condition_analytics(treatment_name, analytics=False, top=5):
 	# treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	# study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
 
@@ -108,6 +122,27 @@ def get_conditions(treatment_name, analytics=False, top=5):
 		.all()
 
 	return condition_analytics 
+
+
+def get_analytics(treatment_name, request_args):
+	condition_name = request_args.get('condition', '', type=str)
+
+	analytics = db.session.query(Analytics)\
+		.join(StudyCondition, StudyCondition.study == Analytics.study)\
+		.join(Condition, Condition.id == StudyCondition.condition)
+
+	if (condition_name != ''):
+		analytics = analytics.where(Condition.name == condition_name)
+
+	analytics = analytics \
+		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.all()
+
+	return analytics 
 
 
 def get_condition_scoring(treatment_name):
