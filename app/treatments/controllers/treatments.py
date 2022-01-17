@@ -125,14 +125,13 @@ def get_condition_analytics(treatment_name, analytics=False, top=5):
 
 
 def get_analytics(treatment_name, request_args):
-	condition_name = request_args.get('condition', '', type=str)
+	condition_id = request_args.get('condition', '', type=int)
 
 	analytics = db.session.query(Analytics)\
 		.join(StudyCondition, StudyCondition.study == Analytics.study)\
-		.join(Condition, Condition.id == StudyCondition.condition)
 
-	if (condition_name != ''):
-		analytics = analytics.where(Condition.name == condition_name)
+	if (condition_id != ''):
+		analytics = analytics.where(StudyCondition.condition == condition_id)
 
 	analytics = analytics \
 		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\
