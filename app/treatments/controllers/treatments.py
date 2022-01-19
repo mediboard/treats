@@ -124,11 +124,32 @@ def get_condition_analytics(treatment_name, analytics=False, top=5):
 	return condition_analytics 
 
 
+def get_study_analytics(treatment_name, request_args):
+	condition_id = request_args.get('condition', '', type=int)
+
+	analytics = db.session.query(Study, Analytics)\
+		.join(StudyCondition, StudyCondition.study == Analytics.study)\
+		.join(Study, Study.id == StudyCondition.study)
+
+	if (condition_id != ''):
+		analytics = analytics.where(StudyCondition.condition == condition_id)
+
+	study_analytics = analytics \
+		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.all()
+
+	return study_analytics 
+
+
 def get_analytics(treatment_name, request_args):
 	condition_id = request_args.get('condition', '', type=int)
 
 	analytics = db.session.query(Analytics)\
-		.join(StudyCondition, StudyCondition.study == Analytics.study)\
+		.join(StudyCondition, StudyCondition.study == Analytics.study)
 
 	if (condition_id != ''):
 		analytics = analytics.where(StudyCondition.condition == condition_id)

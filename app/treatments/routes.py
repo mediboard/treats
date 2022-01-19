@@ -55,6 +55,19 @@ def get_treatment_analytics(name):
 
 	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
 
+@bp.route('/<string:name>/studyanalytics')
+@cross_origin(supports_credentials=True)
+def get_study_analytics(name):
+	study_analytics = treatments.get_study_analytics(name, request.args)
+	id_2_study = {}
+	for study, analytic in study_analytics:
+		if study.id not in id_2_study:
+			id_2_study[study.id] = {**study.to_core_dict(), 'analytics': []}
+
+		id_2_study[study.id]['analytics'].append(analytic.to_small_dict())
+
+	return {'studies': list(id_2_study.values())}
+
 
 @bp.route('/<string:name>/scores')
 @cross_origin(supports_credentials=True)

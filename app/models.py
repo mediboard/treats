@@ -232,6 +232,25 @@ class Study(db.Model):
 			'treatments': [x.treatments.to_dict() for x in self.treatments]
 		}
 
+	def to_core_dict(self):
+		return {
+			'id': self.id,
+			'upload_date': self.upload_date,
+			'short_title': self.short_title,
+			'official_title': self.official_title,
+			'description': self.description,
+			'responsible_party': self.responsible_party,
+			'sponsor': self.sponsor,
+			'type': str(self.type),
+			'purpose': str(self.purpose),
+			'intervention_type': str(self.intervention_type),
+			'min_age': self.min_age,
+			'min_age_units': str(self.min_age_units),
+			'max_age': self.max_age,
+			'min_age_units': str(self.max_age_units),
+			'gender': str(self.gender),
+		}
+
 
 class Criteria(db.Model):
 
