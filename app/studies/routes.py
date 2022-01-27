@@ -13,7 +13,7 @@ def main():
 @cross_origin(supports_credentials=True)
 def get_study(study_id):
 	studies = controller.get_study(study_id)
-	return {'studies': [study.to_dict() for study in studies]}
+	return {'studies': [study.to_core_dict() for study in studies]}
 
 
 @bp.route('/<string:study_id>/baselines')

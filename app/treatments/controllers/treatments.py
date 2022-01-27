@@ -19,6 +19,7 @@ def get_demographics(treatment_name):
 
 	return baselines
 
+
 '''
 Gets the effects for a treatment.
 Mode:
@@ -87,18 +88,28 @@ def get_conditions(treatment_name):
 	return conditions
 
 
+def get_no_studies(treatment_name):
+	no_studies = db.session.query(func.count(StudyTreatment.study).label('no_studies'))\
+		.join(Treatment, StudyTreatment.treatment == Treatment.id)\
+		.filter(Treatment.name == treatment_name)\
+		.all()
+
+	print(no_studies)
+
+	return no_studies
+
+
+def get_no_conditions(treatment_name):
+	no_conditions = db.session.query(func.count(StudyCondition.condition).label('no_conditions'))\
+		.join(StudyTreatment, StudyTreatment.study == StudyCondition.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.all()
+
+	return no_conditions
+
+
 def get_condition_analytics(treatment_name, analytics=False, top=5):
-	# treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
-	# study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
-
-	# study_conditions_query = db.session.query(StudyCondition)\
-	# 	.join(Study, StudyCondition.study == Study.id)\
-	# 	.join(StudyTreatment, Study.id == StudyTreatment.study)\
-	# 	.join(Treatment, Treatment.id == StudyTreatment.treatment)\
-	# 	.filter(Treatment.name == treatment_name)\
-	# 	.group_by()
-	# 	.subquery()
-
 	agg_conditions = db.session.query(Condition.id.label('conditions_id'), func.count(Analytics.id).label('no_analytics'))\
 		.join(StudyCondition, StudyCondition.condition == Condition.id)\
 		.join(StudyTreatment, StudyCondition.study == StudyTreatment.study)\

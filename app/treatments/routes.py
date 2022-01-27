@@ -54,6 +54,7 @@ def get_treatment_analytics(name):
 	analytics = treatments.get_analytics(name, request.args)
 
 	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
+	
 
 @bp.route('/<string:name>/studyanalytics')
 @cross_origin(supports_credentials=True)
@@ -67,6 +68,20 @@ def get_study_analytics(name):
 		id_2_study[study.id]['analytics'].append(analytic.to_small_dict())
 
 	return {'studies': list(id_2_study.values())}
+
+
+@bp.route('/<string:name>/nostudies')
+@cross_origin(supports_credentials=True)
+def get_no_studies(name):
+	no_studies = treatments.get_no_studies(name)
+	return {'no_studies': no_studies[0][0]}
+
+
+@bp.route('/<string:name>/noconditions')
+@cross_origin(supports_credentials=True)
+def get_no_conditions(name):
+	no_conditions = treatments.get_no_conditions(name)
+	return {'no_conditions': no_conditions[0][0]}
 
 
 @bp.route('/<string:name>/scores')

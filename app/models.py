@@ -473,7 +473,7 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison', lazy='dynamic')
+	groups = db.relationship('Comparison', lazy='joined')
 
 	def to_core_dict(self):
 		return {
