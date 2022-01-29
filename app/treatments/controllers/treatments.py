@@ -8,6 +8,16 @@ from sqlalchemy import func, distinct, desc
 import sqlalchemy as sa
 
 
+def search_treatments(query):
+	results = db.session.query(Treatment)\
+		.filter(Treatment.no_studies > 0)\
+		.filter(Treatment.name.match(query) | Treatment.name.like(f'%{query}%'))\
+		.order_by(desc(Treatment.no_studies))\
+		.limit(10)\
+		.all()
+
+	return results
+
 def get_demographics(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
 	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
@@ -93,8 +103,6 @@ def get_no_studies(treatment_name):
 		.join(Treatment, StudyTreatment.treatment == Treatment.id)\
 		.filter(Treatment.name == treatment_name)\
 		.all()
-
-	print(no_studies)
 
 	return no_studies
 

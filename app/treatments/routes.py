@@ -12,6 +12,15 @@ def main():
 	return "Hello Treatments"
 
 
+@bp.route('/search')
+@cross_origin(supports_credentials=True)
+def search_treatments():
+	query = request.args.get('q', '', type=str)
+	results = treatments.search_treatments(query)
+
+	return {'results': [x.to_dict() for x in results]}
+
+
 @bp.route('/<string:name>/demographics')
 @cross_origin(supports_credentials=True)
 def get_treatment_demographics(name):
@@ -54,7 +63,7 @@ def get_treatment_analytics(name):
 	analytics = treatments.get_analytics(name, request.args)
 
 	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
-	
+
 
 @bp.route('/<string:name>/studyanalytics')
 @cross_origin(supports_credentials=True)
