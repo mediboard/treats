@@ -11,7 +11,7 @@ import sqlalchemy as sa
 def search_treatments(query):
 	results = db.session.query(Treatment)\
 		.filter(Treatment.no_studies > 0)\
-		.filter(Treatment.name.match(query) | Treatment.name.like(f'%{query}%'))\
+		.filter(func.lower(Treatment.name).match(query) | func.lower(Treatment.name).like(f'%{query}%'))\
 		.order_by(desc(Treatment.no_studies))\
 		.limit(10)\
 		.all()
