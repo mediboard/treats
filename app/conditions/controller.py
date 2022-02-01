@@ -3,8 +3,10 @@ from app.models import Condition, StudyCondition, Baseline, baseline_type
 from sqlalchemy import func
 
 def get_condition(name):
-	condition = db.session.query(Condition)\
+	condition = db.session.query(Condition, func.count(StudyCondition.study))\
 		.filter(func.lower(Condition.name) == func.lower(name))\
+		.join(StudyCondition, StudyCondition.condition == Condition.id)\
+		.group_by(Condition.id)\
 		.first()
 
 	return condition

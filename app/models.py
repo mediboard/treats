@@ -275,7 +275,7 @@ class Condition(db.Model):
 	@hybrid_property
 	def no_studies(self):
 		if self.studies:
-			return len(self.studies)
+			return func.count(self.studies)
 		return 0
 
 	@no_studies.expression
@@ -289,6 +289,12 @@ class Condition(db.Model):
 		return {
 			'id': self.id,
 			'name': self.name
+		}
+
+	def to_big_dic(self):
+		return {
+			**self.to_dict(),
+			'no_studies': self.no_studies,
 		}
 
 

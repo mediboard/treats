@@ -13,9 +13,9 @@ def main():
 @bp.route('/<string:condition_name>')
 @cross_origin(supports_credentials=True)
 def get_condition(condition_name):
-	condition = controller.get_condition(condition_name)
+	condition, count = controller.get_condition(condition_name)
 
-	return {'condition': condition.to_dict()}
+	return {'condition': {**condition.to_dict(), 'no_studies': count}}
 
 
 @bp.route('/<string:condition_name>/demographics')
