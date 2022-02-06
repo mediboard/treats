@@ -33,3 +33,11 @@ def get_analytics(condition_name):
 	analytics = controller.get_analytics(condition_name, request.args)
 
 	return {'analytics': [x.to_small_dict() for x in analytics]}
+
+
+@bp.route('/<string:condition_name>/treatments')
+@cross_origin(supports_credentials=True)
+def get_treatments(condition_name):
+	treatments = controller.get_treatments(condition_name)
+
+	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}

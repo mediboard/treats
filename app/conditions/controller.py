@@ -27,8 +27,10 @@ def get_demographics(name):
 
 def get_treatments(name):
 	treatments = db.session.query(Treatment, func.count(StudyTreatment.study))\
-		.filter(func.lower(Treatment.name) == func.lower(name))\
-		.join(StudyTreatment, StudyCondition.treatment == Treatment.id)\
+		.join(StudyTreatment, StudyTreatment.treatment == Treatment.id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(Condition, StudyCondition.condition == Condition.id)\
+		.filter(func.lower(Condition.name) == func.lower(name))\
 		.group_by(Treatment.id)\
 		.all()
 
