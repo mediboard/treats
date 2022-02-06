@@ -2,6 +2,7 @@ from app.conditions import bp
 from app.conditions import controller
 from flask_cors import cross_origin
 import app.conditions.controller as controller
+from flask import request
 
 
 @bp.route('/')
@@ -24,3 +25,11 @@ def get_demographics(condition_name):
 	demos = controller.get_demographics(condition_name)
 
 	return {'demographics': [{'sub_type': subtype.value, 'value':value} for subtype, value in demos]}
+
+
+@bp.route('/<string:condition_name>/analytics')
+@cross_origin(supports_credentials=True)
+def get_analytics(condition_name):
+	analytics = controller.get_analytics(condition_name, request.args)
+
+	return {'analytics': [x.to_small_dict() for x in analytics]}

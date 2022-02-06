@@ -1,6 +1,6 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
-	Treatment, StudyTreatment
+	Treatment, StudyTreatment, Analytics, Measure, measure_type
 from sqlalchemy import func
 
 def get_condition(name):
@@ -36,4 +36,20 @@ def get_treatments(name):
 
 
 def get_analytics(name, request_args):
-	treatment_id = 
+	treatment_id = request_args.get('treatment', '', type=int)
+
+	analytics = db.session.query(Analytics)\
+		.join(StudyTreatment, StudyTreatment.study == Analytics.study)
+
+	if (treatment_id != ''):
+		analytics = analytics.where(StudyTreatment.treatment == treatment_id)
+
+	analytics = analytics \
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(Condition, Condition.id == StudyCondition.condition)\
+		.filter(func.lower(Condition.name) == func.lower(name))\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.all()
+
+	return analytics
