@@ -1,7 +1,7 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 	Treatment, StudyTreatment, Analytics, Measure, measure_type
-from sqlalchemy import func
+from sqlalchemy import func, desc
 
 def get_condition(name):
 	condition = db.session.query(Condition, func.count(StudyCondition.study))\
@@ -26,12 +26,13 @@ def get_demographics(name):
 
 
 def get_treatments(name):
-	treatments = db.session.query(Treatment, func.count(StudyTreatment.study))\
+	treatments = db.session.query(Treatment, func.count(StudyTreatment.study).label('no_studies'))\
 		.join(StudyTreatment, StudyTreatment.treatment == Treatment.id)\
 		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
 		.join(Condition, StudyCondition.condition == Condition.id)\
 		.filter(func.lower(Condition.name) == func.lower(name))\
 		.group_by(Treatment.id)\
+		.order_by(desc('no_studies'))\
 		.all()
 
 	return treatments
