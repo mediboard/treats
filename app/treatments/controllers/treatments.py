@@ -13,7 +13,7 @@ def search_treatments(query):
 		.filter(Treatment.no_studies > 0)\
 		.filter(func.lower(Treatment.name).match(query) | func.lower(Treatment.name).like(f'%{query}%'))\
 		.order_by(desc(Treatment.no_studies))\
-		.limit(10)\
+		.limit(5)\
 		.all()
 
 	return results

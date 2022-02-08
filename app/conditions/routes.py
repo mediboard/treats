@@ -11,6 +11,16 @@ def main():
 	return "Hello Conditions"
 
 
+@bp.route('/search')
+@cross_origin(supports_credentials=True)
+def search():
+	query = request.args.get('q')
+	conditions_counts = controller.search(query)
+
+	
+	return {'conditions': [x.to_dict() for x,y in conditions_counts]}
+
+
 @bp.route('/<string:condition_name>')
 @cross_origin(supports_credentials=True)
 def get_condition(condition_name):

@@ -3,6 +3,19 @@ from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 	Treatment, StudyTreatment, Analytics, Measure, measure_type
 from sqlalchemy import func, desc
 
+
+def search(query):
+	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
+		.filter(func.lower(Condition.name).match(query) | func.lower(Condition.name).like(f'%{query}%'))\
+		.join(StudyCondition, StudyCondition.condition == Condition.id)\
+		.group_by(Condition.id)\
+		.order_by(desc('no_studies'))\
+		.limit(5)\
+		.all()
+
+	return conditions_counts
+
+
 def get_condition(name):
 	condition = db.session.query(Condition, func.count(StudyCondition.study))\
 		.filter(func.lower(Condition.name) == func.lower(name))\
