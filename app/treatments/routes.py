@@ -21,6 +21,13 @@ def search_treatments():
 	return {'results': [x.to_dict() for x in results]}
 
 
+@bp.route('/<string:name>')
+@cross_origin(supports_credentials=True)
+def get_treatment(name):
+	treatment = treatments.get_treatment(name)
+	return {'treatment': treatment.to_dict()}
+
+
 @bp.route('/<string:name>/demographics')
 @cross_origin(supports_credentials=True)
 def get_treatment_demographics(name):

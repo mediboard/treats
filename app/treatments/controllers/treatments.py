@@ -9,14 +9,17 @@ import sqlalchemy as sa
 
 
 def search_treatments(query):
+	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+	print(processedQuery)
 	results = db.session.query(Treatment)\
 		.filter(Treatment.no_studies > 0)\
-		.filter(func.lower(Treatment.name).match(query) | func.lower(Treatment.name).like(f'%{query}%'))\
+		.filter(func.lower(Treatment.name).match(processedQuery) | func.lower(Treatment.name).like(f'%{processedQuery}%'))\
 		.order_by(desc(Treatment.no_studies))\
 		.limit(5)\
 		.all()
 
 	return results
+
 
 def get_demographics(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
@@ -28,6 +31,14 @@ def get_demographics(treatment_name):
 		.group_by(Baseline.sub_type).all()
 
 	return baselines
+
+
+def get_treatment(treatment_name):
+	treatment = db.session.query(Treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.first()
+
+	return treatment
 
 
 '''

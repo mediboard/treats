@@ -5,8 +5,10 @@ from sqlalchemy import func, desc
 
 
 def search(query):
+	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+	print(processedQuery)
 	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
-		.filter(func.lower(Condition.name).match(query) | func.lower(Condition.name).like(f'%{query}%'))\
+		.filter(func.lower(Condition.name).match(processedQuery) | func.lower(Condition.name).like(f'%{processedQuery}%'))\
 		.join(StudyCondition, StudyCondition.condition == Condition.id)\
 		.group_by(Condition.id)\
 		.order_by(desc('no_studies'))\
