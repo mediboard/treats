@@ -21,6 +21,14 @@ def search():
 	return {'conditions': [x.to_dict() for x,y in conditions_counts]}
 
 
+@bp.route('/top')
+@cross_origin(supports_credentials=True)
+def get_top_conditions():
+	top_conditions_counts = controller.get_top_conditions();
+
+	return {'conditions': [{**x.to_dict(), 'no_studies':y} for x,y in top_conditions_counts]}
+
+
 @bp.route('/<string:condition_name>')
 @cross_origin(supports_credentials=True)
 def get_condition(condition_name):

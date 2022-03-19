@@ -15,9 +15,10 @@ COPY treats.py boot.sh ./
 RUN chmod +x boot.sh
 
 ENV FLASK_APP treats.py
+COPY instance/dev.cfg instance/dev.cfg
 
 RUN chown -R meditreats:meditreats ./
-USER meditreats 
+USER meditreats
 
-EXPOSE 5000
+EXPOSE 8080
 ENTRYPOINT ["./boot.sh"]

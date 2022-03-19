@@ -18,6 +18,19 @@ def search(query):
 	return conditions_counts
 
 
+def get_top_conditions():
+	# Manually filtering out Healthy for now
+	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
+		.filter(Condition.id != 7)\
+		.join(StudyCondition, StudyCondition.condition == Condition.id)\
+		.group_by(Condition.id)\
+		.order_by(desc('no_studies'))\
+		.limit(5)\
+		.all()
+
+	return conditions_counts
+
+
 def get_condition(name):
 	condition = db.session.query(Condition, func.count(StudyCondition.study))\
 		.filter(func.lower(Condition.name) == func.lower(name))\

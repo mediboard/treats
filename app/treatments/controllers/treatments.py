@@ -10,10 +10,18 @@ import sqlalchemy as sa
 
 def search_treatments(query):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
-	print(processedQuery)
 	results = db.session.query(Treatment)\
 		.filter(Treatment.no_studies > 0)\
 		.filter(func.lower(Treatment.name).match(processedQuery) | func.lower(Treatment.name).like(f'%{processedQuery}%'))\
+		.order_by(desc(Treatment.no_studies))\
+		.limit(5)\
+		.all()
+
+	return results
+
+
+def get_top_treatments():
+	results = db.session.query(Treatment)\
 		.order_by(desc(Treatment.no_studies))\
 		.limit(5)\
 		.all()
