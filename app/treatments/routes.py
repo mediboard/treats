@@ -1,4 +1,5 @@
 from app.treatments import bp
+from app.errors import create_notfound_error
 from app.treatments.controllers import treatments
 from app.utils import removekey_oop
 from flask_cors import cross_origin
@@ -33,6 +34,9 @@ def get_top_treatments():
 @cross_origin(supports_credentials=True)
 def get_treatment(name):
 	treatment = treatments.get_treatment(name)
+	if (not treatment):
+		return create_notfound_error('Treatment {0} not found'.format(name))
+		
 	return {'treatment': treatment.to_dict()}
 
 

@@ -1,3 +1,4 @@
+from app.errors import create_notfound_error
 from app.studies import bp
 from flask_cors import cross_origin
 from app.studies import controller
@@ -13,6 +14,9 @@ def main():
 @cross_origin(supports_credentials=True)
 def get_study(study_id):
 	studies = controller.get_study(study_id)
+	if (not studies):
+		return create_notfound_error('Study with id {0} not found'.format(study_id))
+		
 	return {'studies': [study.to_core_dict() for study in studies]}
 
 

@@ -1,4 +1,5 @@
 from app.conditions import bp
+from app.errors import create_notfound_error
 from app.conditions import controller
 from flask_cors import cross_origin
 import app.conditions.controller as controller
@@ -32,8 +33,11 @@ def get_top_conditions():
 @bp.route('/<string:condition_name>')
 @cross_origin(supports_credentials=True)
 def get_condition(condition_name):
-	condition, count = controller.get_condition(condition_name)
+	condition_count = controller.get_condition(condition_name)
+	if (not condition_count):
+		return create_notfound_error('Condition {0} not found'.format(condition_name))
 
+	condition, count = condition_count
 	return {'condition': {**condition.to_dict(), 'no_studies': count}}
 
 
