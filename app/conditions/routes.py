@@ -16,10 +16,11 @@ def main():
 @cross_origin(supports_credentials=True)
 def search():
 	query = request.args.get('q')
-	conditions_counts = controller.search(query)
+	limit = request.args.get('limit')
+	conditions_counts = controller.search(query, limit or 5)
 
 	
-	return {'conditions': [x.to_dict() for x,y in conditions_counts]}
+	return {'conditions': [{**x.to_dict(), 'no_studies': y} for x,y in conditions_counts]}
 
 
 @bp.route('/top')

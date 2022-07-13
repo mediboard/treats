@@ -4,15 +4,14 @@ from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 from sqlalchemy import func, desc
 
 
-def search(query):
+def search(query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
-	print(processedQuery)
 	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
 		.filter(func.lower(Condition.name).match(processedQuery) | func.lower(Condition.name).like(f'%{processedQuery}%'))\
 		.join(StudyCondition, StudyCondition.condition == Condition.id)\
 		.group_by(Condition.id)\
 		.order_by(desc('no_studies'))\
-		.limit(5)\
+		.limit(limit)\
 		.all()
 
 	return conditions_counts

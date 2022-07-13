@@ -8,13 +8,14 @@ from sqlalchemy import func, distinct, desc
 import sqlalchemy as sa
 
 
-def search_treatments(query):
+def search_treatments(query, limit=5):
+	print(limit)
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	results = db.session.query(Treatment)\
 		.filter(Treatment.no_studies > 0)\
 		.filter(func.lower(Treatment.name).match(processedQuery) | func.lower(Treatment.name).like(f'%{processedQuery}%'))\
 		.order_by(desc(Treatment.no_studies))\
-		.limit(5)\
+		.limit(limit)\
 		.all()
 
 	return results

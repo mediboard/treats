@@ -2,12 +2,23 @@ from app.errors import create_notfound_error
 from app.studies import bp
 from flask_cors import cross_origin
 from app.studies import controller
+from flask import request
 
 
 @bp.route('/')
 @cross_origin(supports_credentials=True)
 def main():
 	return "Hello Studies"
+
+
+@bp.route('/search')
+@cross_origin(supports_credentials=True)
+def search():
+	query = request.args.get('q')
+	limit = request.args.get('limit')
+	studies = controller.search(query, limit)
+	
+	return {'studies': [x.to_core_dict() for x in studies]}
 
 
 @bp.route('/<string:study_id>')

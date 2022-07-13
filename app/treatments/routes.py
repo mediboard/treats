@@ -17,7 +17,8 @@ def main():
 @cross_origin(supports_credentials=True)
 def search_treatments():
 	query = request.args.get('q', '', type=str)
-	results = treatments.search_treatments(query)
+	limit = request.args.get('limit')
+	results = treatments.search_treatments(query, limit or 5)
 
 	return {'results': [x.to_dict() for x in results]}
 

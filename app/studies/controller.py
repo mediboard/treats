@@ -2,6 +2,17 @@ from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
 	Group, StudyTreatment, StudyCondition, Condition, Treatment
 from sqlalchemy.orm import joinedload, raiseload
+from sqlalchemy import func
+
+
+def search(query, limit=10):
+	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+	studies = db.session.query(Study)\
+		.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
+		.limit(limit)\
+		.all()
+
+	return studies
 
 
 def get_study(study_id):
