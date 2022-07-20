@@ -1,3 +1,4 @@
+"""writes measures table"""
 import os
 import pickle
 import pandas as pd
@@ -59,7 +60,7 @@ def create_measurements_table():
     return measurements_table
 
 
-def clean_measures_table(measures_table) -> pd.DataFrame:
+def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
     db_measures_table = measures_table.rename(columns={
         'study_id': 'study',
         'measure': 'title',
@@ -111,6 +112,7 @@ def clean_measures_table(measures_table) -> pd.DataFrame:
     return db_measures_table
 
 
+# requires studies_workflow pulling down raw studies to disk
 def measures_workflow() -> None:
     measures_table = create_measurements_table()
     db_measures_table = clean_measures_table(measures_table=measures_table)
