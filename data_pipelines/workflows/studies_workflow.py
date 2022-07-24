@@ -1,4 +1,4 @@
-"""Uploads studies_table to DB and pkl """
+"""writes studies_table + download raw studies to disk"""
 import typing
 import os
 import pandas as pd

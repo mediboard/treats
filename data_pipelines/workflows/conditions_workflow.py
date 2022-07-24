@@ -6,6 +6,7 @@ import re
 # TODO update this
 STUDIES_PICKLE_FILE_PATH = "/Users/pauldittamo/src/mediboard/"
 
+
 def load_pre_cleaned_studies_table() -> pd.DataFrame:
     with open(STUDIES_PICKLE_FILE_PATH + 'pre_cleaned_studies_table.pkl', 'rb') as f:
         studies_table = pickle.load(f)
