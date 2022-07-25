@@ -116,8 +116,10 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
 def measures_workflow() -> None:
     measures_table = create_measurements_table()
     db_measures_table = clean_measures_table(measures_table=measures_table)
+
     print(db_measures_table)
     print(db_measures_table.keys())
+    print(db_measures_table.iloc[1])
 
 
 if __name__ == "__main__":

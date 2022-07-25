@@ -271,8 +271,10 @@ def studies_workflow(update_studies: bool) -> None:
     studies_table = create_studies_table()
     store_pre_cleaned_studies_table_pkl(studies_table)
     studies_table = clean_studies_table(studies_table)
+
     print(studies_table)
     print(studies_table.keys())
+    print(studies_table.iloc[1])
 
 
 # TODO add argparse to check if overwrite local studies pkl files

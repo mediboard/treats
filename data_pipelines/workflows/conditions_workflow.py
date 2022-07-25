@@ -51,9 +51,11 @@ def conditions_workflow() -> None:
 
     print(conditions_table)
     print(conditions_table.keys())
+    print(conditions_table.iloc[1])
 
     print(study_conditions_table)
     print(study_conditions_table.keys())
+    print(study_conditions_table.iloc[1])
 
 
 if __name__ == "__main__":

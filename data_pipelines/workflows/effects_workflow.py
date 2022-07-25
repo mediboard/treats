@@ -124,7 +124,7 @@ def clean_effects_table(pre_cleaned_effects_table: pd.DataFrame, pre_cleaned_eff
 
 
 # requires studies_workflow pulling down raw studies to disk
-# can break up workflow to parse each individual raw studies and then load rather than all raw studies and then load
+# TODO figure how to add new studies w/o needing to re-parse old data (mapping effects to effectsgroups w/merge)
 def effects_workflow():
     pre_cleaned_effects_groups_table, pre_cleaned_effects_table = create_effects_tables()
     effects_groups_table = clean_effects_groups_table(pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table)
@@ -133,8 +133,11 @@ def effects_workflow():
 
     print(effects_groups_table)
     print(effects_groups_table.keys())
+    print(effects_groups_table.iloc[1])
+
     print(effects_table)
     print(effects_table.keys())
+    print(effects_table.iloc[1])
 
 
 if __name__ == "__main__":
