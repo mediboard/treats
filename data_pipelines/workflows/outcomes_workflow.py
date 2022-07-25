@@ -158,7 +158,7 @@ def string2int(string):
         return -1
 
 
-# requires groups + measures
+# requires studies + groups + measures
 def outcomes_workflow() -> None:
     pre_cleaned_outcomes_table = create_outcomes_table()
     outcomes_table = clean_outcomes_table(pre_cleaned_outcomes_table=pre_cleaned_outcomes_table)

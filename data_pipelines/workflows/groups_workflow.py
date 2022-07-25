@@ -25,7 +25,7 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
     return groups_table
 
 
-# requires studies_workflow + adjusted_int_admins from administrations workflow
+# requires studies_workflow + adjusted_int_admins from adjusted_administrations_workflow
 def groups_workflow() -> None:
     pre_cleaned_groups_table = create_groups_table()
     groups_table = clean_groups_table(pre_cleaned_groups_table)

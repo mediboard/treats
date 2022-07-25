@@ -1,6 +1,5 @@
 import os
 import pickle
-import typing
 import pandas as pd
 from nltk.tokenize import word_tokenize, sent_tokenize
 
@@ -35,7 +34,7 @@ def get_intervention_freq(studies):
     return intervention_freq
 
 
-def create_outcomes_table_helper(studies):
+def create_outcomes_table_helper(studies) -> pd.DataFrame:
     outcome_modules = get_outcome_modules(studies)
     admin_df = {
         'study_id': [],
@@ -43,19 +42,6 @@ def create_outcomes_table_helper(studies):
         'measure': [],
         'title': [],
         'description': [],
-    }
-
-    outcome_df = {
-        'study_id': [],
-        'group_title': [],
-        'group_no': [],
-        'measure': [],
-        'title': [],
-        'value': [],
-        'dispersion': [],
-        'upper': [],
-        'lower': [],
-        'participants': []
     }
 
     for i, module in enumerate(outcome_modules):
@@ -85,36 +71,17 @@ def create_outcomes_table_helper(studies):
                         for count in denom.get('OutcomeClassDenomCountList', {'OutcomeClassDenomCount': []})['OutcomeClassDenomCount']:
                             group_to_no[count['OutcomeClassDenomCountGroupId']] = count['OutcomeClassDenomCountValue']
 
-                    for cat in group.get('OutcomeCategoryList', {'OutcomeCategory': []})['OutcomeCategory']:
-                        for outcome in cat['OutcomeMeasurementList']['OutcomeMeasurement']:
-                            outcome_df['study_id'].append(study_id)
-                            outcome_df['group_title'].append(
-                                group_to_title[outcome.get('OutcomeMeasurementGroupId', 'NA')])
-                            outcome_df['group_no'].append(outcome.get('OutcomeMeasurementGroupId', 'NA'))
-                            outcome_df['measure'].append(measure.get('OutcomeMeasureTitle', 'NA'))
-                            outcome_df['value'].append(outcome.get('OutcomeMeasurementValue', 'NA'))
-                            outcome_df['dispersion'].append(outcome.get('OutcomeMeasurementSpread', 'NA'))
-                            outcome_df['upper'].append(outcome.get('OutcomeMeasurementUpperLimit', 'NA'))
-                            outcome_df['lower'].append(outcome.get('OutcomeMeasurementLowerLimit', 'NA'))
-                            outcome_df['participants'].append(
-                                group_to_no.get(outcome.get('OutcomeMeasurementGroupId', 'NA'),
-                                                None) or overall_group_to_no.get(
-                                    outcome.get('OutcomeMeasurementGroupId', 'NA'), 'NA'))
-                            outcome_df['title'].append(group.get('OutcomeClassTitle', 'NA'))
-
             except KeyError as e:
                 print(e)
                 continue
 
     admin_table_df = pd.DataFrame.from_dict(admin_df).reset_index(drop=True)
-    outcome_table_df = pd.DataFrame.from_dict(outcome_df).reset_index(drop=True)
-    return admin_table_df, outcome_table_df,
+    return admin_table_df
 
 
 # this takes in initial studies parsing
 def create_administrations_table():
     administrations_table_dfs = []
-    outcomes_table_dfs = []
     intervention_freq = {}
     directory = STUDIES_PICKLE_FILE_PATH + 'clinical_trials/'
     for studies_data_pickle_file in os.listdir(directory):
@@ -122,14 +89,12 @@ def create_administrations_table():
         print(f"Deserializing {studies_file}")
         with open(studies_file, 'rb') as f:
             studies_data = pickle.load(f)
-            administrations_table_df, outcomes_table_df = create_outcomes_table_helper(studies=studies_data)
+            administrations_table_df = create_outcomes_table_helper(studies=studies_data)
             intervention_freq.update(get_intervention_freq(studies=studies_data))
             administrations_table_dfs.append(administrations_table_df)
-            outcomes_table_dfs.append(outcomes_table_df)
 
     administrations_table = pd.concat(administrations_table_dfs).reset_index(drop=True)
-    outcomes_table = pd.concat(outcomes_table_dfs).reset_index(drop=True)
-    return administrations_table, outcomes_table, intervention_freq
+    return administrations_table, intervention_freq
 
 
 def clean_administrations_table(int_admins_sample: pd.DataFrame) -> pd.DataFrame:
@@ -164,9 +129,8 @@ def str_contains_int(string, intervention_freq):
     return list(treats_set)
 
 
-def administrations_workflow() -> None:
-    pre_cleaned_administrations_table, outcomes_table, intervention_freq = create_administrations_table()
-
+def adjusted_administrations_workflow() -> None:
+    pre_cleaned_administrations_table, intervention_freq = create_administrations_table()
     sampled_admins = pre_cleaned_administrations_table
     # can pkl and store these different steps
     token_titles = sampled_admins['title'].apply(lambda x: tokenize_sentence(x))
@@ -175,9 +139,9 @@ def administrations_workflow() -> None:
     sampled_admins['treatments'] = sampled_admins['tokens'].apply(lambda x: str_contains_int(x, intervention_freq))
     # TODO remove tokens column
     sampled_admins = clean_administrations_table(sampled_admins)
-    print(sampled_admins)
-    sampled_admins.to_pickle(STUDIES_PICKLE_FILE_PATH + 'adjusted_int_admins.pkl')
+    # adjusted_int_admins used by groups workflow to make groups table + administrations workflow
+    sampled_admins.to_pickle(STUDIES_PICKLE_FILE_PATH + 'adjusted_int_admins_temp.pkl')
 
 
 if __name__ == "__main__":
-    administrations_workflow()
+    adjusted_administrations_workflow()
