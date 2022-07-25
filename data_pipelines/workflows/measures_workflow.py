@@ -117,6 +117,9 @@ def measures_workflow() -> None:
     measures_table = create_measurements_table()
     db_measures_table = clean_measures_table(measures_table=measures_table)
 
+    # used by outcomes workflow
+    db_measures_table.to_pickle(STUDIES_PICKLE_FILE_PATH + 'measures_table.pkl')
+
     print(db_measures_table)
     print(db_measures_table.keys())
     print(db_measures_table.iloc[1])

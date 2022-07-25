@@ -1,5 +1,4 @@
 """writes groups table"""
-import os
 import pickle
 import pandas as pd
 
@@ -26,10 +25,13 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
     return groups_table
 
 
-# requires studies_workflow + admins workflow
+# requires studies_workflow + adjusted_int_admins from administrations workflow
 def groups_workflow() -> None:
     pre_cleaned_groups_table = create_groups_table()
     groups_table = clean_groups_table(pre_cleaned_groups_table)
+
+    # used to make administrations + outcomes table
+    groups_table.to_pickle(STUDIES_PICKLE_FILE_PATH + 'group_table.pkl')
 
     print(groups_table)
     print(groups_table.keys())
