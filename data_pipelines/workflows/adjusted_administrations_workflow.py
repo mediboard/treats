@@ -19,8 +19,7 @@ def get_outcome_modules(studies):
     return outcome_modules
 
 
-def get_intervention_freq(studies):
-    intervention_freq = {}
+def update_intervention_freq(studies, intervention_freq):
     for study in studies:
         try:
             for int_group in study['Study']['DerivedSection']['InterventionBrowseModule']['InterventionMeshList']['InterventionMesh']:
@@ -90,7 +89,7 @@ def create_administrations_table():
         with open(studies_file, 'rb') as f:
             studies_data = pickle.load(f)
             administrations_table_df = create_outcomes_table_helper(studies=studies_data)
-            intervention_freq.update(get_intervention_freq(studies=studies_data))
+            intervention_freq = update_intervention_freq(studies=studies_data, intervention_freq=intervention_freq)
             administrations_table_dfs.append(administrations_table_df)
 
     administrations_table = pd.concat(administrations_table_dfs).reset_index(drop=True)
