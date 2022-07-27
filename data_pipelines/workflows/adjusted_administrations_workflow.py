@@ -19,6 +19,7 @@ def get_outcome_modules(studies):
     return outcome_modules
 
 
+# TODO let's build this off work done in treatments workflow
 def update_intervention_freq(studies, intervention_freq):
     for study in studies:
         try:
