@@ -1,4 +1,4 @@
-"""writes treatments table"""
+"""writes treatments and study_treatments table"""
 import pickle
 import pandas as pd
 
@@ -18,6 +18,28 @@ def create_treatments_table() -> pd.DataFrame:
     }).reset_index(drop=True)
     treatments_table['from_study'] = True
     return treatments_table
+
+
+def create_study_treatments_table(treatments_table: pd.DataFrame) -> pd.DataFrame:
+
+    treatments_table = treatments_table.rename_axis(['id'], axis=0)
+
+    treatments_table = treatments_table.reset_index(level=0).rename(columns={
+        'index': 'id',
+    })
+
+    with open(STUDIES_PICKLE_FILE_PATH + 'pre_cleaned_studies_table.pkl', 'rb') as f:
+        studies_table = pickle.load(f)
+    studies_conditions = studies_table[['study_id', 'interventions']].explode('interventions')
+
+    study_treats = studies_conditions.merge(treatments_table[['id', 'name']].rename(columns={
+        'name': 'interventions',
+        'id': 'treatment'
+    }), 'left', )[['study_id', 'treatment']].rename(columns={
+        'study_id': 'study'
+    })
+
+    return study_treats
 
 
 def combine_with_no_studies_treatments(treatments_table: pd.DataFrame) -> pd.DataFrame:
@@ -44,6 +66,12 @@ def treatments_workflow() -> None:
     print(treatments_table)
     print(treatments_table.keys())
     print(treatments_table.iloc[1])
+
+    study_treatments_table = create_study_treatments_table(treatments_table)
+
+    print(study_treatments_table)
+    print(study_treatments_table.keys())
+    print(study_treatments_table.iloc[1])
 
 
 if __name__ == "__main__":
