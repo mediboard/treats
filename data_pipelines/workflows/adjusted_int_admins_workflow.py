@@ -137,10 +137,10 @@ def adjusted_administrations_workflow() -> None:
     token_desc = sampled_admins['description'].apply(lambda x: tokenize_sentence(x))
     sampled_admins['tokens'] = token_titles + token_desc
     sampled_admins['treatments'] = sampled_admins['tokens'].apply(lambda x: str_contains_int(x, intervention_freq))
-    # TODO remove tokens column
+    sampled_admins.drop(columns=['tokens'])
     sampled_admins = clean_administrations_table(sampled_admins)
     # adjusted_int_admins used by groups workflow to make groups table + administrations workflow
-    sampled_admins.to_pickle(STUDIES_PICKLE_FILE_PATH + 'adjusted_int_admins_temp.pkl')
+    sampled_admins.to_pickle(STUDIES_PICKLE_FILE_PATH + 'adjusted_int_admins.pkl')
 
 
 if __name__ == "__main__":
