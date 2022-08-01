@@ -124,9 +124,12 @@ def clean_effects_table(pre_cleaned_effects_table: pd.DataFrame, pre_cleaned_eff
 
 
 # requires studies_workflow pulling down raw studies to disk
-# TODO figure how to add new studies w/o needing to re-parse old data (mapping effects to effectsgroups w/merge)
 def effects_workflow():
     pre_cleaned_effects_groups_table, pre_cleaned_effects_table = create_effects_tables()
+
+    # pre_cleaned effects_groups is used to make effectsadministrations
+    pre_cleaned_effects_groups_table.to_pickle(STUDIES_PICKLE_FILE_PATH + 'pre_cleaned_effects_groups_table.pkl')
+
     effects_groups_table = clean_effects_groups_table(pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table)
     effects_table = clean_effects_table(pre_cleaned_effects_table=pre_cleaned_effects_table,
                                         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table)

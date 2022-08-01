@@ -69,6 +69,9 @@ def treatments_workflow() -> None:
 
     study_treatments_table = create_study_treatments_table(treatments_table)
 
+    # used with effectsadministrations
+    study_treatments_table.to_pickle(STUDIES_PICKLE_FILE_PATH + 'study_treatments_table.pkl')
+
     print(study_treatments_table)
     print(study_treatments_table.keys())
     print(study_treatments_table.iloc[1])
