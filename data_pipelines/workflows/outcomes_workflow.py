@@ -119,7 +119,9 @@ def create_outcomes_table():
     measures_merge = measures_table.rename(columns={
         'study': 'study_id',
         'title': 'measure'
-    })[['id', 'study_id', 'measure']].drop_duplicates(['study_id', 'measure'])
+    })[['id', 'study_id', 'measure', 'dispersion']].drop_duplicates(['study_id', 'measure']).rename(columns={
+        'dispersion': 'dispersion_param',
+    })
 
     outcomes_table = outcomes_table.merge(measures_merge, 'left', ['study_id', 'measure'])
 
@@ -161,6 +163,10 @@ def string2int(string):
 # requires studies + groups + measures
 def outcomes_workflow() -> None:
     pre_cleaned_outcomes_table = create_outcomes_table()
+
+    # used by analytics
+    pre_cleaned_outcomes_table.to_pickle(STUDIES_PICKLE_FILE_PATH + 'pre_cleaned_outcomes_table.pkl')
+
     outcomes_table = clean_outcomes_table(pre_cleaned_outcomes_table=pre_cleaned_outcomes_table)
 
     print(outcomes_table)
