@@ -127,7 +127,7 @@ def get_no_studies(treatment_name):
 
 
 def get_no_conditions(treatment_name):
-	no_conditions = db.session.query(func.count(StudyCondition.condition).label('no_conditions'))\
+	no_conditions = db.session.query(func.count(distinct(StudyCondition.condition)).label('no_conditions'))\
 		.join(StudyTreatment, StudyTreatment.study == StudyCondition.study)\
 		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
 		.filter(Treatment.name == treatment_name)\
