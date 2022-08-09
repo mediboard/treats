@@ -22,3 +22,11 @@ SQLAlchemy==1.4.15
 Werkzeug==1.0.1
 wheel==0.36.2
 zipp==3.4.1
+# TODO split requirement from datapipelines from treats
+# pandas~=1.4.3
+# numpy~=1.23.0
+# torch~=1.12.0
+# flytekit~=1.1.0
+# boto3~=1.24.26
+# scipy~=1.8.1
+# nltk~=3.7

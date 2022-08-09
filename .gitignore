@@ -105,6 +105,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.idea/
 env/
 venv/
 ENV/
@@ -132,3 +133,5 @@ dmypy.json
 datasets
 .DS_Store
 *.html
+#*.pkl
+*.csv
