@@ -64,3 +64,13 @@ def get_treatments(condition_name):
 	treatments = controller.get_treatments(condition_name)
 
 	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}
+
+
+@bp.route('/<string:condition_name>/studies')
+@cross_origin(supports_credentials=True)
+def get_studies(condition_name):
+	treatment_id = request.args.get('treatment', None, type=int)
+
+	studies = controller.get_studies(condition_name, treatment_id)
+
+	return {'studies': [x.to_summary_dict() for x in studies]}

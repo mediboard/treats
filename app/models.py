@@ -199,7 +199,7 @@ class Study(db.Model):
 	gender = db.Column(db.Enum(gender))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='dynamic')
+	conditions = db.relationship('StudyCondition', lazy='joined')
 	treatments = db.relationship('StudyTreatment', lazy='dynamic')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
@@ -228,6 +228,13 @@ class Study(db.Model):
 			'analytics': [x.to_dict() for x in self.analytics],
 			'baselines': [x.to_dict() for x in self.baselines],
 			'groups': [x.to_dict() for x in self.groups],
+			'conditions': [x.conditions.to_dict() for x in self.conditions],
+			'treatments': [x.treatments.to_dict() for x in self.treatments]
+		}
+
+	def to_summary_dict(self):
+		return {
+			**self.to_core_dict(),
 			'conditions': [x.conditions.to_dict() for x in self.conditions],
 			'treatments': [x.treatments.to_dict() for x in self.treatments]
 		}

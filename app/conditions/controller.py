@@ -1,6 +1,7 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
-	Treatment, StudyTreatment, Analytics, Measure, measure_type
+	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study
+from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func, desc
 
 
@@ -83,3 +84,22 @@ def get_analytics(name, request_args):
 		.all()
 
 	return analytics
+
+
+def get_studies(name, treatment_id):
+	studies = db.session.query(Study)\
+		.join(StudyTreatment, StudyTreatment.study == Study.id)
+
+	if (treatment_id):
+		studies = studies.where(StudyTreatment.treatment == treatment_id)
+
+	studies = studies.join(StudyCondition, Study.id == StudyCondition.study)\
+		.join(Condition, Condition.id == StudyCondition.condition)\
+		.filter(func.lower(Condition.name) == func.lower(name))\
+		.options(
+			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
+			raiseload('*')
+		).all()
+
+	return studies
+
