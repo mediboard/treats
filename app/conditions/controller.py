@@ -5,6 +5,8 @@ from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func, desc
 
 
+ROWS_PER_PAGE=8
+
 def search(query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
@@ -86,7 +88,7 @@ def get_analytics(name, request_args):
 	return analytics
 
 
-def get_studies(name, treatment_id):
+def get_studies(name, treatment_id, page=1):
 	studies = db.session.query(Study)\
 		.join(StudyTreatment, StudyTreatment.study == Study.id)
 
@@ -99,7 +101,7 @@ def get_studies(name, treatment_id):
 		.options(
 			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 			raiseload('*')
-		).all()
+		).paginate(page, ROWS_PER_PAGE)
 
-	return studies
+	return studies.items, studies.next_num, studies.total
 

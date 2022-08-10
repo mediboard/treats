@@ -70,7 +70,8 @@ def get_treatments(condition_name):
 @cross_origin(supports_credentials=True)
 def get_studies(condition_name):
 	treatment_id = request.args.get('treatment', None, type=int)
+	page = request.args.get('page', None, type=int)
 
-	studies = controller.get_studies(condition_name, treatment_id)
+	studies, next_page, total = controller.get_studies(condition_name, treatment_id, page)
 
-	return {'studies': [x.to_summary_dict() for x in studies]}
+	return {'studies': [x.to_summary_dict() for x in studies], 'no_studies': total, 'next': next_page}
