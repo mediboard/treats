@@ -199,7 +199,7 @@ class Study(db.Model):
 	gender = db.Column(db.Enum(gender))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='joined')
+	conditions = db.relationship('StudyCondition', lazy='dynamic')
 	treatments = db.relationship('StudyTreatment', lazy='dynamic')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')

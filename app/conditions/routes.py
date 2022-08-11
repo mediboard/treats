@@ -73,12 +73,6 @@ def get_studies(condition_name):
 	page = request.args.get('page', None, type=int)
 
 	studies, next_page, total = controller.get_studies(condition_name, treatment_id, page)
-	id_2_study = {}
-	print(studies)
-	for study, analytic in studies:
-		if study.id not in id_2_study:
-			id_2_study[study.id] = {**study.to_summary_dict(), 'analytics': []}
 
-		id_2_study[study.id]['analytics'].append(analytic.to_small_dict())
 
-	return {'studies': list(id_2_study.values()), 'no_studies': total, 'next': next_page}
+	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2] } for x in studies], 'no_studies': total, 'next': next_page}
