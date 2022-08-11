@@ -89,7 +89,7 @@ def get_analytics(name, request_args):
 
 
 def get_studies(name, treatment_id, page=1):
-	studies = db.session.query(Study)\
+	studies = db.session.query(Study, Analytics)\
 		.join(StudyTreatment, StudyTreatment.study == Study.id)
 
 	if (treatment_id):
@@ -101,7 +101,11 @@ def get_studies(name, treatment_id, page=1):
 		.options(
 			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 			raiseload('*')
-		).paginate(page, ROWS_PER_PAGE)
+		)\
+		.join(Analytics, Analytics.study == Study.id)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.paginate(page, ROWS_PER_PAGE)
 
 	return studies.items, studies.next_num, studies.total
 
