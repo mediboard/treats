@@ -4,6 +4,7 @@ from app.conditions import controller
 from flask_cors import cross_origin
 import app.conditions.controller as controller
 from flask import request
+from app.utils import calculate_results_summary
 
 
 @bp.route('/')
@@ -75,4 +76,4 @@ def get_studies(condition_name):
 	studies, next_page, total = controller.get_studies(condition_name, treatment_id, page)
 
 
-	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2] } for x in studies], 'no_studies': total, 'next': next_page}
+	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2]) } for x in studies], 'no_studies': total, 'next': next_page}
