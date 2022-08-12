@@ -22,6 +22,18 @@ def get_study(study_id):
 	return studies.all()
 
 
+def get_study_summary(study_id):
+	# Need conditions, treatments, participants
+	studies = db.session.query(Study)\
+		.filter_by(id = study_id)\
+		.options(
+			joinedload(Study.conditions).joinedload(StudyCondition.conditions),
+			raiseload('*')
+		).all()
+
+	return studies
+
+
 def get_baselines(study_id):
 	baselines = db.session.query(Baseline)\
 		.filter_by(study = study_id)

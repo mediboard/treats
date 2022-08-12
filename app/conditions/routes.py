@@ -4,6 +4,7 @@ from app.conditions import controller
 from flask_cors import cross_origin
 import app.conditions.controller as controller
 from flask import request
+from app.utils import calculate_results_summary
 
 
 @bp.route('/')
@@ -64,3 +65,15 @@ def get_treatments(condition_name):
 	treatments = controller.get_treatments(condition_name)
 
 	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}
+
+
+@bp.route('/<string:condition_name>/studies')
+@cross_origin(supports_credentials=True)
+def get_studies(condition_name):
+	treatment_id = request.args.get('treatment', None, type=int)
+	page = request.args.get('page', None, type=int)
+
+	studies, next_page, total = controller.get_studies(condition_name, treatment_id, page)
+
+
+	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2]) } for x in studies], 'no_studies': total, 'next': next_page}

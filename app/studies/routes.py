@@ -31,6 +31,13 @@ def get_study(study_id):
 	return {'studies': [study.to_core_dict() for study in studies]}
 
 
+@bp.route('/<string:study_id>/summary')
+@cross_origin(supports_credentials=True)
+def get_summary(study_id):
+	studies = controller.get_study_summary(study_id)
+	return {'studies': [study.to_summary_dict() for study in studies]}
+
+
 @bp.route('/<string:study_id>/baselines')
 @cross_origin(supports_credentials=True)
 def get_baselines(study_id):

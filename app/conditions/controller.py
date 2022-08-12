@@ -1,8 +1,11 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
-	Treatment, StudyTreatment, Analytics, Measure, measure_type
+	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study
+from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func, desc
 
+
+ROWS_PER_PAGE=8
 
 def search(query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
@@ -83,3 +86,23 @@ def get_analytics(name, request_args):
 		.all()
 
 	return analytics
+
+
+def get_studies(name, treatment_id, page=1):
+	studies = db.session.query(Study, func.avg(Analytics.p_value).label('mean'), func.min(Analytics.p_value).label('min'))\
+		.join(StudyTreatment, StudyTreatment.study == Study.id)
+
+	if (treatment_id):
+		studies = studies.where(StudyTreatment.treatment == treatment_id)
+
+	studies = studies.join(StudyCondition, Study.id == StudyCondition.study)\
+		.join(Condition, Condition.id == StudyCondition.condition)\
+		.filter(func.lower(Condition.name) == func.lower(name))\
+		.join(Analytics, Analytics.study == Study.id)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.group_by(Study.id)\
+		.paginate(page, ROWS_PER_PAGE)
+
+	return studies.items, studies.next_num, studies.total
+

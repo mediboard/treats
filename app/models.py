@@ -232,6 +232,13 @@ class Study(db.Model):
 			'treatments': [x.treatments.to_dict() for x in self.treatments]
 		}
 
+	def to_summary_dict(self):
+		return {
+			**self.to_core_dict(),
+			'conditions': [x.conditions.to_dict() for x in self.conditions],
+			'treatments': [x.treatments.to_dict() for x in self.treatments]
+		}
+
 	def to_core_dict(self):
 		return {
 			'id': self.id,
