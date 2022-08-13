@@ -76,4 +76,20 @@ def get_studies(condition_name):
 	studies, next_page, total = controller.get_studies(condition_name, treatment_id, page)
 
 
-	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2]) } for x in studies], 'no_studies': total, 'next': next_page}
+	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2])} for x in studies], 'no_studies': total, 'next': next_page}
+
+
+@bp.route('/<string:condition_name>/no_treatments')
+@cross_origin(supports_credentials=True)
+def get_no_treatments(condition_name):
+	no_treatments = controller.get_no_treatments(condition_name)
+
+	return {**no_treatments[0]}
+
+
+@bp.route('/<string:condition_name>/no_studies')
+@cross_origin(supports_credentials=True)
+def get_no_studies(condition_name):
+	no_studies = controller.get_no_studies(condition_name)
+
+	return {**no_studies[0]}

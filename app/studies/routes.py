@@ -3,6 +3,7 @@ from app.studies import bp
 from flask_cors import cross_origin
 from app.studies import controller
 from flask import request
+from app.utils import calculate_results_summary
 
 
 @bp.route('/')
@@ -78,3 +79,13 @@ def get_conditions(study_id):
 def get_treatments(study_id):
 	treatments = controller.get_treatments(study_id)
 	return {'treatments': [treat.to_dict() for treat in treatments]}
+
+
+@bp.route('/get_studies_by_ids')
+@cross_origin(supports_credentials=True)
+def get_studies_by_ids():
+	study_ids = request.args.get('ids', None, type=str)
+	studies = controller.get_studies_by_ids(study_ids.split(','))
+
+	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2]) } for x in studies]}
+

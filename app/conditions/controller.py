@@ -2,7 +2,7 @@ from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study
 from sqlalchemy.orm import joinedload, raiseload
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, distinct
 
 
 ROWS_PER_PAGE=8
@@ -106,3 +106,22 @@ def get_studies(name, treatment_id, page=1):
 
 	return studies.items, studies.next_num, studies.total
 
+
+def get_no_treatments(name):
+	no_treatments = db.session.query(func.count(distinct(Treatment.id)).label('no_treatments'))\
+		.join(StudyTreatment, StudyTreatment.treatment == Treatment.id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(Condition, StudyCondition.condition == Condition.id)\
+		.filter(Condition.name == name)\
+		.group_by(Condition.name).all()
+
+	return no_treatments
+
+
+def get_no_studies(name):
+	no_studies = db.session.query(func.count(distinct(StudyCondition.study)).label('no_studies'))\
+		.join(Condition, Condition.id == StudyCondition.condition)\
+		.filter(Condition.name == name)\
+		.group_by(Condition.name).all()
+
+	return no_studies

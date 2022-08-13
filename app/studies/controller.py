@@ -85,3 +85,12 @@ def get_treatments(study_id):
 		.join(study_treatments, Treatment.id == study_treatments.c.treatment)
 
 	return treatments.all()
+
+
+def get_studies_by_ids(study_ids):
+	studies = db.session.query(Study, func.avg(Analytics.p_value).label('mean'), func.min(Analytics.p_value).label('min'))\
+		.join(Analytics, Analytics.study == Study.id)\
+		.filter(Study.id.in_(study_ids))\
+		.group_by(Study.id)
+
+	return studies.all()
