@@ -5,7 +5,7 @@ def removekey_oop(d, key):
 
 
 def calculate_results_summary(mean, mn):
-    if (mn <= .15):
+    if (mn and mn <= .15):
         return 'strong' if mean <= .15 else 'mixed'
 
     return 'weak'
