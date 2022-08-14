@@ -22,9 +22,10 @@ def search_treatments(query, limit=5):
 
 
 def get_top_treatments():
+	top_treatments = ['Ketamine', 'Gabapentin', 'Pregabalin', 'Citalopram', 'Fluoxetine', 'Estradiol']
 	results = db.session.query(Treatment)\
+		.filter(Treatment.name.in_(top_treatments))\
 		.order_by(desc(Treatment.no_studies))\
-		.limit(5)\
 		.all()
 
 	return results
