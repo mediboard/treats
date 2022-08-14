@@ -22,12 +22,12 @@ def search(query, limit=5):
 
 def get_top_conditions():
 	# Manually filtering out Healthy for now
+	top_conditions = ['Depression', 'Anxiety', 'Asthma', 'Alcohol Dependence', 'Menopause', 'Insomnia', 'Obesity']
 	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
-		.filter(Condition.id != 7)\
+		.filter(Condition.name.in_(top_conditions))\
 		.join(StudyCondition, StudyCondition.condition == Condition.id)\
 		.group_by(Condition.id)\
 		.order_by(desc('no_studies'))\
-		.limit(5)\
 		.all()
 
 	return conditions_counts
