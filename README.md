@@ -1,6 +1,31 @@
 # treats
 the treatment exploration arm of mediboard
 
+## Deployment
+
+- Build a new image from repo root
+```
+docker build -t meditreats:latest .
+```
+
+- Tag image for remote registry
+```
+docker tag meditreats:latest public.ecr.aws/t6z3u3k0/docker-treats:latest
+```
+
+- Push image
+```
+docker push public.ecr.aws/t6z3u3k0/docker-treats:latest
+```
+
+Now that the image is pushed and tagged as latest, we just need to restart the compute tasks in ECS and it will restart with the lastest image.
+
+- Go to: ECS => default cluster => Service:df-treats-service-4 => tasks
+- Select one task and stop it
+- Wait for another one to automatically spin up
+- Repeat for the second task
+
+
 ## API Docs
 
 ### Treatments
