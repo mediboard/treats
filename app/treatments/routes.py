@@ -35,7 +35,7 @@ def get_top_treatments():
 @cross_origin(supports_credentials=True)
 def get_treatment(name):
 	treatment = treatments.get_treatment(name)
-	if (not treatment):
+	if not treatment:
 		return create_notfound_error('Treatment {0} not found'.format(name))
 		
 	return {'treatment': treatment.to_dict()}
@@ -51,8 +51,9 @@ def get_treatment_demographics(name):
 @bp.route('/<string:name>/effects')
 @cross_origin(supports_credentials=True)
 def get_treatment_effects(name):
-	effects = treatments.get_effects(name)
-	return {'effects': [{'name':name, 'effected':effected, 'at_risk':at_risk, 'no_studies':count} for name,effected,at_risk,count in effects]}
+	limit = int(request.args.get('limit'))
+	effects = treatments.get_effects(name, limit)
+	return {'effects': [{'name': name, 'effected': effected, 'at_risk': at_risk, 'no_studies': count} for name, effected, at_risk, count in effects]}
 
 
 @bp.route('/<string:name>/conditions')
