@@ -2,7 +2,8 @@ from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study
 from sqlalchemy.orm import joinedload, raiseload
-from sqlalchemy import func, desc, distinct
+from sqlalchemy import func, desc, distinct, asc
+from app.utils import calculate_results_summary
 
 
 ROWS_PER_PAGE=8
@@ -102,9 +103,13 @@ def get_studies(name, treatment_id, page=1):
 		.join(Measure, Analytics.measure == Measure.id)\
 		.filter(Measure.type == measure_type.PRIMARY)\
 		.group_by(Study.id)\
+		.order_by(asc('min'), asc('mean'))\
 		.paginate(page, ROWS_PER_PAGE)
 
-	return studies.items, studies.next_num, studies.total
+	study_items = studies.items
+	study_items.sort(key=lambda x: calculate_results_summary(x[1], x[2]), reverse=True)
+
+	return study_items, studies.next_num, studies.total
 
 
 def get_no_treatments(name):
