@@ -129,12 +129,12 @@ def get_placebo_measures(treatment_id, condition_id):
 	return {'measures': measures}
 
 
-# @bp.route('/<int:treatment_id>/measure/<int:measure_id>/get_placebo_analytics')
-# @cross_origin(supports_credentials=True)
-# def get_placebo_measures(treatment_id, measure_id):
-# 	analytics = treatments.get_placebo_analytics_measure(measure_id, treatment_id)
+@bp.route('/<int:treatment_id>/measure/<int:measure_id>/get_placebo_analytics')
+@cross_origin(supports_credentials=True)
+def get_placebo_analytics(treatment_id, measure_id):
+	analytics = treatments.get_placebo_analytics(measure_id, treatment_id)
 
-# 	return {'analytics': analytics}
+	return {'analytics': analytics}
 
 
 @bp.route('/<string:name>/spread')

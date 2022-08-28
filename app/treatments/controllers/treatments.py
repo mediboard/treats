@@ -224,10 +224,12 @@ def get_analytics(treatment_name, request_args):
 # 	return results;
 
 
-def get_placebo_analytics_measure(measure_id, treatment_id):
+def get_placebo_analytics(measure_id, treatment_id):
 	results = db.session.query(Analytics, Treatment)\
-		.join(Analytics, Analytics.measure == measure_id)\
-		.join(Administration, Administration.analytic == Analytics.id)\
+		.filter(Analytics.measure == measure_id)\
+		.join(Comparison, Comparison.analytic == Analytics.id)\
+		.join(Group, Comparison.group == Group.id)\
+		.join(Administration, Administration.group == Group.id)\
 		.join(Treatment, Treatment.id == Administration.treatment)\
 		.all()
 
@@ -243,7 +245,7 @@ def get_placebo_analytics_measure(measure_id, treatment_id):
 
 		analytic2treats[analytic.id]['treatments'].append(treatment.to_dict())
 
-	for analytic_id in analytics_to_delete:
+	for analytic_id in list(set(analytics_to_delete)):
 		del analytic2treats[analytic_id]
 
 	return [x['analytic'] for x in analytic2treats]
@@ -260,7 +262,6 @@ def get_placebo_measures(treatment_id, condition_id):
 		.join(Administration, Administration.group == Group.id)\
 		.all()
 
-
 	measure2admins = {}
 	for measure, admin in measure_admins:
 		if measure.id not in measure2admins:
@@ -268,7 +269,6 @@ def get_placebo_measures(treatment_id, condition_id):
 
 		measure2admins[measure.id]['hasTreat'] = measure2admins[measure.id]['hasTreat'] or admin.treatment == treatment_id
 		measure2admins[measure.id]['hasControl'] = measure2admins[measure.id]['hasControl'] or admin.treatment == 2182 
-
 
 	return [x['measure'].to_small_dict() for x in measure2admins.values() if x['hasTreat'] and x['hasControl']]
 
