@@ -121,6 +121,22 @@ def get_condition_scores(name):
 	return {'condition_scores': [{**x.to_dict(), 'name':y.name} for x,y in scores]}
 
 
+@bp.route('/<int:treatment_id>/condition/<int:condition_id>/get_placebo_measures')
+@cross_origin(supports_credentials=True)
+def get_placebo_measures(treatment_id, condition_id):
+	measures = treatments.get_placebo_measures(treatment_id, condition_id)
+
+	return {'measures': measures}
+
+
+# @bp.route('/<int:treatment_id>/measure/<int:measure_id>/get_placebo_analytics')
+# @cross_origin(supports_credentials=True)
+# def get_placebo_measures(treatment_id, measure_id):
+# 	analytics = treatments.get_placebo_analytics_measure(measure_id, treatment_id)
+
+# 	return {'analytics': analytics}
+
+
 @bp.route('/<string:name>/spread')
 @cross_origin(supports_credentials=True)
 def get_treatment_spreaed(name):
