@@ -43,12 +43,7 @@ def get_baselines(study_id):
 
 def get_measures(study_id):
 	measures = db.session.query(Measure)\
-		.filter_by(study = study_id)\
-		.options(
-			joinedload(Measure.outcomes),
-			joinedload(Measure.analytics).joinedload(Analytics.groups),
-			raiseload('*')
-		)
+		.filter_by(study = study_id)
 
 	return measures.all()
 
