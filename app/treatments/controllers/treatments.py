@@ -212,20 +212,6 @@ def get_analytics(treatment_name, request_args):
 	return analytics
 
 
-# def get_placebo_analytics(measure_group):
-# 	results = db.session.query(Measure, Analytics, Treatment)\
-# 		.join(Measure, Measure.measureGroup == MeasureGroup.id)\
-# 		.filter(MeasureGroup.id == measure_group)\
-# 		.join(Analytics, Analytics.measure == Measure.id)\
-# 		.join(Administration, Administration.analytic == Analytics.id)\
-# 		.join(Treatment, Treatment.id == Administration.treatment)\
-# 		.all()
-
-# 	print(results)
-
-# 	return results;
-
-
 def get_analytic_outcomes(analytic_id):
 	results = db.session.query(Group, Outcome)\
 		.join(Comparison, Comparison.group == Group.id)\
@@ -293,49 +279,7 @@ def get_placebo_measures(treatment_id, condition_id, page=1):
 	measures = [measure['measure'] for measure in measure2admins.values() if measure['hasTreat'] and measure['hasControl']]
 
 	return measures[(page - 1) * 10 : (((page - 1) * 10) + 10) % len(measures)], page+1, len(measures)
-
-
-# def get_placebo_measures(treatment_id, request_args):
-# 	condition_id = request_args.get('condition_id', '', type=int)
-
-# 	groups_query = db.session.query(Group, func.count(Administration.id).label('no_treatments'))\
-# 		.join(Administration, Group.id == Administration.group)\
-# 		.join(StudyTreatment, StudyTreatment.study == Group.study)\
-# 		.filter((StudyTreatment.treatment == treatment_id))\
-# 		.join(StudyCondition, StudyCondition.study == Group.study)\
-# 		.filter(StudyCondition.condition == condition_id)\
-# 		.group_by(Group.id)\
-# 		.subquery()
-
-# 	single_groups_query = db.session.query(groups_query).filter(groups_query.c.no_treatments == 1).subquery()
-
-# 	# # Get the analtics comparing those two groups together
-# 	# db.session.query(Analytics, Group).join(Comparison, Comparison.analytics == Analytics.id)\
-# 	# 	.join(Group, Comparison.group == Group.id)\
-# 	# 	.join(Administration, Administration.group == Group.id)\
-# 	# 	.filter((Administration.treatment == treatment_id) | (Administration.treatment == 2182))\
-# 	# 	.join(StudyTreatment, StudyTreatment.treatment == Administration.treatment)\
-# 	# 	.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
-# 	# 	.filter(StudyTreatment.treatment == treatment_id)\
-# 	# 	.filter(StudyCondition.condition == condition_id)\
-
-
-# 	results = db.session.query(Measure, Analytics, Treatment)\
-# 		.join(Analytics, Analytics.measure == Measure.id)\
-# 		.join(StudyTreatment, StudyTreatment.study == Analytics.study)\
-# 		.join(StudyCondition, StudyCondition.study == Analytics.study)\
-# 		.filter(StudyTreatment.treatment == treatment_id)\
-# 		.filter(StudyCondition.condition == condition_id)\
-# 		.join(Comparison, Comparison.analytic == Analytics.id)\
-# 		.join(single_groups_query, single_groups_query.c.id == Comparison.group)\
-# 		.join(Administration, Administration.group == single_groups_query.c.id)\
-# 		.join(Treatment, Treatment.id == Administration.treatment)\
-# 		.all()
-
-# 	print(results)
-
-# 	return results 
-
+	
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
