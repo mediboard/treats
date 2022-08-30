@@ -240,7 +240,7 @@ def get_placebo_analytics(measure_id, treatment_id):
 		if analytic.id not in analytic2treats:
 			analytic2treats[analytic.id] = {'analytic': analytic.to_small_dict(), 'treatments': []}
 
-		if (treatment.id != treatment_id) and (treatment.id != 2182):
+		if (treatment.id != treatment_id) and (treatment.id == ''):
 			analytics_to_delete.append(analytic.id)
 
 		analytic2treats[analytic.id]['treatments'].append(treatment.to_dict())
@@ -277,7 +277,7 @@ def get_placebo_measures(treatment_id, condition_id, page=1):
 	measures = [measure['measure'] for measure in measure2admins.values() if measure['hasTreat'] and measure['hasControl']]
 
 
-	return ([], page, 0) if not measures else measures[(page - 1) * 10 : (((page - 1) * 10) + 10) % len(measures)], page+1, len(measures)
+	return ([], page, 0) if not measures else measures[(page - 1) * ROWS_PER_PAGE : (((page - 1) * ROWS_PER_PAGE) + ROWS_PER_PAGE) % len(measures)], page+1, len(measures)
 
 
 def get_condition_scoring(treatment_name):
