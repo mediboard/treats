@@ -121,6 +121,37 @@ def get_condition_scores(name):
 	return {'condition_scores': [{**x.to_dict(), 'name':y.name} for x,y in scores]}
 
 
+@bp.route('/analytics/<int:analytic_id>/outcomes')
+@cross_origin(supports_credentials=True)
+def get_analytic_outcomes(analytic_id):
+	group_outcomes = treatments.get_analytic_outcomes(analytic_id)
+	group2outcome = {}
+	for group, outcome in group_outcomes:
+		if group.id not in group2outcome:
+			group2outcome[group.id] = {'group': group.to_dict(), 'outcomes': []}
+
+		group2outcome[group.id]['outcomes'].append(outcome.to_dict())
+
+	return {'groups': [group for group in group2outcome.values()]}
+
+
+@bp.route('/<int:treatment_id>/condition/<int:condition_id>/get_placebo_measures')
+@cross_origin(supports_credentials=True)
+def get_placebo_measures(treatment_id, condition_id):
+	page = request.args.get('page', None, type=int)
+	measures, next_page, total = treatments.get_placebo_measures(treatment_id, condition_id, page or 1)
+
+	return {'measures': measures, 'next': next_page, 'total': total}
+
+
+@bp.route('/<int:treatment_id>/measure/<int:measure_id>/get_placebo_analytics')
+@cross_origin(supports_credentials=True)
+def get_placebo_analytics(treatment_id, measure_id):
+	analytics = treatments.get_placebo_analytics(measure_id, treatment_id)
+
+	return {'analytics': analytics}
+
+
 @bp.route('/<string:name>/spread')
 @cross_origin(supports_credentials=True)
 def get_treatment_spreaed(name):

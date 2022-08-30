@@ -323,12 +323,23 @@ class StudyTreatment(db.Model):
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 
 
+class MeasureGroup(db.Model):
+
+	__tablename__ = 'measure_groups'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(256))
+
+	measures = db.relationship('Measure', lazy='dynamic')
+
+
 class Measure(db.Model):
 
 	__tablename__ = 'measures'
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.Enum(dispersion_param))
@@ -336,10 +347,17 @@ class Measure(db.Model):
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
 
-	outcomes = db.relationship('Outcome', lazy='joined')
-	analytics = db.relationship('Analytics', lazy='joined')
+	outcomes = db.relationship('Outcome', lazy='dynamic')
+	analytics = db.relationship('Analytics', lazy='dynamic')
 
 	def to_dict(self):
+		return {
+			**self.to_small_dict(),
+			'outcomes': [x.to_dict() for x in self.outcomes],
+			'analytics': [x.to_dict() for x in self.analytics]
+		}
+
+	def to_small_dict(self):
 		return {
 			'id': self.id,
 			'study': self.study,
@@ -348,9 +366,7 @@ class Measure(db.Model):
 			'dispersion': str(self.dispersion),
 			'type': str(self.type),
 			'param': str(self.param),
-			'units': self.units,
-			'outcomes': [x.to_dict() for x in self.outcomes],
-			'analytics': [x.to_dict() for x in self.analytics]
+			'units': self.units
 		}
 
 
@@ -486,7 +502,7 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison', lazy='joined')
+	groups = db.relationship('Comparison', lazy='dynamic')
 
 	def to_core_dict(self):
 		return {
