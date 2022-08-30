@@ -233,8 +233,6 @@ def get_placebo_analytics(measure_id, treatment_id):
 		.join(Treatment, Treatment.id == Administration.treatment)\
 		.all()
 
-	print(str(results))
-
 	# Filtering out the analytics that dont compare placebo to treatment
 	analytic2treats = {}
 	analytics_to_delete = []
@@ -278,8 +276,9 @@ def get_placebo_measures(treatment_id, condition_id, page=1):
 
 	measures = [measure['measure'] for measure in measure2admins.values() if measure['hasTreat'] and measure['hasControl']]
 
-	return measures[(page - 1) * 10 : (((page - 1) * 10) + 10) % len(measures)], page+1, len(measures)
-	
+
+	return ([], page, 0) if not measures else measures[(page - 1) * 10 : (((page - 1) * 10) + 10) % len(measures)], page+1, len(measures)
+
 
 def get_condition_scoring(treatment_name):
 	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
