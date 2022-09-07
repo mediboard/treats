@@ -314,6 +314,16 @@ class StudyCondition(db.Model):
 	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
 
 
+class TreatmentGroup(db.Model):
+
+	__tablename__ = 'treatment_groups'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(400))
+
+	treatments = db.relationship('Treatment', lazy='dynamic');
+
+
 class StudyTreatment(db.Model):
 
 	__tablename__ = 'study_treatments'
@@ -383,7 +393,9 @@ class Treatment(db.Model):
 	__tablename__ = 'treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
+	treatmentGroup = db.Column(db.Integer, db.ForeignKey('treatment_groups.id'))
 	name = db.Column(db.String(400))
+	description = db.Column(db.String(5000))
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
 
@@ -395,6 +407,8 @@ class Treatment(db.Model):
 		return {
 			'id': self.id,
 			'name': self.name,
+			'treatment_group': self.treatmentGroup,
+			'description': self.description,
 			'from_study': self.from_study,
 			'no_studies': self.no_studies
 		}
@@ -601,6 +615,16 @@ class Baseline(db.Model):
 		}
 
 
+class EffectCluster(db.Model):
+
+	__tablename__ = 'effects_cluster'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(100))
+
+	effects = db.relationship('Effect', lazy='dynamic')
+
+
 class Effect(db.Model):
 
 	__tablename__ = 'effects'
@@ -608,6 +632,8 @@ class Effect(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
+	cluster = db.Column(db.Integer, db.ForeignKey('effects_cluster.id'))
+	cluster_name = db.Column(db.String(100))
 	name = db.Column(db.String(100))
 	organ_system = db.Column(db.Enum(organ_system))
 	effect_type = db.Column(db.Enum(effect_type))
@@ -621,6 +647,8 @@ class Effect(db.Model):
 			'id': self.id,
 			'study': self.study,
 			'group': self.group,
+			'cluster': self.cluster,
+			'cluster_name': self.cluster_name,
 			'name': self.name,
 			'organ_system': str(self.organ_system),
 			'effect_type': str(self.effect_type),
