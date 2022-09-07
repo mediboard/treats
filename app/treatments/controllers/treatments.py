@@ -12,7 +12,6 @@ from sqlalchemy.dialects import postgresql
 ROWS_PER_PAGE=10
 
 def search_treatments(query, limit=5):
-	print(limit)
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	results = db.session.query(Treatment)\
 		.filter(Treatment.no_studies > 0)\
@@ -67,18 +66,18 @@ def get_effects(treatment_name, limit=0, mode='strict'):
 		study_query = db.session.query(StudyTreatment).join(treatment_query, StudyTreatment.treatment == treatment_query.c.id).subquery()
 		admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 		group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+		effects = db.session.query(func.lower(Effect.cluster_name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
 			.join(group_query, Effect.group == group_query.c.id)\
 			.join(study_query, Effect.study == study_query.c.study)\
-			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
+			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.cluster_name)).all()
 	else:
 		admin_query = db.session.query(EffectAdministration)\
 			.join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 		group_query = db.session.query(EffectGroup)\
 			.join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+		effects = db.session.query(func.lower(Effect.cluster_name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
 			.join(group_query, Effect.group == group_query.c.id)\
-			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
+			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.cluster_name)).all()
 
 	if limit != 0:
 		# Sort based on frequency when side effect exists in > 1 studies to handle false positives
@@ -271,13 +270,16 @@ def get_placebo_measures(treatment_id, condition_id, page=1):
 		if measure.id not in measure2admins:
 			measure2admins[measure.id] = {'measure': measure.to_small_dict(), 'hasTreat': False, 'hasControl': False}
 
+
 		measure2admins[measure.id]['hasTreat'] = measure2admins[measure.id]['hasTreat'] or admin.treatment == treatment_id
 		measure2admins[measure.id]['hasControl'] = measure2admins[measure.id]['hasControl'] or admin.treatment == 2182 
 
+
 	measures = [measure['measure'] for measure in measure2admins.values() if measure['hasTreat'] and measure['hasControl']]
 
+	has_next_token = (((page - 1) * ROWS_PER_PAGE) + ROWS_PER_PAGE) < len(measures)
 
-	return ([], page, 0) if not measures else measures[(page - 1) * ROWS_PER_PAGE : (((page - 1) * ROWS_PER_PAGE) + ROWS_PER_PAGE) % len(measures)], page+1, len(measures)
+	return ([], page, 0) if not measures else (measures[(page - 1) * ROWS_PER_PAGE : (((page - 1) * ROWS_PER_PAGE) + ROWS_PER_PAGE)], page+1 if has_next_token else None, len(measures))
 
 
 def get_condition_scoring(treatment_name):
