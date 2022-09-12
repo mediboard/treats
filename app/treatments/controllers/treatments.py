@@ -66,18 +66,18 @@ def get_effects(treatment_name, limit=0, mode='strict'):
 		study_query = db.session.query(StudyTreatment).join(treatment_query, StudyTreatment.treatment == treatment_query.c.id).subquery()
 		admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 		group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-		effects = db.session.query(func.lower(Effect.cluster_name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
 			.join(group_query, Effect.group == group_query.c.id)\
 			.join(study_query, Effect.study == study_query.c.study)\
-			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.cluster_name)).all()
+			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
 	else:
 		admin_query = db.session.query(EffectAdministration)\
 			.join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 		group_query = db.session.query(EffectGroup)\
 			.join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-		effects = db.session.query(func.lower(Effect.cluster_name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
 			.join(group_query, Effect.group == group_query.c.id)\
-			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.cluster_name)).all()
+			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
 
 	if limit != 0:
 		# Sort based on frequency when side effect exists in > 1 studies to handle false positives

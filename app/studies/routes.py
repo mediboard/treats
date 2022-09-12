@@ -46,6 +46,13 @@ def get_baselines(study_id):
 	return {'baselines': [baseline.to_dict() for baseline in baselines]}
 
 
+@bp.route('/<string:study_id>/effects')
+@cross_origin(supports_credentials=True)
+def get_effects(study_id):
+	effect_groups = controller.get_effects(study_id)
+	return {'effects': [effect.to_dict() for effect in effect_groups]}
+
+
 @bp.route('/<string:study_id>/measures')
 @cross_origin(supports_credentials=True)
 def get_measures(study_id):

@@ -402,6 +402,7 @@ class Treatment(db.Model):
 	studies = db.relationship('StudyTreatment', lazy='joined', backref='treatments')
 	administrations = db.relationship('Administration', lazy='dynamic')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
+	effect_administrations = db.relationship('EffectAdministration', lazy='joined', backref='treatments')
 
 	def to_dict(self):
 		return {
@@ -664,11 +665,23 @@ class EffectGroup(db.Model):
 	__tablename__ = 'effectsgroups'
 
 	id = db.Column(db.Integer, primary_key=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	title = db.Column(db.String(101))
 	description = db.Column(db.String(1500))
 	study_id = db.Column(db.String(7))
 
-	effects = db.relationship('Effect', lazy='dynamic')
+	effects = db.relationship('Effect', lazy='joined')
+	administrations = db.relationship('EffectAdministration', lazy='joined')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'title': self.title,
+			'description': self.description,
+			'treatments': [x.treatments.to_dict() for x in self.administrations],
+			'effects': [x.to_dict() for x in self.effects]
+		}
 
 
 class EffectAdministration(db.Model):
@@ -678,6 +691,4 @@ class EffectAdministration(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
-
-
 
