@@ -1,6 +1,6 @@
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
-	Group, StudyTreatment, StudyCondition, Condition, Treatment
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func
 
@@ -39,6 +39,13 @@ def get_baselines(study_id):
 		.filter_by(study = study_id)
 
 	return baselines.all()
+
+
+def get_effects(study_id):
+	effect_groups = db.session.query(EffectGroup)\
+		.filter(EffectGroup.study == study_id)
+
+	return effect_groups.all();
 
 
 def get_measures(study_id):
