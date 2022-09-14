@@ -26,7 +26,9 @@ def register_blueprints(app):
 	from app.treatments import bp as treatments_bp
 	from app.studies import bp as studies_bp
 	from app.conditions import bp as conditions_bp
+	from app.blogs import bp as blogs_bp
 
 	app.register_blueprint(treatments_bp, url_prefix='/treatments')
 	app.register_blueprint(studies_bp, url_prefix='/studies')
 	app.register_blueprint(conditions_bp, url_prefix='/conditions')
+	app.register_blueprint(blogs_bp, url_prefix='/blogs')
