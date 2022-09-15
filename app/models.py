@@ -199,8 +199,8 @@ class Study(db.Model):
 	gender = db.Column(db.Enum(gender))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='dynamic')
-	treatments = db.relationship('StudyTreatment', lazy='dynamic')
+	conditions = db.relationship('StudyCondition', lazy='joined')
+	treatments = db.relationship('StudyTreatment', lazy='joined')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
@@ -276,7 +276,7 @@ class Condition(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='dynamic', backref='conditions')
+	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -338,9 +338,19 @@ class MeasureGroup(db.Model):
 	__tablename__ = 'measure_groups'
 
 	id = db.Column(db.Integer, primary_key=True)
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
 	name = db.Column(db.String(256))
 
-	measures = db.relationship('Measure', lazy='dynamic')
+	measures = db.relationship('MeasureGroupMeasure', lazy='joined')
+
+
+class MeasureGroupMeasure(db.Model):
+
+	__tablename__ = 'measure_group_measures'
+
+	id = db.Column(db.Integer, primary_key=True)
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
+	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
 
 
 class Measure(db.Model):
@@ -349,7 +359,6 @@ class Measure(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.Enum(dispersion_param))
