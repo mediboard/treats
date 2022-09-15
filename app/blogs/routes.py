@@ -11,4 +11,4 @@ import json
 @bp.route('/medium/<string:username>')
 @cross_origin(supports_credentials=True)
 def main(username):
-	return feedparser.parse("https://medium.com/feed/" + username).entries
+	return {"entries" : feedparser.parse("https://medium.com/feed/" + username).entries}
