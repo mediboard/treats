@@ -32,6 +32,14 @@ def get_top_conditions():
 	return {'conditions': [{**x.to_dict(), 'no_studies':y} for x,y in top_conditions_counts]}
 
 
+@bp.route('/<string:condition_id>/measure_groups')
+@cross_origin(supports_credentials=True)
+def get_measure_groups(condition_id):
+	measure_groups = controller.get_measure_groups(condition_id)
+
+	return {'groups': [group.to_dict() for group in measure_groups]}
+
+
 @bp.route('/<string:condition_name>')
 @cross_origin(supports_credentials=True)
 def get_condition(condition_name):

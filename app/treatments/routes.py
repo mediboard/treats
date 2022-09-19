@@ -135,6 +135,14 @@ def get_analytic_outcomes(analytic_id):
 	return {'groups': [group for group in group2outcome.values()]}
 
 
+@bp.route('/<int:treatment_id>/condition/<int:condition_id>/get_placebo_measure_groups')
+@cross_origin(supports_credentials=True)
+def get_placebo_measure_groups(treatment_id, condition_id):
+	measures = treatments.get_placebo_measure_groups(treatment_id, condition_id)
+
+	return {'measures': measures}
+
+
 @bp.route('/<int:treatment_id>/condition/<int:condition_id>/get_placebo_measures')
 @cross_origin(supports_credentials=True)
 def get_placebo_measures(treatment_id, condition_id):

@@ -1,6 +1,6 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
-	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study
+	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study, MeasureGroup, MeasureGroupMeasure
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func, desc, distinct, asc
 from app.utils import calculate_results_summary
@@ -32,6 +32,14 @@ def get_top_conditions():
 		.all()
 
 	return conditions_counts
+
+
+def get_measure_groups(condition_id):
+	groups = db.session.query(MeasureGroup)\
+		.filter(MeasureGroup.condition == condition_id)\
+		.all()
+
+	return groups
 
 
 def get_condition(name):
