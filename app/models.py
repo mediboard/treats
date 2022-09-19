@@ -125,6 +125,13 @@ class measure_type(enum.Enum):
 	OTHER='Other'
 
 
+class measure_group_type(enum.Enum):
+	PRIMARY='Primary'
+	SECONDARY='Secondary'
+	OTHER='Other'
+	IRRELEVANT='Irrelevant'
+
+
 class group_type(enum.Enum):
 	EXPERIMENTAL='Experimental'
 	ACTIVE_COMPARATOR='Active Comparator'
@@ -199,8 +206,8 @@ class Study(db.Model):
 	gender = db.Column(db.Enum(gender))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='dynamic')
-	treatments = db.relationship('StudyTreatment', lazy='dynamic')
+	conditions = db.relationship('StudyCondition', lazy='joined')
+	treatments = db.relationship('StudyTreatment', lazy='joined')
 	measures = db.relationship('Measure', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
 	baselines = db.relationship('Baseline', lazy='dynamic')
@@ -276,7 +283,7 @@ class Condition(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='dynamic', backref='conditions')
+	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -338,9 +345,28 @@ class MeasureGroup(db.Model):
 	__tablename__ = 'measure_groups'
 
 	id = db.Column(db.Integer, primary_key=True)
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
 	name = db.Column(db.String(256))
+	type = db.Column(db.Enum(measure_group_type))
 
-	measures = db.relationship('Measure', lazy='dynamic')
+	measures = db.relationship('MeasureGroupMeasure', lazy='joined', backref='group')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'condition': self.condition,
+			'name': self.name,
+			'type': str(self.type)
+		}
+
+
+class MeasureGroupMeasure(db.Model):
+
+	__tablename__ = 'measure_group_measures'
+
+	id = db.Column(db.Integer, primary_key=True)
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
+	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
 
 
 class Measure(db.Model):
@@ -349,7 +375,6 @@ class Measure(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
-	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.Enum(dispersion_param))
@@ -359,6 +384,7 @@ class Measure(db.Model):
 
 	outcomes = db.relationship('Outcome', lazy='dynamic')
 	analytics = db.relationship('Analytics', lazy='dynamic')
+	measureGroups = db.relationship('MeasureGroupMeasure', lazy='joined')
 
 	def to_dict(self):
 		return {
@@ -376,7 +402,8 @@ class Measure(db.Model):
 			'dispersion': str(self.dispersion),
 			'type': str(self.type),
 			'param': str(self.param),
-			'units': self.units
+			'units': self.units,
+			'measureGroups': [x.group.to_dict() for x in self.measureGroups]
 		}
 
 
@@ -399,10 +426,10 @@ class Treatment(db.Model):
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
 
-	studies = db.relationship('StudyTreatment', lazy='joined', backref='treatments')
+	studies = db.relationship('StudyTreatment', lazy='select', backref='treatments')
 	administrations = db.relationship('Administration', lazy='dynamic')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
-	effect_administrations = db.relationship('EffectAdministration', lazy='joined', backref='treatments')
+	effect_administrations = db.relationship('EffectAdministration', lazy='select', backref='treatments')
 
 	def to_dict(self):
 		return {

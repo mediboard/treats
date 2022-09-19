@@ -5,6 +5,8 @@ from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import func
 
 
+ROWS_PER_PAGE=10
+
 def search(query, limit=10):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	studies = db.session.query(Study)\
@@ -13,6 +15,40 @@ def search(query, limit=10):
 		.all()
 
 	return studies
+
+
+def get_studies(args, page=1):
+	# Need to filter by search string, condition(s), treatment(s), size, kids
+	studies = db.session.query(Study)
+
+	query = args.get('q')
+	if (query):
+		processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
+
+	conditions = args.get('conditions', None, type=str)
+	if (conditions):
+		studies = studies.join(StudyCondition, StudyCondition.study == Study.id)\
+			.filter(StudyCondition.condition.in_(conditions.split(',')))
+
+	treatments = args.get('treatments', None, type=str)
+	if (treatments):
+		studies = studies.join(StudyTreatment, StudyTreatment.study == Study.id)\
+			.filter(StudyTreatment.treatment.in_(treatments.split(',')))
+
+	gender = args.get('gender', None, type=str)
+	if (gender):
+		studies = studies.filter(Study.gender == gender)
+
+	studies = studies.options(
+		joinedload(Study.conditions).joinedload(StudyCondition.conditions),
+		joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
+		raiseload('*')
+	)
+
+	studies = studies.paginate(page, ROWS_PER_PAGE)
+
+	return studies.items, studies.next_num, studies.total
 
 
 def get_study(study_id):

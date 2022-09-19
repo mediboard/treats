@@ -9,7 +9,9 @@ from app.utils import calculate_results_summary
 @bp.route('/')
 @cross_origin(supports_credentials=True)
 def main():
-	return "Hello Studies"
+	studies, next_page, total = controller.get_studies(request.args)
+
+	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
 
 @bp.route('/search')

@@ -1,9 +1,10 @@
+import asyncio
 from app.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
 	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup
 from app.models import baseline_type, measure_type
 from app import db
-from sqlalchemy.orm import aliased, Bundle
+from sqlalchemy.orm import aliased, lazyload
 from sqlalchemy import func, distinct, desc, or_, text, case
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -248,6 +249,72 @@ def get_placebo_analytics(measure_id, treatment_id):
 		del analytic2treats[analytic_id]
 
 	return [x['analytic'] for x in analytic2treats.values()]
+
+
+def get_placebo_measure_groups(treatment_id, condition_id):
+	measure_admins = db.session.query(Measure, Administration)\
+		.join(Outcome, Outcome.measure == Measure.id)\
+		.join(Group, Group.id == Outcome.group)\
+		.join(StudyTreatment, StudyTreatment.study == Group.study)\
+		.filter(StudyTreatment.treatment == treatment_id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.filter(StudyCondition.condition == condition_id)\
+		.join(Administration, Administration.group == Group.id)\
+		.order_by(case([
+			(Measure.type == measure_type.PRIMARY, 1),
+			(Measure.type == measure_type.SECONDARY, 2)
+		]))\
+		.all()
+
+	measure2admins = {}
+	for measure, admin in measure_admins:
+		if measure.id not in measure2admins:
+			measure2admins[measure.id] = {'measure': measure.to_small_dict(), 'hasTreat': False, 'hasControl': False}
+
+
+		measure2admins[measure.id]['hasTreat'] = measure2admins[measure.id]['hasTreat'] or admin.treatment == treatment_id
+		measure2admins[measure.id]['hasControl'] = measure2admins[measure.id]['hasControl'] or admin.treatment == 2182 
+
+	measures = [measure['measure'] for measure in measure2admins.values() if measure['hasTreat'] and measure['hasControl']]
+
+	# Get the placebo analytics
+	results = db.session.query(Analytics, Treatment)\
+		.filter(Analytics.measure.in_([measure['id'] for measure in measures]))\
+		.join(Comparison, Comparison.analytic == Analytics.id)\
+		.join(Group, Comparison.group == Group.id)\
+		.join(Administration, Administration.group == Group.id)\
+		.join(Treatment, Treatment.id == Administration.treatment).all()
+
+	# Filtering out the analytics that dont compare placebo to treatment
+	analytic2treats = {}
+	analytics_to_delete = []
+	for analytic, treatment in results:
+		if analytic.id not in analytic2treats:
+			analytic2treats[analytic.id] = {'analytic': analytic.to_small_dict(), 'treatments': []}
+
+		if (treatment.id != treatment_id) and (treatment.id == ''):
+			analytics_to_delete.append(analytic.id)
+
+		analytic2treats[analytic.id]['treatments'].append(treatment.to_dict())
+
+	for analytic_id in list(set(analytics_to_delete)):
+		del analytic2treats[analytic_id]
+
+	measure2Analytic = {measure['id']: {**measure, 'analytics': []} for measure in measures}
+	for analytic in analytic2treats.values():
+		measure2Analytic[analytic['analytic']['measure']]['analytics'].append(analytic['analytic'])
+
+	# Put the measurements into groups
+	group2measure = {}
+	for measure in measure2Analytic.values():
+		for group in measure['measureGroups']:
+			if group['id'] not in group2measure:
+				group2measure[group['id']] = {**group, 'measures': []}
+
+			group2measure[group['id']]['measures'].append(measure)
+
+
+	return [x for x in group2measure.values()]
 
 
 def get_placebo_measures(treatment_id, condition_id, page=1):
