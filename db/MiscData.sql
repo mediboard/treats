@@ -259,3 +259,250 @@ INSERT into measure_group_measures(measure, "measureGroup") values (148881, 3);
 INSERT into measure_group_measures(measure, "measureGroup") values (165368, 3);
 INSERT into measure_group_measures(measure, "measureGroup") values (180281, 3);
 INSERT into measure_group_measures(measure, "measureGroup") values (225265, 3);
+
+-- Irrelevant
+Select title, measures.id, description from measures
+    join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null;
+
+INSERT into measure_group_measures(measure, "measureGroup") values (85796, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (53233, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (210411, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85807, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85810, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183408, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (47328, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (111632, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59550, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (165373, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (224070, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124660, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (172851, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (129900, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (111629, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183991, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190223, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (180753, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124659, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85771, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (111633, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59546, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (53232, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (173241, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85809, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85768, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (172853, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85797, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59547, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (10449, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85770, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59552, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35316, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (12832, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (210403, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190212, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85769, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190220, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (189815, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (155139, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (111636, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (173240, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35331, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183413, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85793, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124668, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85792, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (129899, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (148884, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (148885, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85785, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (141824, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124661, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183409, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (129901, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190215, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85808, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85789, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35263, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124664, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (165372, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183411, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (180749, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (180752, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (201114, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (129903, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59548, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35268, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35314, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (224067, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190222, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190218, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (53231, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (10453, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (224905, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35315, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124663, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (165374, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (224073, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (141825, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59549, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85794, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (172850, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183412, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (148875, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (111628, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (224072, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59553, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (180745, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124662, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (225004, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183410, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (59551, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85790, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85791, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (148882, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85788, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (10455, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (124658, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (172852, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190216, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (85795, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (148883, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (129902, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (183989, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (190213, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (35264, 9);
+INSERT into measure_group_measures(measure, "measureGroup") values (66080, 9);
+
+-- Clean Up
+INSERT into measure_group_measures(measure, "measureGroup") values (73648, 1);
+INSERT into measure_group_measures(measure, "measureGroup") values (85800, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (208481, 1);
+INSERT into measure_group_measures(measure, "measureGroup") values (142254, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (215990, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (85787, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (85783, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (35327, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (73649, 1);
+INSERT into measure_group_measures(measure, "measureGroup") values (73653, 3);
+INSERT into measure_group_measures(measure, "measureGroup") values (35274, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (222157, 1);
+INSERT into measure_group_measures(measure, "measureGroup") values (148833, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (57660, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (142255, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (73652, 3);
+INSERT into measure_group_measures(measure, "measureGroup") values (124647, 1);
+INSERT into measure_group_measures(measure, "measureGroup") values (149060, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (85799, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (35328, 5);
+INSERT into measure_group_measures(measure, "measureGroup") values (59554, 3);
+-- Daytime Fatigue
+Select title, measures.id from measures
+    join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null;
+
+INSERT into measure_group_measures(measure, "measureGroup") values (30234, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (30235, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (30236, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (32656, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (33803, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (35269, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (35270, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (35326, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (66082, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (66083, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (111635, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (124665, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (124666, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (124667, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (129898, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148837, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148838, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148839, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148840, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148841, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148842, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148843, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148844, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148845, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148846, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148847, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (148848, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (149061, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (153975, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (165371, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (180747, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (180748, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (180750, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (180751, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (183405, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (183406, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (208482, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (225266, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (225267, 6);
+INSERT into measure_group_measures(measure, "measureGroup") values (225268, 6);
+
+
+-- AEs
+Select title, measures.id, description from measures
+    join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null;
+
+INSERT into measure_group_measures(measure, "measureGroup") values (210401, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210405, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (203018, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (44358, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (190214, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210404, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210406, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (183407, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210399, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (173242, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (222150, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (44357, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (173243, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (183993, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210402, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (222151, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (183992, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (217762, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (35262, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (217761, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (224068, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (35261, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (210400, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (224069, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (85806, 8);
+INSERT into measure_group_measures(measure, "measureGroup") values (47327, 3);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Misc
+Select title, measures.id, description from measures
+    join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null;
+
+insert into measure_group_measures(measure, "measureGroup")  (
+select measures.id, 7 from measures join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null);
+
+select measures.id, 7 from measures join study_conditions sc on measures.study = sc.study
+    left outer join measure_group_measures mgm on measures.id = mgm.measure
+    where sc.condition=817 and mgm.id is null
