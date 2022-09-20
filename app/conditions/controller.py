@@ -1,7 +1,7 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
 	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study, MeasureGroup, MeasureGroupMeasure
-from sqlalchemy.orm import joinedload, raiseload
+from sqlalchemy.orm import joinedload, raiseload, contains_eager
 from sqlalchemy import func, desc, distinct, asc
 from app.utils import calculate_results_summary
 
@@ -102,13 +102,13 @@ def get_analytics(name, request_args):
 
 def get_studies(name, treatment_id, page=1):
 	studies = db.session.query(Study, func.avg(Analytics.p_value).label('mean'), func.min(Analytics.p_value).label('min'))\
+		.join(StudyCondition, Study.id == StudyCondition.study)\
 		.join(StudyTreatment, StudyTreatment.study == Study.id)
 
 	if (treatment_id):
 		studies = studies.where(StudyTreatment.treatment == treatment_id)
 
-	studies = studies.join(StudyCondition, Study.id == StudyCondition.study)\
-		.join(Condition, Condition.id == StudyCondition.condition)\
+	studies = studies.join(Condition, Condition.id == StudyCondition.condition)\
 		.filter(func.lower(Condition.name) == func.lower(name))\
 		.join(Analytics, Analytics.study == Study.id)\
 		.join(Measure, Analytics.measure == Measure.id)\
