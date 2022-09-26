@@ -74,6 +74,13 @@ def get_treatments(condition_name):
 
 	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}
 
+@bp.route('/group/<int:condition_group>/treatments')
+@cross_origin(supports_credentials=True)
+def get_treatments_by_group(condition_group):
+	print(condition_group)
+	treatments = controller.get_treatments_by_condition_group(condition_group)
+
+	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}
 
 @bp.route('/<string:condition_name>/studies')
 @cross_origin(supports_credentials=True)
