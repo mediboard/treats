@@ -276,11 +276,22 @@ class Criteria(db.Model):
 	is_inclusion = db.Column(db.Boolean)
 
 
+class ConditionGroup(db.Model):
+
+	__tablename__ = 'condition_groups'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(400))
+
+	conditions = db.relationship('Condition', lazy='dynamic')
+
+
 class Condition(db.Model):
 
 	__tablename__ = 'conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
+	condition_group = db.Column(db.Integer, db.ForeignKey('condition_groups.id'))
 	name = db.Column(db.String(150), index=True, unique=True)
 
 	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
@@ -302,7 +313,8 @@ class Condition(db.Model):
 	def to_dict(self):
 		return {
 			'id': self.id,
-			'name': self.name
+			'name': self.name,
+			'condition_group': self.condition_group,
 		}
 
 	def to_big_dic(self):
@@ -328,7 +340,7 @@ class TreatmentGroup(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(400))
 
-	treatments = db.relationship('Treatment', lazy='dynamic');
+	treatments = db.relationship('Treatment', lazy='dynamic')
 
 
 class StudyTreatment(db.Model):

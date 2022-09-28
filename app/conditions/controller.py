@@ -79,6 +79,20 @@ def get_treatments(name):
 
 	return treatments
 
+def get_treatments_by_condition_group(condition_group):
+	treatments = db.session.query(Treatment, func.count(distinct(StudyTreatment.study)).label('no_studies'))\
+		.join(StudyTreatment, StudyTreatment.treatment == Treatment.id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(Analytics, Analytics.study == StudyTreatment.study)\
+		.join(Measure, Analytics.measure == Measure.id)\
+		.filter(Measure.type == measure_type.PRIMARY)\
+		.join(Condition, StudyCondition.condition == Condition.id)\
+		.filter(Condition.condition_group == condition_group)\
+		.group_by(Treatment.id)\
+		.order_by(desc('no_studies'))\
+		.all()
+
+	return treatments
 
 def get_analytics(name, request_args):
 	treatment_id = request_args.get('treatment', '', type=int)
