@@ -437,6 +437,7 @@ class Treatment(db.Model):
 	description = db.Column(db.String(5000))
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
+	no_prescriptions = db.Column(db.Integer)
 
 	studies = db.relationship('StudyTreatment', lazy='select', backref='treatments')
 	administrations = db.relationship('Administration', lazy='dynamic')
