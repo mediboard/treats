@@ -53,7 +53,7 @@ def get_treatment_demographics(name):
 def get_treatment_effects(name):
 	limit = int(request.args.get('limit'))
 	effects = treatments.get_effects(name, limit)
-	return {'effects': [{'name': name, 'effected': effected, 'at_risk': at_risk, 'no_studies': count} for name, effected, at_risk, count in effects]}
+	return {'effects': [{'name': name, 'effected': effected, 'at_risk': at_risk, 'no_studies': count, 'studies': studies} for name, effected, at_risk, count, studies in effects]}
 
 
 @bp.route('/<string:name>/conditions')
