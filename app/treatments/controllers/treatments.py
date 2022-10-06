@@ -5,9 +5,10 @@ from app.models import Baseline, Treatment, Administration, Study, Group,\
 from app.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased, lazyload
-from sqlalchemy import func, distinct, desc, or_, text, case
+from sqlalchemy import func, distinct, desc, or_, text, case, literal_column
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 
 
 ROWS_PER_PAGE=10
@@ -67,7 +68,7 @@ def get_effects(treatment_name, limit=0, mode='strict'):
 		study_query = db.session.query(StudyTreatment).join(treatment_query, StudyTreatment.treatment == treatment_query.c.id).subquery()
 		admin_query = db.session.query(EffectAdministration).join(treatment_query, EffectAdministration.treatment == treatment_query.c.id).subquery()
 		group_query = db.session.query(EffectGroup).join(admin_query, EffectGroup.id == admin_query.c.group).subquery()
-		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)))\
+		effects = db.session.query(func.lower(Effect.name), func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)), func.string_agg(Effect.study, aggregate_order_by(literal_column("','"), Effect.study)))\
 			.join(group_query, Effect.group == group_query.c.id)\
 			.join(study_query, Effect.study == study_query.c.study)\
 			.filter(Effect.no_effected > 0).group_by(func.lower(Effect.name)).all()
