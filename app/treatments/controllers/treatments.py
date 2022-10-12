@@ -1,11 +1,12 @@
 import asyncio
 from app.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
-	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup
+	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure
 from app.models import baseline_type, measure_type
 from app import db
-from sqlalchemy.orm import aliased, lazyload
+from sqlalchemy.orm import aliased, lazyload, contains_eager
 from sqlalchemy import func, distinct, desc, or_, text, case
+from app.treatments.controllers.statistics import pick_top_point, non_calculable, cohen_d
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -251,13 +252,133 @@ def get_placebo_analytics(measure_id, treatment_id):
 	return [x['analytic'] for x in analytic2treats.values()]
 
 
+def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_id = 1):
+	study_query = db.session.query(Study)\
+		.join(StudyTreatment, StudyTreatment.study == Study.id)\
+		.filter(StudyTreatment.treatment == treatment_id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(Condition, StudyCondition.condition == Condition.id)\
+		.group_by(Study.id)\
+		.having(func.count(distinct(Condition.condition_group)) == 1)\
+		.subquery()
+
+	# bunch_of_data = db.session.query(Measure, Group)\
+	# 	.join(Outcome, Outcome.measure == Measure.id)\
+	# 	.join(Group, Group.id == Outcome.group)\
+	# 	.join(study_query, study_query.c.id == Group.study)\
+	# 	.join(StudyCondition, StudyCondition.study == study_query.c.id)\
+	# 	.join(Condition, StudyCondition.condition == Condition.id)\
+	# 	.filter(Condition.condition_group == condition_group_id)\
+	# 	.options(contains_eager(Measure.outcomes))\
+	# 	.order_by(case([
+	# 		(Measure.type == measure_type.PRIMARY, 1),
+	# 		(Measure.type == measure_type.SECONDARY, 2)
+	# 	])).all()
+
+	bunch_of_data = db.session.query(Measure, Group)\
+		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == Measure.id)\
+		.join(MeasureGroup, MeasureGroup.id == MeasureGroupMeasure.measureGroup)\
+		.filter(MeasureGroup.id == measure_group_id)\
+		.join(Outcome, Outcome.measure == Measure.id)\
+		.join(Group, Group.id == Outcome.group)\
+		.join(study_query, study_query.c.id == Group.study)\
+		.join(StudyCondition, StudyCondition.study == study_query.c.id)\
+		.join(Condition, StudyCondition.condition == Condition.id)\
+		.filter(Condition.condition_group == condition_group_id)\
+		.options(contains_eager(Measure.outcomes))\
+		.order_by(case([
+			(Measure.type == measure_type.PRIMARY, 1),
+			(Measure.type == measure_type.SECONDARY, 2)
+		])).all()
+
+
+	# put all the measure outcomes into their groups
+	# filter out all groups that don't have the treatment or a placebo
+	id2Group = {}
+	id2Measure = {}
+	for measure, group in bunch_of_data:
+		if (group.id not in id2Group):
+			id2Group[group.id] = group.to_dict()
+
+		if (measure.id not in id2Measure):
+			id2Measure[measure.id] = measure
+
+
+	measures_outcomes = []
+	calculable_measures = [measure for measure in id2Measure.values() if str(measure.dispersion) not in non_calculable]
+	for measure in calculable_measures:
+		group2outcome = {}
+
+		for outcome in measure.outcomes:
+			if outcome.group not in group2outcome:
+				group2outcome[outcome.group] = { 
+					**id2Group[outcome.group],
+					'outcomes': []
+				}
+
+			group2outcome[outcome.group]['outcomes'].append(outcome)
+
+		measures_outcomes.append({
+			**measure.to_small_dict(),
+			'groups': [x for x in group2outcome.values()]
+		})
+
+	for measure in measures_outcomes:
+		for i in range(len(measure['groups'])):
+			for j in range(i, len(measure['groups'])):
+				group_a = measure['groups'][i]
+				group_b = measure['groups'][j]
+
+				group_a_is_treat = group_a['administrations'][0]['treatment'] == treatment_id
+				group_a_is_compare = group_a['administrations'][0]['treatment'] == 2182
+
+				group_b_is_treat = group_b['administrations'][0]['treatment'] == treatment_id
+				group_b_is_compare = group_b['administrations'][0]['treatment'] == 2182
+
+				if ((group_a_is_treat and group_b_is_treat) or (group_a_is_compare and group_b_is_compare)):
+					continue
+
+				treat_group = group_a if group_a_is_treat else group_b
+				compare_group = group_a if group_a_is_compare else group_b
+
+				if ('comparisons' not in treat_group):
+					treat_group['comparisons'] = []
+
+				outcome_a = treat_group['outcomes'][0]
+				outcome_b = compare_group['outcomes'][0]
+
+				if (len(treat_group['outcomes']) > 1 ):
+					outcome_a, outcome_b = pick_top_point(treat_group['outcomes'], compare_group['outcomes'], measure['dispersion'])
+
+				d = cohen_d(outcome_a, outcome_b, measure['dispersion'])
+				treat_group['comparisons'].append({
+					'title': group_b['title'],
+					'id': group_b['id'],
+					'cohen_d': d
+				})
+
+	for measure in measures_outcomes:
+		for group in measure['groups']:
+			group['outcomes'] = [x.to_dict() for x in group['outcomes']]
+
+	return measures_outcomes
+
+
 def get_placebo_measure_groups(treatment_id, condition_id):
+	study_query = db.session.query(Study)\
+		.join(StudyTreatment, StudyTreatment.study == Study.id)\
+		.filter(StudyTreatment.treatment == treatment_id)\
+		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.group_by(Study.id)\
+		.having(func.count(StudyCondition.id) == 1)\
+		.subquery()
+
+
 	measure_admins = db.session.query(Measure, Administration)\
 		.join(Outcome, Outcome.measure == Measure.id)\
 		.join(Group, Group.id == Outcome.group)\
-		.join(StudyTreatment, StudyTreatment.study == Group.study)\
-		.filter(StudyTreatment.treatment == treatment_id)\
-		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
+		.join(study_query, study_query.c.id == Group.study)\
+		.join(StudyCondition, StudyCondition.study == study_query.c.id)\
 		.filter(StudyCondition.condition == condition_id)\
 		.join(Administration, Administration.group == Group.id)\
 		.order_by(case([
