@@ -323,6 +323,7 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 			'groups': [x for x in group2outcome.values()]
 		})
 
+	comparisons = []
 	for measure in measures_outcomes:
 		for i in range(len(measure['groups'])):
 			for j in range(i, len(measure['groups'])):
@@ -341,9 +342,6 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 				treat_group = group_a if group_a_is_treat else group_b
 				compare_group = group_a if group_a_is_compare else group_b
 
-				if ('comparisons' not in treat_group):
-					treat_group['comparisons'] = []
-
 				outcome_a = treat_group['outcomes'][0]
 				outcome_b = compare_group['outcomes'][0]
 
@@ -351,17 +349,18 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 					outcome_a, outcome_b = pick_top_point(treat_group['outcomes'], compare_group['outcomes'], measure['dispersion'])
 
 				d = cohen_d(outcome_a, outcome_b, measure['dispersion'])
-				treat_group['comparisons'].append({
-					'title': group_b['title'],
-					'id': group_b['id'],
+
+				comparisons.append({
+					'compare_title': compare_group['title'],
+					'compare_outcome_id': outcome_b.id,
+					'treat_title': treat_group['title'],
+					'treat_outcome_id': outcome_a.id,
+					'measure_title': measure['title'],
+					'study': measure['study'],
 					'cohen_d': d
 				})
 
-	for measure in measures_outcomes:
-		for group in measure['groups']:
-			group['outcomes'] = [x.to_dict() for x in group['outcomes']]
-
-	return measures_outcomes
+	return comparisons 
 
 
 def get_placebo_measure_groups(treatment_id, condition_id):
