@@ -262,19 +262,6 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 		.having(func.count(distinct(Condition.condition_group)) == 1)\
 		.subquery()
 
-	# bunch_of_data = db.session.query(Measure, Group)\
-	# 	.join(Outcome, Outcome.measure == Measure.id)\
-	# 	.join(Group, Group.id == Outcome.group)\
-	# 	.join(study_query, study_query.c.id == Group.study)\
-	# 	.join(StudyCondition, StudyCondition.study == study_query.c.id)\
-	# 	.join(Condition, StudyCondition.condition == Condition.id)\
-	# 	.filter(Condition.condition_group == condition_group_id)\
-	# 	.options(contains_eager(Measure.outcomes))\
-	# 	.order_by(case([
-	# 		(Measure.type == measure_type.PRIMARY, 1),
-	# 		(Measure.type == measure_type.SECONDARY, 2)
-	# 	])).all()
-
 	bunch_of_data = db.session.query(Measure, Group)\
 		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == Measure.id)\
 		.join(MeasureGroup, MeasureGroup.id == MeasureGroupMeasure.measureGroup)\
@@ -290,7 +277,6 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 			(Measure.type == measure_type.PRIMARY, 1),
 			(Measure.type == measure_type.SECONDARY, 2)
 		])).all()
-
 
 	# put all the measure outcomes into their groups
 	# filter out all groups that don't have the treatment or a placebo
@@ -345,10 +331,12 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 				outcome_a = treat_group['outcomes'][0]
 				outcome_b = compare_group['outcomes'][0]
 
-				if (len(treat_group['outcomes']) > 1 ):
+				if (treat_group['outcomes'][0].title != 'NA'):
 					outcome_a, outcome_b = pick_top_point(treat_group['outcomes'], compare_group['outcomes'], measure['dispersion'])
 
 				d = cohen_d(outcome_a, outcome_b, measure['dispersion'])
+				if d == 0:
+					continue
 
 				comparisons.append({
 					'compare_title': compare_group['title'],

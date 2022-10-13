@@ -402,6 +402,7 @@ class Measure(db.Model):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
+			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
@@ -415,7 +416,6 @@ class Measure(db.Model):
 			'type': str(self.type),
 			'param': str(self.param),
 			'units': self.units,
-			'measureGroups': [x.group.to_dict() for x in self.measureGroups]
 		}
 
 

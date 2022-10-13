@@ -32,10 +32,20 @@ non_calculable = [
 
 def pick_top_point(outcomes_a, outcomes_b, dispersion_type):
 	# line them up based on title
-	outcomes_a.sort(key=lambda x: (x.title, x.group))
-	outcomes_b.sort(key=lambda x: (x.title, x.group))
+	title2Outcomes = {}
+	for outcome in outcomes_a:
+		if outcome.title not in title2Outcomes:
+			title2Outcomes[outcome.title] = []
 
-	return max([x for x in zip(outcomes_a, outcomes_b)], key=lambda x: cohen_d(x[0], x[1], dispersion_type))
+		title2Outcomes[outcome.title].append(outcome)
+
+	for outcome in outcomes_b:
+		if outcome.title not in title2Outcomes:
+			title2Outcomes[outcome.title] = []
+
+		title2Outcomes[outcome.title].append(outcome)
+
+	return max([x for x in title2Outcomes.values() if len(x) > 1], key=lambda x: cohen_d(x[0], x[1], dispersion_type))
 
 
 def cohen_d(outcome_a, outcome_b, dispersion_type):
