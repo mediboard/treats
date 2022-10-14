@@ -1,10 +1,12 @@
 import numpy as np
+import pandas as pd
 import pickle
 import psycopg2
 import requests
 import sys
 import time
 
+from sqlalchemy import create_engine
 from typing import List
 
 
@@ -14,7 +16,7 @@ def get_all_treatments():
         # TODO add these as env vars
         connection = psycopg2.connect(user="",
                                       password="",
-                                      host="df-treats-db.cs6hxh6ocizm.us-west-2.rds.amazonaws.com",
+                                      host="",
                                       port="5432",
                                       database="")
         cursor = connection.cursor()
@@ -136,15 +138,22 @@ if __name__ == '__main__':
             with open(f'local_drug_to_brand_names_{i}.pkl', 'rb') as f:
                 data = pickle.load(f)
                 treats_to_brand_names.update(data)
-        count = 0
+
+        brand_names_list = []
         for t in treats_to_brand_names:
+            treatment_id = t[0]
+            treatment_name = t[1]
             brand_names = treats_to_brand_names[t]
-            if len(brand_names) >= 1:
-                if t[1] in brand_names:
-                    if len(brand_names) > 1:
-                        count += 1
-                else:
-                    print(t)
-                    print(brand_names)
-                    count += 1
-        print(count)
+            for bn in brand_names:
+                if treatment_name == bn:
+                    continue
+                brand_names_list.append((treatment_id, bn))
+
+        df = pd.DataFrame(brand_names_list, columns=['treatment', 'brand_name'])
+
+        df = df.rename_axis('id').reset_index()
+
+        db = create_engine("")
+
+        df.to_sql('treatment_brand_names', db, index=False, if_exists='append')
+
