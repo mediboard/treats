@@ -48,6 +48,13 @@ def get_treatment_demographics(name):
 	return {'baselines': [{'sub_type': subtype.value, 'value':value} for subtype, value in baselines]}
 
 
+@bp.route('/<string:name>/demo_effects')
+@cross_origin(supports_credentials=True)
+def get_treatment_demo_effects(name):
+	effects = treatments.get_demo_effects(name)
+	return {'effects': [{'name': x[0], 'effected': x[1], 'at_risk': x[2], 'no_studies': x[3], 'studies': x[4]} for x in effects]}
+
+
 @bp.route('/<string:name>/effects')
 @cross_origin(supports_credentials=True)
 def get_treatment_effects(name):

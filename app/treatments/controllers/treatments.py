@@ -1,7 +1,7 @@
 import asyncio
 from app.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
-	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure
+	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure, EffectCluster
 from app.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased, lazyload, contains_eager
@@ -54,6 +54,25 @@ def get_treatment(treatment_name):
 		.first()
 
 	return treatment
+
+
+def get_demo_effects(treatment_name, limit=0, mode='strict'):
+	single_groups = db.session.query(EffectGroup)\
+		.join(EffectAdministration, EffectAdministration.group == EffectGroup.id)\
+		.subquery()
+		# .group_by(EffectGroup.id)\
+		# .having(func.count(EffectAdministration.id) == 1)\
+
+	return db.session.query(EffectCluster.name, func.sum(Effect.no_effected), func.sum(Effect.no_at_risk), func.count(distinct(Effect.study)), func.string_agg(Effect.study, aggregate_order_by(literal_column("','"), Effect.study)))\
+		.join(EffectCluster, Effect.cluster == EffectCluster.id)\
+		.join(single_groups, single_groups.c.id == Effect.group)\
+		.join(EffectAdministration, EffectAdministration.group == single_groups.c.id)\
+		.join(Treatment, Treatment.id == EffectAdministration.treatment)\
+		.filter(Treatment.name == treatment_name)\
+		.filter(Effect.no_effected > 1)\
+		.join(StudyTreatment, StudyTreatment.study == Effect.study)\
+		.group_by(EffectCluster.name)\
+		.all()
 
 
 def get_effects(treatment_name, limit=0, mode='strict'):
