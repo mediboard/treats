@@ -368,7 +368,7 @@ class MeasureGroup(db.Model):
 			'id': self.id,
 			'condition': self.condition,
 			'name': self.name,
-			'type': str(self.type)
+			'type': str(self.type),
 		}
 
 
@@ -394,7 +394,7 @@ class Measure(db.Model):
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
 
-	outcomes = db.relationship('Outcome', lazy='dynamic')
+	outcomes = db.relationship('Outcome')
 	analytics = db.relationship('Analytics', lazy='dynamic')
 	measureGroups = db.relationship('MeasureGroupMeasure', lazy='joined')
 
@@ -402,6 +402,7 @@ class Measure(db.Model):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
+			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
@@ -415,7 +416,6 @@ class Measure(db.Model):
 			'type': str(self.type),
 			'param': str(self.param),
 			'units': self.units,
-			'measureGroups': [x.group.to_dict() for x in self.measureGroups]
 		}
 
 
@@ -487,6 +487,13 @@ class Group(db.Model): # These are just the outcome groups for now
 
 	administrations = db.relationship('Administration', lazy='dynamic')
 	analytics = db.relationship('Comparison', lazy='dynamic')
+	outcomes = db.relationship('Outcome', lazy='joined')
+
+	def to_measure_dict(self):
+		return {
+			**self.to_dict(),
+			'outcomes': [x.to_dict() for x in self.outcomes],
+		}
 
 	def to_dict(self):
 		return {
@@ -494,7 +501,8 @@ class Group(db.Model): # These are just the outcome groups for now
 			'title': self.title,
 			'study_id': self.study_id,
 			'description': self.description,
-			'study': self.study
+			'study': self.study,
+			'administrations': [x.to_dict() for x in self.administrations]
 		}
 
 
@@ -536,6 +544,13 @@ class Administration(db.Model):
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 	description = db.Column(db.String(1500))
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'group': self.group,
+			'treatment': self.treatment,
+		}
 
 
 class Analytics(db.Model):
