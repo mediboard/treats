@@ -455,6 +455,15 @@ class Treatment(db.Model):
 		}
 
 
+class TreatmentBrandName(db.Model):
+
+	__tablename__ = 'treatment_brand_names'
+
+	id = db.Column(db.Integer, primary_key=True)
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+	brand_name = db.Column(db.String(400))
+
+
 class ConditionScore(db.Model):
 
 	__tablename__ = 'conditionscores'
