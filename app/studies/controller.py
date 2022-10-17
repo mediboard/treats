@@ -102,17 +102,6 @@ def get_baselines(study_id):
 	return baselines.all()
 
 
-def get_effects_by_group(group_id):
-	effect_groups = db.session.query(EffectGroup)\
-		.filter(EffectGroup.id == group_id)\
-		.options(
-			joinedload(EffectGroup.effects),
-			joinedload(EffectGroup.administrations).joinedload(EffectAdministration.treatments),
-			raiseload('*'))
-
-	return effect_groups.all()
-
-
 def get_effects(study_id):
 	effect_groups = db.session.query(EffectGroup)\
 		.filter(EffectGroup.study == study_id)\

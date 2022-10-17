@@ -97,9 +97,3 @@ def get_studies_by_ids():
 	studies = controller.get_studies_by_ids(study_ids.split(','))
 
 	return {'studies': [{**x[0].to_summary_dict(), 'mean':x[1], 'min': x[2], 'resultsSummary': calculate_results_summary(x[1], x[2]) } for x in studies]}
-
-@bp.route('/groups/<string:group_id>/effects')
-@cross_origin(supports_credentials=True)
-def effects_by_group(group_id):
-	effect_groups = controller.get_effects_by_group(group_id)
-	return {'effects': [effect.to_dict() for effect in effect_groups]}
