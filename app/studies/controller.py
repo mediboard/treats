@@ -2,7 +2,7 @@ from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration
 from sqlalchemy.orm import joinedload, raiseload
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 
 
 ROWS_PER_PAGE=10
@@ -25,16 +25,41 @@ def get_studies(args, page=1):
 	if (query):
 		processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
+	
+	min_age = args.get('min_age', None, type=int)
+	min_age_units = args.get('min_age_units', None, type=str)
+	max_age = args.get('max_age', None, type=int)
+	max_age_units = args.get('max_age_units', None, type=str)
 
-	conditions = args.get('conditions', None, type=str)
-	if (conditions):
+	if (min_age and min_age != -1 and min_age_units):
+		# Minimum bound
+		min_age_years = min_age if min_age_units == "YEARS" else min_age / 12.0
+		min_age_months = min_age if min_age_units == "MONTHS" else min_age * 12.0
+
+		studies = studies.filter(
+			or_(and_(func.lower(Study.min_age_units).match("YEARS"), Study.min_age >= min_age_years),
+				and_(func.lower(Study.min_age_units).match("MONTHS"),Study.min_age >= min_age_months)))
+
+	if (max_age and max_age != -1 and max_age_units):
+		# Maximum bound
+		max_age_years = max_age if max_age_units == "YEARS" else max_age / 12.0
+		max_age_months = max_age if max_age_units == "MONTHS" else max_age * 12.0
+
+		studies = studies.filter(
+			or_(and_(func.lower(Study.max_age_units).match("YEARS"), Study.max_age <= max_age_years, Study.max_age != -1),
+				and_(func.lower(Study.max_age_units).match("MONTHS"),Study.max_age <= max_age_months, Study.max_age != -1)))
+
+	condition = args.get('condition', None, type=str)
+	if (condition):
 		studies = studies.join(StudyCondition, StudyCondition.study == Study.id)\
-			.filter(StudyCondition.condition.in_(conditions.split(',')))
+			.join(Condition, Condition.id == StudyCondition.condition)\
+			.filter(func.lower(Condition.name).match(condition) | func.lower(Condition.name).like(f'%{condition}%'))
 
-	treatments = args.get('treatments', None, type=str)
-	if (treatments):
+	treatment = args.get('treatment', None, type=str)
+	if (treatment):
 		studies = studies.join(StudyTreatment, StudyTreatment.study == Study.id)\
-			.filter(StudyTreatment.treatment.in_(treatments.split(',')))
+			.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+			.filter(func.lower(Treatment.name).match(treatment) | func.lower(Treatment.name).like(f'%{treatment}%'))
 
 	gender = args.get('gender', None, type=str)
 	if (gender):
@@ -85,7 +110,7 @@ def get_effects(study_id):
 			joinedload(EffectGroup.administrations).joinedload(EffectAdministration.treatments),
 			raiseload('*'))
 
-	return effect_groups.all();
+	return effect_groups.all()
 
 
 def get_measures(study_id):
