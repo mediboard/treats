@@ -8,6 +8,7 @@ from sqlalchemy.orm import aliased, lazyload, contains_eager
 from sqlalchemy import func, distinct, desc, or_, text, case, literal_column
 from app.treatments.controllers.statistics import pick_top_point, non_calculable, cohen_d
 import sqlalchemy as sa
+from app.studies.controller import get_studies
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 
@@ -36,12 +37,17 @@ def get_top_treatments():
 	return results
 
 
-def get_demographics(treatment_name):
-	treatment_query = db.session.query(Treatment).filter_by(name = treatment_name).subquery()
-	admin_query = db.session.query(Administration).join(treatment_query, Administration.treatment == treatment_query.c.id).subquery()
-	group_query = db.session.query(Group).join(admin_query, Group.id == admin_query.c.group).subquery()
-	study_query = db.session.query(Study).join(group_query, Study.id == group_query.c.study).subquery()
-	baselines = db.session.query(Baseline.sub_type, func.sum(Baseline.value)).join(study_query, Baseline.study == study_query.c.id)\
+def get_demographics(treatment_name, args=None):
+
+	baselines = db.session.query(Baseline.sub_type, func.sum(Baseline.value))\
+
+	if (args):
+		study_subquery = get_studies(args, subquery=True)
+		baselines = baselines.join(study_query, study_query.c.id == Baseline.study)
+
+	baselines = baselines.join(StudyTreatment, StudyTreatment.study == Baseline.study)\
+		.join(Treatment, Treatment.id == StudyTreatment.treatment)\
+		.filter(Treatment.name == treatment_name)\
 		.filter(Baseline.type != baseline_type.OTHER)\
 		.group_by(Baseline.sub_type).all()
 
@@ -56,7 +62,7 @@ def get_treatment(treatment_name):
 	return treatment
 
 
-def get_effects(treatment_name, limit=0):
+def get_effects(treatment_name, limit=0, args=None):
 	single_groups = db.session.query(EffectGroup)\
 		.join(EffectAdministration, EffectAdministration.group == EffectGroup.id)\
 		.join(Treatment, Treatment.id == EffectAdministration.treatment)\
@@ -67,8 +73,12 @@ def get_effects(treatment_name, limit=0):
 		.join(EffectCluster, Effect.cluster == EffectCluster.id)\
 		.join(single_groups, single_groups.c.id == Effect.group)\
 		.filter(Effect.no_effected > 0)\
-		.group_by(EffectCluster.name)\
-		.all()
+
+	if (args):
+		filtering_studies = get_studies(args, subquery=True)
+		effects = effects.join(filtering_studies, filtering_studies.c.id == Effect.study)
+
+	effects = effects.group_by(EffectCluster.name).all()
 
 	if limit != 0:
 		# Sort based on frequency when side effect exists in > 1 studies to handle false positives
