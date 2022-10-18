@@ -1,6 +1,6 @@
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 
@@ -132,6 +132,7 @@ def get_measures(study_id):
 
 def get_groups(study_id):
 	groups = db.session.query(Group)\
+		.options(joinedload(Group.administrations).joinedload(Administration.treatments))\
 		.filter_by(study = study_id)
 
 	return groups.all()
