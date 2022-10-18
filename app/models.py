@@ -511,7 +511,10 @@ class Group(db.Model): # These are just the outcome groups for now
 			'study_id': self.study_id,
 			'description': self.description,
 			'study': self.study,
-			'administrations': [x.treatments.to_dict() for x in self.administrations]
+			'administrations': [{
+				'admin_id': x.id,
+				**x.treatments.to_dict()
+				} for x in self.administrations]
 		}
 
 
@@ -560,6 +563,10 @@ class Administration(db.Model):
 			'group': self.group,
 			'treatment': self.treatment,
 		}
+
+	def from_dict(self, data):
+		for field, value in data.items():
+			setattr(self, field, value)
 
 
 class Analytics(db.Model):

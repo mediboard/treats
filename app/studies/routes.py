@@ -24,6 +24,23 @@ def search():
 	return {'studies': [x.to_core_dict() for x in studies]}
 
 
+@bp.route('/administrations/<int:admin_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
+def delete_admin(admin_id):
+	controller.remove_admin(admin_id)
+
+	return {'status': 'success'}
+
+
+@bp.route('/administrations', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def add_admin():
+	data = request.get_json()
+	new_admin = controller.add_admin(data)
+
+	return {'admin': new_admin.to_dict()}
+
+
 @bp.route('/<string:study_id>')
 @cross_origin(supports_credentials=True)
 def get_study(study_id):

@@ -123,6 +123,25 @@ def get_effects(study_id):
 	return effect_groups.all()
 
 
+def add_admin(admin_data):
+	new_admin = Administration()
+	new_admin.from_dict(admin_data)
+
+	db.session.add(new_admin)
+	db.session.commit()
+
+	return new_admin 
+
+
+def remove_admin(admin_id):
+	to_delete = db.session.query(Administration)\
+		.filter(Administration.id == admin_id)\
+		.first()
+
+	db.session.delete(to_delete)
+	db.session.commit()
+
+
 def get_measures(study_id):
 	measures = db.session.query(Measure)\
 		.filter_by(study = study_id)
