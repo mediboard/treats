@@ -124,8 +124,11 @@ def get_effects(study_id):
 
 
 def add_admin(admin_data):
+	new_id = db.session.query(func.max(Administration.id)).first()[0] + 1
+
 	new_admin = Administration()
-	new_admin.from_dict(admin_data)
+	new_admin.from_dict({**admin_data, 'id': new_id})
+
 
 	db.session.add(new_admin)
 	db.session.commit()
