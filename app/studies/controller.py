@@ -1,6 +1,6 @@
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 
@@ -17,7 +17,7 @@ def search(query, limit=10):
 	return studies
 
 
-def get_studies(args, page=1):
+def get_studies(args, page=1, subquery=False):
 	# Need to filter by search string, condition(s), treatment(s), size, kids
 	studies = db.session.query(Study)
 
@@ -55,6 +55,13 @@ def get_studies(args, page=1):
 			.join(Condition, Condition.id == StudyCondition.condition)\
 			.filter(func.lower(Condition.name).match(condition) | func.lower(Condition.name).like(f'%{condition}%'))
 
+	condition_group = args.get('condition_group', None, type=str)
+	if (condition_group):
+		studies = studies.join(StudyCondition, StudyCondition.study == Study.id)\
+			.join(Condition, Condition.id == StudyCondition.condition)\
+			.join(ConditionGroup, ConditionGroup.id == Condition.condition_group)\
+			.filter(func.lower(ConditionGroup.name).match(condition_group) | func.lower(ConditionGroup.name).like(f'%{condition_group}%'))
+
 	treatment = args.get('treatment', None, type=str)
 	if (treatment):
 		studies = studies.join(StudyTreatment, StudyTreatment.study == Study.id)\
@@ -70,6 +77,9 @@ def get_studies(args, page=1):
 		joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
 		raiseload('*')
 	)
+
+	if (subquery):
+		return studies.subquery()
 
 	studies = studies.paginate(page, ROWS_PER_PAGE)
 
