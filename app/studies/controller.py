@@ -17,6 +17,14 @@ def search(query, limit=10):
 	return studies
 
 
+def get_banner_studies():
+	banner_studies = db.session.query(Study)\
+		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334']))\
+		.all()
+
+	return banner_studies
+
+
 def get_studies(args, page=1, subquery=False):
 	# Need to filter by search string, condition(s), treatment(s), size, kids
 	studies = db.session.query(Study)
