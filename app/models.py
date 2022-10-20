@@ -440,7 +440,7 @@ class Treatment(db.Model):
 	no_prescriptions = db.Column(db.Integer)
 
 	studies = db.relationship('StudyTreatment', lazy='select', backref='treatments')
-	administrations = db.relationship('Administration', lazy='dynamic')
+	administrations = db.relationship('Administration', lazy='dynamic', backref='treatments')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
 	effect_administrations = db.relationship('EffectAdministration', lazy='select', backref='treatments')
 
@@ -494,9 +494,9 @@ class Group(db.Model): # These are just the outcome groups for now
 	description = db.Column(db.String(1500))
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
-	administrations = db.relationship('Administration', lazy='dynamic')
+	administrations = db.relationship('Administration')
 	analytics = db.relationship('Comparison', lazy='dynamic')
-	outcomes = db.relationship('Outcome', lazy='joined')
+	outcomes = db.relationship('Outcome')
 
 	def to_measure_dict(self):
 		return {
@@ -511,7 +511,10 @@ class Group(db.Model): # These are just the outcome groups for now
 			'study_id': self.study_id,
 			'description': self.description,
 			'study': self.study,
-			'administrations': [x.to_dict() for x in self.administrations]
+			'administrations': [{
+				'admin_id': x.id,
+				**x.treatments.to_dict()
+				} for x in self.administrations]
 		}
 
 
@@ -560,6 +563,10 @@ class Administration(db.Model):
 			'group': self.group,
 			'treatment': self.treatment,
 		}
+
+	def from_dict(self, data):
+		for field, value in data.items():
+			setattr(self, field, value)
 
 
 class Analytics(db.Model):

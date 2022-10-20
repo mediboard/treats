@@ -1,6 +1,6 @@
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 
@@ -15,6 +15,14 @@ def search(query, limit=10):
 		.all()
 
 	return studies
+
+
+def get_banner_studies():
+	banner_studies = db.session.query(Study)\
+		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334', 'NCT03262038']))\
+		.all()
+
+	return banner_studies
 
 
 def get_studies(args, page=1, subquery=False):
@@ -123,6 +131,28 @@ def get_effects(study_id):
 	return effect_groups.all()
 
 
+def add_admin(admin_data):
+	new_id = db.session.query(func.max(Administration.id)).first()[0] + 1
+
+	new_admin = Administration()
+	new_admin.from_dict({**admin_data, 'id': new_id})
+
+
+	db.session.add(new_admin)
+	db.session.commit()
+
+	return new_admin 
+
+
+def remove_admin(admin_id):
+	to_delete = db.session.query(Administration)\
+		.filter(Administration.id == admin_id)\
+		.first()
+
+	db.session.delete(to_delete)
+	db.session.commit()
+
+
 def get_measures(study_id):
 	measures = db.session.query(Measure)\
 		.filter_by(study = study_id)
@@ -132,6 +162,7 @@ def get_measures(study_id):
 
 def get_groups(study_id):
 	groups = db.session.query(Group)\
+		.options(joinedload(Group.administrations).joinedload(Administration.treatments))\
 		.filter_by(study = study_id)
 
 	return groups.all()
