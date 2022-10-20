@@ -19,7 +19,7 @@ def search(query, limit=10):
 
 def get_banner_studies():
 	banner_studies = db.session.query(Study)\
-		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334']))\
+		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334', 'NCT03262038']))\
 		.all()
 
 	return banner_studies
