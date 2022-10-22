@@ -87,7 +87,6 @@ def get_studies(args, page=1, subquery=False):
 		raiseload('*')
 	)
 
-
 	if (subquery):
 		return studies.subquery()
 

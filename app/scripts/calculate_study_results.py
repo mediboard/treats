@@ -47,13 +47,10 @@ if __name__ == '__main__':
 			'results_summary': calculate_results_summary(avg, mn)
 		})
 
-	print(values[0:10])
-	print(len(values))
+	update_stmt = update(studies_table)\
+		.where(studies_table.c.id == bindparam('study_id'))\
+		.values(results_summary=bindparam('results_summary'))
 
-	# update_stmt = update(studies_table)\
-	# 	.where(studies_table.c.id == bindparam('study_id'))\
-	# 	.values(results_summary=bindparam('results_summary'))
-
-	# conn.execute(update_stmt, values)
+	conn.execute(update_stmt, values)
 
 
