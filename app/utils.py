@@ -6,7 +6,7 @@ def removekey_oop(d, key):
 
 def calculate_results_summary(mean, mn):
     if (mn and mn <= .15):
-        return 10 if mean <= .15 else 7.8 
+        return 10 if mean <= .15 else 8 
 
     return 0
 
