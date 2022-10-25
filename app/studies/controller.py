@@ -19,7 +19,7 @@ def search(query, limit=10):
 
 def get_banner_studies():
 	banner_studies = db.session.query(Study)\
-		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334', 'NCT03262038']))\
+		.filter(Study.id.in_(['NCT01014533', 'NCT00392041', 'NCT00386334', 'NCT03262038', 'NCT02944656']))\
 		.all()
 
 	return banner_studies
@@ -83,6 +83,7 @@ def get_studies(args, page=1, subquery=False):
 	studies = studies.options(
 		joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 		joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
+		joinedload(Study.effects),
 		raiseload('*')
 	)
 

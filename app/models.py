@@ -204,14 +204,16 @@ class Study(db.Model):
 	max_age = db.Column(db.Integer)
 	max_age_units = db.Column(db.Enum(age_units))
 	gender = db.Column(db.Enum(gender))
+	results_summary = db.Column(db.Integer)
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
 	conditions = db.relationship('StudyCondition', lazy='select')
 	treatments = db.relationship('StudyTreatment', lazy='select')
 	measures = db.relationship('Measure', lazy='dynamic')
-	analytics = db.relationship('Analytics', lazy='dynamic')
+	analytics = db.relationship('Analytics')
 	baselines = db.relationship('Baseline', lazy='dynamic')
 	groups = db.relationship('Group', lazy='dynamic')
+	effects = db.relationship('Effect')
 
 	def to_dict(self):
 		return {
@@ -240,10 +242,14 @@ class Study(db.Model):
 		}
 
 	def to_summary_dict(self):
+		effects = {x['name']: x for x in [x.to_min_dict() for x in sorted(self.effects, key=lambda x: x.no_effected)]}
+		effects = list(effects.values())
+
 		return {
 			**self.to_core_dict(),
 			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments]
+			'treatments': [x.treatments.to_dict() for x in self.treatments],
+			'effects': effects
 		}
 
 	def to_core_dict(self):
@@ -254,6 +260,7 @@ class Study(db.Model):
 			'official_title': self.official_title,
 			'description': self.description,
 			'responsible_party': self.responsible_party,
+			'results_summary': self.results_summary,
 			'sponsor': self.sponsor,
 			'type': str(self.type),
 			'purpose': str(self.purpose),
@@ -713,6 +720,13 @@ class Effect(db.Model):
 	no_effected = db.Column(db.Float)
 	no_at_risk = db.Column(db.Integer)
 	collection_threshold = db.Column(db.Float)
+
+	def to_min_dict(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+			'no_effected': self.no_effected,
+		}
 
 	def to_dict(self):
 		return {
