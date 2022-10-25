@@ -290,6 +290,19 @@ class Insight(db.Model):
 	type = db.Column(db.Enum(insight_Type))
 	body = db.Column(db.String(1000))
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'study': self.study,
+			'measure': self.measure,
+			'type': str(self.type),
+			'body': body
+		}
+
+	def from_dict(self, data):
+		for field, value in data.items():
+			setattr(self, field, value)
+
 
 class Criteria(db.Model):
 

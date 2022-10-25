@@ -49,6 +49,24 @@ def add_admin():
 	return {'admin': new_admin.to_dict()}
 
 
+@bp.route('/insights', methods=['POST', 'GET'])
+@cross_origin(supports_credentials=True)
+def get_add_admin():
+	if (request.method == 'POST'):
+		data = request.get_json()
+		new_insight = controller.add_insight(data)
+
+		return {'insight': new_insight.to_dict()}
+
+	study_id = request.args.get('study_id')
+	measure_id = request.args.get('measure_id')
+	type = request.args.get('type')
+
+	insights = controller.get_insights(study_id, measure_id, type)
+
+	return {'insights': [x.to_dict() for x in insights]}
+
+
 @bp.route('/<string:study_id>')
 @cross_origin(supports_credentials=True)
 def get_study(study_id):

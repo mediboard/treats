@@ -1,5 +1,5 @@
 from app import db
-from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, \
+from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, Insight, \
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
@@ -138,7 +138,6 @@ def add_admin(admin_data):
 	new_admin = Administration()
 	new_admin.from_dict({**admin_data, 'id': new_id})
 
-
 	db.session.add(new_admin)
 	db.session.commit()
 
@@ -148,6 +147,38 @@ def add_admin(admin_data):
 def remove_admin(admin_id):
 	to_delete = db.session.query(Administration)\
 		.filter(Administration.id == admin_id)\
+		.first()
+
+	db.session.delete(to_delete)
+	db.session.commit()
+
+
+def add_insight(insight_data):
+	new_insight = Insight()
+	new_insight.from_dict(insight_data)
+
+	db.session.add(new_insight)
+	db.session.commit();
+
+	return new_insight;
+
+
+def get_insights(study_id, measure_id, type):
+	insights = db.session.query(Insight)\
+		.filter(Insight.study == study_id)
+
+	if (measure_id):
+		insights = insights.filter(Insight.measure == measure_id)
+
+	if (type):
+		insights = insights.filter(Insight.type == type)
+
+	return insights.all()
+
+
+def remove_insight(insight_id):
+	to_delete = db.session.query(Insight)\
+		.filter(Insight.id == insight_id)\
 		.first()
 
 	db.session.delete(to_delete)
