@@ -185,6 +185,13 @@ class age_units(enum.Enum):
 	NA='NA'
 
 
+class insight_Type(enum.Enum):
+	STUDY='study',
+	BASELINE='baseline',
+	MEASURE='measure',
+	ADVERSE_EFFECT='adverse_effect'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
@@ -271,6 +278,17 @@ class Study(db.Model):
 			'min_age_units': str(self.max_age_units),
 			'gender': str(self.gender),
 		}
+
+
+class Insight(db.Model):
+
+	__tablename__ = 'insights'
+
+	id = db.Column(db.Integer, primary_key=True, , autoincrement=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
+	type = db.Column(db.Enum(insight_Type))
+	body = db.Column(db.String(1000))
 
 
 class Criteria(db.Model):
@@ -402,7 +420,7 @@ class Measure(db.Model):
 	units = db.Column(db.String(40))
 
 	outcomes = db.relationship('Outcome')
-	analytics = db.relationship('Analytics', lazy='dynamic')
+	analytics = db.relationship('Analytics')
 	measureGroups = db.relationship('MeasureGroupMeasure', lazy='joined')
 
 	def to_dict(self):
@@ -410,7 +428,6 @@ class Measure(db.Model):
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
 			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
-			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
 	def to_small_dict(self):
@@ -503,7 +520,7 @@ class Group(db.Model): # These are just the outcome groups for now
 
 	administrations = db.relationship('Administration')
 	analytics = db.relationship('Comparison', lazy='dynamic')
-	outcomes = db.relationship('Outcome')
+	outcomes = db.relationship('Outcome', backref='groups')
 
 	def to_measure_dict(self):
 		return {

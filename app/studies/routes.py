@@ -56,7 +56,7 @@ def get_study(study_id):
 	if (not studies):
 		return create_notfound_error('Study with id {0} not found'.format(study_id))
 		
-	return {'studies': [study.to_core_dict() for study in studies]}
+	return {'studies': [study.to_summary_dict() for study in studies]}
 
 
 @bp.route('/<string:study_id>/summary')
@@ -83,7 +83,10 @@ def get_effects(study_id):
 @bp.route('/<string:study_id>/measures')
 @cross_origin(supports_credentials=True)
 def get_measures(study_id):
-	measures = controller.get_measures(study_id)
+	limit = request.args.get('limit') or None
+	primary = request.args.get('primary') or False
+
+	measures = controller.get_measures(study_id, limit, primary)
 	return {'measures': [measure.to_dict() for measure in measures]}
 
 

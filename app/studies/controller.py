@@ -1,6 +1,6 @@
 from app import db
-from app.models import Study, Criteria, Measure, Analytics, Baseline,\
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration
+from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, \
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 
@@ -154,9 +154,16 @@ def remove_admin(admin_id):
 	db.session.commit()
 
 
-def get_measures(study_id):
+def get_measures(study_id, limit=None, primary=False):
 	measures = db.session.query(Measure)\
-		.filter_by(study = study_id)
+		.options(joinedload(Measure.outcomes))\
+		.filter(Measure.study == study_id)
+
+	if (primary):
+		measures = measures.filter(Measure.type == measure_type.PRIMARY)
+
+	if (limit):
+		measures = measures.limit(limit)
 
 	return measures.all()
 
