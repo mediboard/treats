@@ -284,7 +284,7 @@ class Insight(db.Model):
 
 	__tablename__ = 'insights'
 
-	id = db.Column(db.Integer, primary_key=True, , autoincrement=True)
+	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
 	type = db.Column(db.Enum(insight_Type))
