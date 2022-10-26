@@ -49,9 +49,17 @@ def add_admin():
 	return {'admin': new_admin.to_dict()}
 
 
+@bp.route('/insights/<int:insight_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
+def remove_insight(insight_id):
+	controller.remove_insight(insight_id)
+
+	return {'status': 'success'}
+
+
 @bp.route('/<string:study_id>/insights', methods=['POST', 'GET'])
 @cross_origin(supports_credentials=True)
-def get_add_admin(study_id):
+def get_add_insight(study_id):
 	if (request.method == 'POST'):
 		data = request.get_json()
 		new_insight = controller.add_insight(data)
