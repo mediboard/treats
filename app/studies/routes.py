@@ -49,6 +49,31 @@ def add_admin():
 	return {'admin': new_admin.to_dict()}
 
 
+@bp.route('/insights/<int:insight_id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
+def remove_insight(insight_id):
+	controller.remove_insight(insight_id)
+
+	return {'status': 'success'}
+
+
+@bp.route('/<string:study_id>/insights', methods=['POST', 'GET'])
+@cross_origin(supports_credentials=True)
+def get_add_insight(study_id):
+	if (request.method == 'POST'):
+		data = request.get_json()
+		new_insight = controller.add_insight(data)
+
+		return {'insight': new_insight.to_dict()}
+
+	measure_id = request.args.get('measure_id')
+	type = request.args.get('type')
+
+	insights = controller.get_insights(study_id, measure_id, type)
+
+	return {'insights': [x.to_dict() for x in insights]}
+
+
 @bp.route('/<string:study_id>')
 @cross_origin(supports_credentials=True)
 def get_study(study_id):
@@ -56,7 +81,7 @@ def get_study(study_id):
 	if (not studies):
 		return create_notfound_error('Study with id {0} not found'.format(study_id))
 		
-	return {'studies': [study.to_core_dict() for study in studies]}
+	return {'studies': [study.to_summary_dict() for study in studies]}
 
 
 @bp.route('/<string:study_id>/summary')
@@ -92,7 +117,10 @@ def get_effects(study_id):
 @bp.route('/<string:study_id>/measures')
 @cross_origin(supports_credentials=True)
 def get_measures(study_id):
-	measures = controller.get_measures(study_id)
+	limit = request.args.get('limit') or None
+	primary = request.args.get('primary') or False
+
+	measures = controller.get_measures(study_id, limit, primary)
 	return {'measures': [measure.to_dict() for measure in measures]}
 
 
