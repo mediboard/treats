@@ -296,7 +296,7 @@ class Insight(db.Model):
 			'study': self.study,
 			'measure': self.measure,
 			'type': str(self.type),
-			'body': body
+			'body': self.body
 		}
 
 	def from_dict(self, data):
