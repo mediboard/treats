@@ -1,9 +1,11 @@
+from sympy import re
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline,\
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 
+from werkzeug.datastructures import ImmutableMultiDict
 
 ROWS_PER_PAGE=10
 
@@ -30,6 +32,7 @@ def get_studies(args, page=1, subquery=False):
 	studies = db.session.query(Study)
 
 	query = args.get('q')
+	print(type(args))
 	if (query):
 		processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
@@ -100,6 +103,22 @@ def get_study(study_id):
 		.filter_by(id = study_id)\
 
 	return studies.all()
+
+def get_related_studies(study_id):
+	studies = get_study(study_id)
+	if not studies and len(studies) != 1: 
+		return None
+	study = [study.to_summary_dict() for study in studies][0]
+
+	# TODO(davon): We can make a better scoring later. 
+	name_lambda = lambda s : s['name']
+	conditions = list(map(name_lambda, study['conditions']))
+	treatments = list(map(name_lambda, study['treatments']))
+
+	return get_studies(ImmutableMultiDict({
+		'conditions': conditions[0],
+		'treatments': conditions[0]
+	}))
 
 
 def get_study_summary(study_id):
