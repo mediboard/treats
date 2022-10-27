@@ -60,11 +60,11 @@ def get_studies(args, page=1, subquery=False):
 			or_(and_(func.lower(Study.max_age_units).match("YEARS"), Study.max_age <= max_age_years, Study.max_age != -1),
 				and_(func.lower(Study.max_age_units).match("MONTHS"),Study.max_age <= max_age_months, Study.max_age != -1)))
 
-	condition = args.get('condition', None, type=str)
-	if (condition):
+	conditions = args.get('conditions', None, type=str)
+	if (conditions):
 		studies = studies.join(StudyCondition, StudyCondition.study == Study.id)\
 			.join(Condition, Condition.id == StudyCondition.condition)\
-			.filter(func.lower(Condition.name).match(condition) | func.lower(Condition.name).like(f'%{condition}%'))
+			.filter(func.lower(Condition.name).in_(conditions.split(',')))
 
 	condition_group = args.get('condition_group', None, type=str)
 	if (condition_group):
@@ -73,11 +73,11 @@ def get_studies(args, page=1, subquery=False):
 			.join(ConditionGroup, ConditionGroup.id == Condition.condition_group)\
 			.filter(func.lower(ConditionGroup.name).match(condition_group) | func.lower(ConditionGroup.name).like(f'%{condition_group}%'))
 
-	treatment = args.get('treatment', None, type=str)
-	if (treatment):
+	treatments = args.get('treatments', None, type=str)
+	if (treatments):
 		studies = studies.join(StudyTreatment, StudyTreatment.study == Study.id)\
 			.join(Treatment, Treatment.id == StudyTreatment.treatment)\
-			.filter(func.lower(Treatment.name).match(treatment) | func.lower(Treatment.name).like(f'%{treatment}%'))
+			.filter(func.lower(Treatment.name).in_(treatments.split(',')))
 
 	gender = args.get('gender', None, type=str)
 	if (gender):
