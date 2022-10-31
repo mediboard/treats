@@ -1,4 +1,3 @@
-from sympy import re
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, Insight, \
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
@@ -32,7 +31,6 @@ def get_studies(args, page=1, subquery=False):
 	studies = db.session.query(Study)
 
 	query = args.get('q')
-	print(type(args))
 	if (query):
 		processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
@@ -64,7 +62,7 @@ def get_studies(args, page=1, subquery=False):
 	if (conditions):
 		studies = studies.join(StudyCondition, StudyCondition.study == Study.id)\
 			.join(Condition, Condition.id == StudyCondition.condition)\
-			.filter(func.lower(Condition.name).in_(conditions.split(',')))
+			.filter(func.lower(Condition.name).in_(conditions.lower().split(',')))
 
 	condition_group = args.get('condition_group', None, type=str)
 	if (condition_group):
@@ -77,7 +75,7 @@ def get_studies(args, page=1, subquery=False):
 	if (treatments):
 		studies = studies.join(StudyTreatment, StudyTreatment.study == Study.id)\
 			.join(Treatment, Treatment.id == StudyTreatment.treatment)\
-			.filter(func.lower(Treatment.name).in_(treatments.split(',')))
+			.filter(func.lower(Treatment.name).in_(treatments.lower().split(',')))
 
 	gender = args.get('gender', None, type=str)
 	if (gender):
@@ -89,6 +87,7 @@ def get_studies(args, page=1, subquery=False):
 		joinedload(Study.effects),
 		raiseload('*')
 	)
+	print(str(studies))
 
 	if (subquery):
 		return studies.subquery()
@@ -104,7 +103,7 @@ def get_study(study_id):
 
 	return studies.all()
 
-def get_related_studies(study_id):
+def get_related_studies(study_id, page):
 	studies = get_study(study_id)
 	if not studies and len(studies) != 1: 
 		return None
@@ -115,10 +114,12 @@ def get_related_studies(study_id):
 	conditions = list(map(name_lambda, study['conditions']))
 	treatments = list(map(name_lambda, study['treatments']))
 
+	print(conditions)
+
 	return get_studies(ImmutableMultiDict({
 		'conditions': conditions[0],
-		'treatments': conditions[0]
-	}))
+		'treatments': treatments[0]
+	}), page)
 
 
 def get_study_summary(study_id):

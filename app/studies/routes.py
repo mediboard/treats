@@ -94,7 +94,7 @@ def get_summary(study_id):
 @bp.route('/<string:study_id>/related')
 @cross_origin(supports_credentials=True)
 def get_related_studies(study_id):
-	studies, next_page, total = controller.get_related_studies(study_id)
+	studies, next_page, total = controller.get_related_studies(study_id, int(request.args.get('page')))
 	if not studies:
 		return create_notfound_error('Study with id {0} not found'.format(study_id))
 	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
