@@ -87,7 +87,6 @@ def get_studies(args, page=1, subquery=False):
 		joinedload(Study.effects),
 		raiseload('*')
 	)
-	print(str(studies))
 
 	if (subquery):
 		return studies.subquery()
@@ -113,8 +112,6 @@ def get_related_studies(study_id, page):
 	name_lambda = lambda s : s['name']
 	conditions = list(map(name_lambda, study['conditions']))
 	treatments = list(map(name_lambda, study['treatments']))
-
-	print(conditions)
 
 	return get_studies(ImmutableMultiDict({
 		'conditions': conditions[0],
