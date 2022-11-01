@@ -4,7 +4,7 @@ from app.models import Baseline, Treatment, Administration, Study, Group,\
 	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure, EffectCluster
 from app.models import baseline_type, measure_type
 from app import db
-from sqlalchemy.orm import aliased, lazyload, contains_eager
+from sqlalchemy.orm import aliased, lazyload, contains_eager, joinedload, raiseload
 from sqlalchemy import func, distinct, desc, or_, text, case, literal_column
 from app.treatments.controllers.statistics import pick_top_point, non_calculable, cohen_d
 import sqlalchemy as sa
@@ -271,7 +271,10 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 		.join(StudyCondition, StudyCondition.study == study_query.c.id)\
 		.join(Condition, StudyCondition.condition == Condition.id)\
 		.filter(Condition.condition_group == condition_group_id)\
-		.options(contains_eager(Measure.outcomes))\
+		.options(
+			contains_eager(Measure.outcomes),
+			joinedload(Group.administrations).joinedload(Administration.treatments),
+			raiseload('*'))\
 		.order_by(case([
 			(Measure.type == measure_type.PRIMARY, 1),
 			(Measure.type == measure_type.SECONDARY, 2)
@@ -315,11 +318,11 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 				group_a = measure['groups'][i]
 				group_b = measure['groups'][j]
 
-				group_a_is_treat = group_a['administrations'][0]['treatment'] == treatment_id
-				group_a_is_compare = group_a['administrations'][0]['treatment'] == 2182
+				group_a_is_treat = group_a['administrations'][0]['id'] == treatment_id
+				group_a_is_compare = group_a['administrations'][0]['id'] == 2182
 
-				group_b_is_treat = group_b['administrations'][0]['treatment'] == treatment_id
-				group_b_is_compare = group_b['administrations'][0]['treatment'] == 2182
+				group_b_is_treat = group_b['administrations'][0]['id'] == treatment_id
+				group_b_is_compare = group_b['administrations'][0]['id'] == 2182
 
 				if ((group_a_is_treat and group_b_is_treat) or (group_a_is_compare and group_b_is_compare)):
 					continue
