@@ -1,6 +1,7 @@
 from app import db
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
-	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study, MeasureGroup, MeasureGroupMeasure
+	Treatment, StudyTreatment, Analytics, Measure, measure_type, Study, MeasureGroup, MeasureGroupMeasure, \
+	ConditionGroup
 from sqlalchemy.orm import joinedload, raiseload, contains_eager
 from sqlalchemy import func, desc, distinct, asc
 from app.utils import calculate_results_summary
@@ -80,16 +81,34 @@ def get_treatments_by_condition_group(condition_group):
 	treatments = db.session.query(Treatment, func.count(distinct(StudyTreatment.study)).label('no_studies'))\
 		.join(StudyTreatment, StudyTreatment.treatment == Treatment.id)\
 		.join(StudyCondition, StudyCondition.study == StudyTreatment.study)\
-		.join(Analytics, Analytics.study == StudyTreatment.study)\
-		.join(Measure, Analytics.measure == Measure.id)\
-		.filter(Measure.type == measure_type.PRIMARY)\
 		.join(Condition, StudyCondition.condition == Condition.id)\
-		.filter(Condition.condition_group == condition_group)\
+		.join(ConditionGroup, ConditionGroup.id == Condition.condition_group)\
+		.filter(ConditionGroup.name == condition_group)\
 		.group_by(Treatment.id)\
 		.order_by(desc('no_studies'))\
 		.all()
 
 	return treatments
+
+def get_condition_group(condition_group_title):
+	condition_group = db.session.query(ConditionGroup)\
+		.join(Condition, Condition.condition_group == ConditionGroup.id)\
+		.filter(ConditionGroup.name == condition_group_title)\
+		.options(contains_eager(ConditionGroup.conditions))\
+		.all()
+
+	return condition_group[0]
+
+
+def get_no_group_studies(condition_group_title):
+	no_studies = db.session.query(func.count(distinct(StudyCondition.id)).label('no_studies'))\
+		.join(Condition, Condition.id == StudyCondition.condition)\
+		.join(ConditionGroup, ConditionGroup.id == Condition.condition_group)\
+		.filter(ConditionGroup.name == condition_group_title)\
+		.all()
+
+	return no_studies[0]
+
 
 def get_analytics(name, request_args):
 	treatment_id = request_args.get('treatment', '', type=int)

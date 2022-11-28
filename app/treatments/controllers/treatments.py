@@ -1,7 +1,7 @@
 import asyncio
 from app.models import Baseline, Treatment, Administration, Study, Group,\
 	Effect, EffectGroup, EffectAdministration, Condition, StudyCondition, Comparison, Analytics,\
-	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure, EffectCluster
+	ConditionScore, StudyTreatment, Measure, Outcome, MeasureGroup, MeasureGroupMeasure, EffectCluster, ConditionGroup
 from app.models import baseline_type, measure_type
 from app import db
 from sqlalchemy.orm import aliased, lazyload, contains_eager, joinedload, raiseload
@@ -124,6 +124,28 @@ def get_conditions(treatment_name):
 		.all()
 
 	return conditions
+
+
+def get_no_analytics(treatment_name, condition_group=None):
+	# Get the number of statistically significant datapoints
+	base_query = db.session.query(func.count(distinct(Analytics.id)).label('no_analytics'))\
+		.join(Comparison, Comparison.analytic == Analytics.id)\
+		.join(Group, Comparison.group == Group.id)\
+		.join(Administration, Administration.group == Group.id)\
+		.join(Treatment, Administration.treatment == Treatment.id)
+
+	if (condition_group):
+		base_query = base_query\
+			.join(StudyCondition, StudyCondition.study == Group.study)\
+			.join(Condition, Condition.id == StudyCondition.condition)\
+			.join(ConditionGroup, ConditionGroup.id == Condition.condition_group)\
+			.filter(ConditionGroup.name == condition_group)
+
+	no_analytics = base_query\
+		.filter(Treatment.name == treatment_name)\
+		.all()
+
+	return no_analytics[0]
 
 
 def get_no_studies(treatment_name):

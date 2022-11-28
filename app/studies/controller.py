@@ -84,7 +84,6 @@ def get_studies(args, page=1, subquery=False):
 	studies = studies.options(
 		joinedload(Study.conditions).joinedload(StudyCondition.conditions),
 		joinedload(Study.treatments).joinedload(StudyTreatment.treatments),
-		joinedload(Study.effects),
 		raiseload('*')
 	)
 

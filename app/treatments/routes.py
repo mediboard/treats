@@ -53,7 +53,7 @@ def get_treatment_demographics(name):
 def get_treatment_effects(name):
 	limit = int(request.args.get('limit'))
 	effects = treatments.get_effects(name, limit, request.args)
-	return {'effects': [{'name': name, 'effected': effected, 'at_risk': at_risk, 'no_studies': count, 'studies': studies} for name, effected, at_risk, count, studies in effects]}
+	return {'effects': [{'name': name, 'no_effected': effected, 'at_risk': at_risk, 'no_studies': count, 'studies': studies} for name, effected, at_risk, count, studies in effects]}
 
 
 @bp.route('/<string:name>/conditions')
@@ -84,6 +84,19 @@ def get_treatment_analytics(name):
 	analytics = treatments.get_analytics(name, request.args)
 
 	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
+
+
+@bp.route('/<string:name>/no_analytics')
+@cross_origin(supports_credentials=True)
+def get_no_analytics(name):
+	condition_group = None
+
+	if request.args.get('condition_group'):
+		condition_group = str(request.args['condition_group'])
+
+	no_analytics = treatments.get_no_analytics(name, condition_group)
+
+	return {**no_analytics}
 
 
 @bp.route('/<string:name>/studyanalytics')

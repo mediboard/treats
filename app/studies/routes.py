@@ -29,7 +29,7 @@ def search():
 def get_banner_studies():
 	banner_studies = controller.get_banner_studies()
 
-	return {'studies': [study.to_summary_dict() for study in banner_studies]}
+	return {'studies': [study.to_summary_effects_dict() for study in banner_studies]}
 
 
 @bp.route('/administrations/<int:admin_id>', methods=['DELETE'])

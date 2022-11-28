@@ -74,10 +74,26 @@ def get_treatments(condition_name):
 
 	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}
 
-@bp.route('/group/<int:condition_group>/treatments')
+
+@bp.route('/group/<string:condition_group>')
+@cross_origin(supports_credentials=True)
+def get_condition_group(condition_group):
+	group = controller.get_condition_group(condition_group)
+
+	return {'group': group.to_dict()}
+
+
+@bp.route('/group/<string:condition_group>/no_studies')
+@cross_origin(supports_credentials=True)
+def get_no_group_studies(condition_group):
+	no_studies = controller.get_no_group_studies(condition_group)
+
+	return {**no_studies}
+
+
+@bp.route('/group/<string:condition_group>/treatments')
 @cross_origin(supports_credentials=True)
 def get_treatments_by_group(condition_group):
-	print(condition_group)
 	treatments = controller.get_treatments_by_condition_group(condition_group)
 
 	return {'treatments': [{**x.to_dict(), 'no_studies':y} for x,y in treatments]}

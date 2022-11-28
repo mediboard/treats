@@ -249,6 +249,13 @@ class Study(db.Model):
 		}
 
 	def to_summary_dict(self):
+		return {
+			**self.to_core_dict(),
+			'conditions': [x.conditions.to_dict() for x in self.conditions],
+			'treatments': [x.treatments.to_dict() for x in self.treatments],
+		}
+
+	def to_summary_effects_dict(self):
 		effects = {x['name']: x for x in [x.to_min_dict() for x in sorted(self.effects, key=lambda x: x.no_effected)]}
 		effects = list(effects.values())
 
@@ -321,7 +328,14 @@ class ConditionGroup(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(400))
 
-	conditions = db.relationship('Condition', lazy='dynamic')
+	conditions = db.relationship('Condition')
+
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+			'conditions': [condition.to_dict() for condition in self.conditions]
+		}
 
 
 class Condition(db.Model):
@@ -756,6 +770,7 @@ class Effect(db.Model):
 			'id': self.id,
 			'name': self.name,
 			'no_effected': self.no_effected,
+			'no_at_risk': self.no_at_risk
 		}
 
 	def to_dict(self):
