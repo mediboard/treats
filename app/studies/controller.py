@@ -148,6 +148,11 @@ def get_effects(study_id):
 	return effect_groups.all()
 
 
+# def get_analytics(study_id):
+# 	analytics = db.session.query(Analytics)\
+
+
+
 def add_admin(admin_data):
 	new_id = db.session.query(func.max(Administration.id)).first()[0] + 1
 
@@ -203,7 +208,7 @@ def remove_insight(insight_id):
 
 def get_measures(study_id, limit=None, primary=False):
 	measures = db.session.query(Measure)\
-		.options(joinedload(Measure.outcomes))\
+		.options(joinedload(Measure.outcomes), joinedload(Measure.analytics).joinedload(Analytics.groups))\
 		.filter(Measure.study == study_id)
 
 	if (primary):

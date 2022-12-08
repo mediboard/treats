@@ -152,6 +152,13 @@ def get_treatments(study_id):
 	return {'treatments': [treat.to_dict() for treat in treatments]}
 
 
+# @bp.route('/<string:study_id>/analytics')
+# @cross_origin(supports_credentials=True)
+# def get_analytics(study_id):
+# 	analytics = controller.get_analytics(study_id)
+	
+
+
 @bp.route('/get_studies_by_ids')
 @cross_origin(supports_credentials=True)
 def get_studies_by_ids():

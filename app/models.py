@@ -455,6 +455,7 @@ class Measure(db.Model):
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
 			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
+			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
 	def to_small_dict(self):
@@ -639,7 +640,7 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison', lazy='dynamic')
+	groups = db.relationship('Comparison')
 
 	def to_core_dict(self):
 		return {
