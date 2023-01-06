@@ -470,7 +470,10 @@ class MeasureGroup(db.Model):
 	name = db.Column(db.String(256))
 	type = db.Column(db.Enum(measure_group_type))
 
-	measures = db.relationship('MeasureGroupMeasure', lazy='joined', backref='group')
+	measures = db.relationship(
+		'Measure',
+		secondary='measure_group_measures',
+		back_populates='groups')
 
 	def to_dict(self):
 		return {
@@ -505,13 +508,16 @@ class Measure(db.Model):
 
 	outcomes = db.relationship('Outcome')
 	analytics = db.relationship('Analytics')
-	measureGroups = db.relationship('MeasureGroupMeasure', lazy='joined')
+	groups = db.relationship(
+		'MeasureGroup',
+		secondary='measure_group_measures',
+		back_populates='measures')
 
 	def to_dict(self):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
-			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
+			'groups': [x.to_dict() for x in self.groups],
 			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
@@ -608,7 +614,10 @@ class Group(db.Model): # These are just the outcome groups for now
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	administrations = db.relationship('Administration')
-	analytics = db.relationship('Comparison', lazy='dynamic')
+	analytics = db.relationship(
+		'Analytics', 
+		secondary='comparison',
+		back_populates='groups')
 	outcomes = db.relationship('Outcome', backref='groups')
 
 	def to_measure_dict(self):
@@ -701,7 +710,10 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison')
+	groups = db.relationship(
+		'Group',
+		secondary='comparison',
+		back_populates='analytics')
 
 	def to_core_dict(self):
 		return {
