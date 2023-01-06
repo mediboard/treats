@@ -1,34 +1,34 @@
 import scipy.stats as stats
 import math
 
-from app.models import dispersion_param 
+from app.models import measure_dispersion_param 
 
 
 continous_dispersions = [
-	'dispersion_param.STANDARD_ERROR',
-	'dispersion_param.STANDARD_DEVIATION']
+	'measure_dispersion_param.STANDARD_ERROR',
+	'measure_dispersion_param.STANDARD_DEVIATION']
 
 confidence_intervals = [
-	'dispersion_param.CONFIDENCE_INTERVAL_95',
-	'dispersion_param.CONFIDENCE_INTERVAL_90',
-	'dispersion_param.CONFIDENCE_INTERVAL_80',
-	'dispersion_param.CONFIDENCE_INTERVAL_97',
-	'dispersion_param.CONFIDENCE_INTERVAL_99',
-	'dispersion_param.CONFIDENCE_INTERVAL_60',
-	'dispersion_param.CONFIDENCE_INTERVAL_96',
-	'dispersion_param.CONFIDENCE_INTERVAL_98',
-	'dispersion_param.CONFIDENCE_INTERVAL_70',
-	'dispersion_param.CONFIDENCE_INTERVAL_85',
-	'dispersion_param.CONFIDENCE_INTERVAL_75',
-	'dispersion_param.CONFIDENCE_INTERVAL_94',
-	'dispersion_param.CONFIDENCE_INTERVAL_100']
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_95',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_90',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_80',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_97',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_99',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_60',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_96',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_98',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_70',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_85',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_75',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_94',
+	'measure_dispersion_param.CONFIDENCE_INTERVAL_100']
 
-iqr = ['dispersion_param.INTER_QUARTILE_RANGE']
+iqr = ['measure_dispersion_param.INTER_QUARTILE_RANGE']
 
 non_calculable = [
-	'dispersion_param.FULL_RANGE',
-	'dispersion_param.GEOMETRIC_COEFFICIENT_OF_VARIATION',
-	'dispersion_param.NA']
+	'measure_dispersion_param.FULL_RANGE',
+	'measure_dispersion_param.GEOMETRIC_COEFFICIENT_OF_VARIATION',
+	'measure_dispersion_param.NA']
 
 def pick_top_point(outcomes_a, outcomes_b, dispersion_type):
 	# line them up based on title
@@ -68,7 +68,7 @@ def cohen_d(outcome_a, outcome_b, dispersion_type):
 
 def get_sd(outcome, dispersion_type):
 
-	if (dispersion_type == 'dispersion_param.STANDARD_ERROR'):
+	if (dispersion_type == 'measure_dispersion_param.STANDARD_ERROR'):
 		return math.sqrt(outcome.no_participants) * float(outcome.dispersion)
 
 	if (dispersion_type in confidence_intervals):
@@ -82,35 +82,35 @@ def get_sd(outcome, dispersion_type):
 
 def get_pval(outcome_a, outcome_b, dispersion_type):
 	continous_dispersions = [
-		'dispersion_param.STANDARD_ERROR',
-		'dispersion_param.STANDARD_DEVIATION']
+		'measure_dispersion_param.STANDARD_ERROR',
+		'measure_dispersion_param.STANDARD_DEVIATION']
 
 	confidence_intervals = [
-		'dispersion_param.CONFIDENCE_INTERVAL_95',
-		'dispersion_param.CONFIDENCE_INTERVAL_90',
-		'dispersion_param.CONFIDENCE_INTERVAL_80',
-		'dispersion_param.CONFIDENCE_INTERVAL_97',
-		'dispersion_param.CONFIDENCE_INTERVAL_99',
-		'dispersion_param.CONFIDENCE_INTERVAL_60',
-		'dispersion_param.CONFIDENCE_INTERVAL_96',
-		'dispersion_param.CONFIDENCE_INTERVAL_98',
-		'dispersion_param.CONFIDENCE_INTERVAL_70',
-		'dispersion_param.CONFIDENCE_INTERVAL_85',
-		'dispersion_param.CONFIDENCE_INTERVAL_75',
-		'dispersion_param.CONFIDENCE_INTERVAL_94',
-		'dispersion_param.CONFIDENCE_INTERVAL_100']
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_95',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_90',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_80',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_97',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_99',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_60',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_96',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_98',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_70',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_85',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_75',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_94',
+		'measure_dispersion_param.CONFIDENCE_INTERVAL_100']
 
-	iqr = ['dispersion_param.INTER_QUARTILE_RANGE']
+	iqr = ['measure_dispersion_param.INTER_QUARTILE_RANGE']
 
 	non_calculable = [
-		'dispersion_param.FULL_RANGE',
-		'dispersion_param.GEOMETRIC_COEFFICIENT_OF_VARIATION',
-		'dispersion_param.NA']
+		'measure_dispersion_param.FULL_RANGE',
+		'measure_dispersion_param.GEOMETRIC_COEFFICIENT_OF_VARIATION',
+		'measure_dispersion_param.NA']
 
 	sd_a = outcome_a.dispersion
 	sd_b = outcome_b.dispersion
 
-	if (dispersion_type == dispersion_param.STANDARD_ERROR):
+	if (dispersion_type == measure_dispersion_param.STANDARD_ERROR):
 		sd_a = math.sqrt(outcome_a.no_participants) * float(outcome_a.dispersion)
 		sd_b = math.sqrt(outcome_b.no_participants) * float(outcome_b.dispersion)
 
