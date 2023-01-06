@@ -71,6 +71,19 @@ class resonsible_party_type(enum.Enum):
 	SPONSER_INVESTIGATOR= 'Sponsor-Investigator'
 
 
+class baseline_param(enum.Enum):
+	MEAN='Mean'
+	NUMBER='Number'
+	MEDIAN='Median'
+	COUNT_OF_PARTICIPANTS='Count of Participants'
+	LEAST_SQUARES_MEAN='Least Squares Mean'
+	GEOMETRIC_MEAN='Geometric Mean'
+	COUNT_OF_UNITS='Count of Units'
+	GEOMETRIC_LEAST_SQUARES_MEAN='Geometric Least Squares Mean'
+	LOG_MEAN='Log Mean'
+	NA='NA'
+
+
 class measure_param(enum.Enum):
 	MEAN='Mean'
 	NUMBER='Number'
@@ -153,7 +166,7 @@ class non_inferiority_type(enum.Enum):
 	NA='NA'
 
 
-class dispersion_param(enum.Enum):
+class baseline_dispersion_param(enum.Enum):
 	STANDARD_DEVIATION='Standard Deviation'
 	CONFIDENCE_INTERVAL_95='95% Confidence Interval'
 	STANDARD_ERROR='Standard Error'
@@ -175,7 +188,39 @@ class dispersion_param(enum.Enum):
 	NA='NA'
 
 
-class age_units(enum.Enum):
+class measure_dispersion_param(enum.Enum):
+	STANDARD_DEVIATION='Standard Deviation'
+	CONFIDENCE_INTERVAL_95='95% Confidence Interval'
+	STANDARD_ERROR='Standard Error'
+	FULL_RANGE='Full Range'
+	GEOMETRIC_COEFFICIENT_OF_VARIATION= 'Geometric Coefficient of Variation'
+	INTER_QUARTILE_RANGE='Inter-Quartile Range'
+	CONFIDENCE_INTERVAL_90='90% Confidence Interval'
+	CONFIDENCE_INTERVAL_80='80% Confidence Interval'
+	CONFIDENCE_INTERVAL_97='97% Confidence Interval'
+	CONFIDENCE_INTERVAL_99='99% Confidence Interval'
+	CONFIDENCE_INTERVAL_60='60% Confidence Interval'
+	CONFIDENCE_INTERVAL_96='96% Confidence Interval'
+	CONFIDENCE_INTERVAL_98='98% Confidence Interval'
+	CONFIDENCE_INTERVAL_70='70% Confidence Interval'
+	CONFIDENCE_INTERVAL_85='85% Confidence Interval'
+	CONFIDENCE_INTERVAL_75='75% Confidence Interval'
+	CONFIDENCE_INTERVAL_94='94% Confidence Interval'
+	CONFIDENCE_INTERVAL_100='100% Confidence Interval'
+	NA='NA'
+
+
+class max_age_units(enum.Enum):
+	YEARS='years',
+	MONTHS='Months',
+	WEEKS='Weeks',
+	DAYS='Days',
+	HOURS='Hours',
+	MINUTES='Minutes',
+	NA='NA'
+
+
+class min_age_units(enum.Enum):
 	YEARS='years',
 	MONTHS='Months',
 	WEEKS='Weeks',
@@ -207,16 +252,25 @@ class Study(db.Model):
 	purpose = db.Column(db.Enum(purpose))
 	intervention_type = db.Column(db.Enum(intervention_type))
 	min_age = db.Column(db.Integer)
-	min_age_units = db.Column(db.Enum(age_units))
+	min_age_units = db.Column(db.Enum(min_age_units))
 	max_age = db.Column(db.Integer)
-	max_age_units = db.Column(db.Enum(age_units))
+	max_age_units = db.Column(db.Enum(max_age_units))
 	gender = db.Column(db.Enum(gender))
 	results_summary = db.Column(db.Integer)
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='select')
-	treatments = db.relationship('StudyTreatment', lazy='select')
-	measures = db.relationship('Measure', lazy='dynamic')
+
+	conditions = db.relationship(
+		'Condition',
+		secondary="study_conditions",
+		back_populates="studies")
+
+	treatments = db.relationship(
+		'Treatment',
+		secondary="study_treatments",
+		back_populates="studies")
+
+	measures = db.relationship('Measure')
 	analytics = db.relationship('Analytics')
 	baselines = db.relationship('Baseline', lazy='dynamic')
 	groups = db.relationship('Group', lazy='dynamic')
@@ -244,15 +298,15 @@ class Study(db.Model):
 			'analytics': [x.to_dict() for x in self.analytics],
 			'baselines': [x.to_dict() for x in self.baselines],
 			'groups': [x.to_dict() for x in self.groups],
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments]
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments]
 		}
 
 	def to_summary_dict(self):
 		return {
 			**self.to_core_dict(),
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments],
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments],
 		}
 
 	def to_summary_effects_dict(self):
@@ -261,8 +315,8 @@ class Study(db.Model):
 
 		return {
 			**self.to_core_dict(),
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments],
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments],
 			'effects': effects
 		}
 
@@ -346,7 +400,10 @@ class Condition(db.Model):
 	condition_group = db.Column(db.Integer, db.ForeignKey('condition_groups.id'))
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
+	studies = db.relationship(
+		'Study',
+		secondary='study_conditions',
+		back_populates='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -413,7 +470,10 @@ class MeasureGroup(db.Model):
 	name = db.Column(db.String(256))
 	type = db.Column(db.Enum(measure_group_type))
 
-	measures = db.relationship('MeasureGroupMeasure', lazy='joined', backref='group')
+	measures = db.relationship(
+		'Measure',
+		secondary='measure_group_measures',
+		back_populates='measureGroups')
 
 	def to_dict(self):
 		return {
@@ -441,20 +501,23 @@ class Measure(db.Model):
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
-	dispersion = db.Column(db.Enum(dispersion_param))
+	dispersion = db.Column(db.Enum(measure_dispersion_param))
 	type = db.Column(db.Enum(measure_type))
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
 
 	outcomes = db.relationship('Outcome')
 	analytics = db.relationship('Analytics')
-	measureGroups = db.relationship('MeasureGroupMeasure', lazy='joined')
+	measureGroups = db.relationship(
+		'MeasureGroup',
+		secondary='measure_group_measures',
+		back_populates='measures', lazy='joined')
 
 	def to_dict(self):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
-			'measureGroups': [x.group.to_dict() for x in self.measureGroups],
+			'measureGroups': [x.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
@@ -491,7 +554,11 @@ class Treatment(db.Model):
 	no_studies = db.Column(db.Integer)
 	no_prescriptions = db.Column(db.Integer)
 
-	studies = db.relationship('StudyTreatment', lazy='select', backref='treatments')
+	studies = db.relationship(
+		'Study',
+		secondary='study_treatments',
+		back_populates='treatments')
+
 	administrations = db.relationship('Administration', lazy='dynamic', backref='treatments')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
 	effect_administrations = db.relationship('EffectAdministration', lazy='select', backref='treatments')
@@ -547,7 +614,10 @@ class Group(db.Model): # These are just the outcome groups for now
 	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	administrations = db.relationship('Administration')
-	analytics = db.relationship('Comparison', lazy='dynamic')
+	analytics = db.relationship(
+		'Analytics', 
+		secondary='comparison',
+		back_populates='groups')
 	outcomes = db.relationship('Outcome', backref='groups')
 
 	def to_measure_dict(self):
@@ -640,7 +710,10 @@ class Analytics(db.Model):
 	ci_lower = db.Column(db.Float)
 	ci_upper = db.Column(db.Float)
 
-	groups = db.relationship('Comparison')
+	groups = db.relationship(
+		'Group',
+		secondary='comparison',
+		back_populates='analytics')
 
 	def to_core_dict(self):
 		return {
@@ -703,11 +776,12 @@ class Baseline(db.Model):
 	__tablename__ = 'baselines'
 
 	id = db.Column(db.Integer, primary_key=True)
+	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 	base = db.Column(db.String(100))
 	clss = db.Column(db.String(100))
 	category = db.Column(db.String(100))
-	param_type = db.Column(db.Enum(measure_param))
-	dispersion = db.Column(db.Enum(dispersion_param))
+	param_type = db.Column(db.Enum(baseline_param))
+	dispersion = db.Column(db.Enum(baseline_dispersion_param))
 	unit = db.Column(db.String(40))
 	value = db.Column(db.Float)
 	spread = db.Column(db.Float)
@@ -715,7 +789,6 @@ class Baseline(db.Model):
 	lower = db.Column(db.Float)
 	type = db.Column(db.Enum(baseline_type))
 	sub_type = db.Column(db.Enum(baseline_subtype))
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
 
 	def is_demographic(self):
 		return (self.type != baseline_type.OTHER)
