@@ -175,7 +175,17 @@ class dispersion_param(enum.Enum):
 	NA='NA'
 
 
-class age_units(enum.Enum):
+class max_age_units(enum.Enum):
+	YEARS='years',
+	MONTHS='Months',
+	WEEKS='Weeks',
+	DAYS='Days',
+	HOURS='Hours',
+	MINUTES='Minutes',
+	NA='NA'
+
+
+class min_age_units(enum.Enum):
 	YEARS='years',
 	MONTHS='Months',
 	WEEKS='Weeks',
@@ -207,16 +217,25 @@ class Study(db.Model):
 	purpose = db.Column(db.Enum(purpose))
 	intervention_type = db.Column(db.Enum(intervention_type))
 	min_age = db.Column(db.Integer)
-	min_age_units = db.Column(db.Enum(age_units))
+	min_age_units = db.Column(db.Enum(min_age_units))
 	max_age = db.Column(db.Integer)
-	max_age_units = db.Column(db.Enum(age_units))
+	max_age_units = db.Column(db.Enum(max_age_units))
 	gender = db.Column(db.Enum(gender))
 	results_summary = db.Column(db.Integer)
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
-	conditions = db.relationship('StudyCondition', lazy='select')
-	treatments = db.relationship('StudyTreatment', lazy='select')
-	measures = db.relationship('Measure', lazy='dynamic')
+
+	conditions = db.relationship(
+		'Condition',
+		secondary="study_conditions",
+		back_populates="studies")
+
+	treatments = db.relationship(
+		'Treatment',
+		secondary="study_treatments",
+		back_populates="studies")
+
+	measures = db.relationship('Measure')
 	analytics = db.relationship('Analytics')
 	baselines = db.relationship('Baseline', lazy='dynamic')
 	groups = db.relationship('Group', lazy='dynamic')
@@ -244,15 +263,15 @@ class Study(db.Model):
 			'analytics': [x.to_dict() for x in self.analytics],
 			'baselines': [x.to_dict() for x in self.baselines],
 			'groups': [x.to_dict() for x in self.groups],
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments]
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments]
 		}
 
 	def to_summary_dict(self):
 		return {
 			**self.to_core_dict(),
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments],
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments],
 		}
 
 	def to_summary_effects_dict(self):
@@ -261,8 +280,8 @@ class Study(db.Model):
 
 		return {
 			**self.to_core_dict(),
-			'conditions': [x.conditions.to_dict() for x in self.conditions],
-			'treatments': [x.treatments.to_dict() for x in self.treatments],
+			'conditions': [x.to_dict() for x in self.conditions],
+			'treatments': [x.to_dict() for x in self.treatments],
 			'effects': effects
 		}
 
@@ -346,7 +365,10 @@ class Condition(db.Model):
 	condition_group = db.Column(db.Integer, db.ForeignKey('condition_groups.id'))
 	name = db.Column(db.String(150), index=True, unique=True)
 
-	studies = db.relationship('StudyCondition', lazy='joined', backref='conditions')
+	studies = db.relationship(
+		'Study',
+		secondary='study_conditions',
+		back_populates='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	@hybrid_property
@@ -491,7 +513,11 @@ class Treatment(db.Model):
 	no_studies = db.Column(db.Integer)
 	no_prescriptions = db.Column(db.Integer)
 
-	studies = db.relationship('StudyTreatment', lazy='select', backref='treatments')
+	studies = db.relationship(
+		'Study',
+		secondary='study_treatments',
+		back_populates='treatments')
+
 	administrations = db.relationship('Administration', lazy='dynamic', backref='treatments')
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
 	effect_administrations = db.relationship('EffectAdministration', lazy='select', backref='treatments')
