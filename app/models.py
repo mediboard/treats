@@ -473,7 +473,7 @@ class MeasureGroup(db.Model):
 	measures = db.relationship(
 		'Measure',
 		secondary='measure_group_measures',
-		back_populates='groups')
+		back_populates='measureGroups')
 
 	def to_dict(self):
 		return {
@@ -508,16 +508,16 @@ class Measure(db.Model):
 
 	outcomes = db.relationship('Outcome')
 	analytics = db.relationship('Analytics')
-	groups = db.relationship(
+	measureGroups = db.relationship(
 		'MeasureGroup',
 		secondary='measure_group_measures',
-		back_populates='measures')
+		back_populates='measures', lazy='joined')
 
 	def to_dict(self):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
-			'groups': [x.to_dict() for x in self.groups],
+			'measureGroups': [x.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
 		}
 
