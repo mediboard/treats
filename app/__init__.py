@@ -1,7 +1,9 @@
+import graphene
 from flask import Flask 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_graphql import GraphQLView
 
 
 db = SQLAlchemy()
@@ -11,8 +13,20 @@ cors = CORS()
 def create_app(config_file=None):
 	app = Flask(__name__, instance_relative_config=True)
 	app.config.from_pyfile(config_file)
-	initialize_extensions(app)
+
+
+	from app.schema import Query
+	schema = graphene.Schema(query=Query)
+	app.add_url_rule(
+		'/graphql-api',
+		view_func=GraphQLView.as_view(
+				'graphql',
+				schema=schema,
+				graphiql=True))
+
 	register_blueprints(app)
+	initialize_extensions(app)
+	
 	return app
 
 
