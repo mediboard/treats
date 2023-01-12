@@ -18,13 +18,29 @@ ROWS_PER_PAGE=10
 def search_treatments(query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	results = db.session.query(Treatment)\
-		.filter(Treatment.no_studies > 0)\
 		.filter(func.lower(Treatment.name).match(processedQuery) | func.lower(Treatment.name).like(f'%{processedQuery}%'))\
 		.order_by(desc(Treatment.no_studies))\
 		.limit(limit)\
 		.all()
 
 	return results
+
+
+def search_measures(treatment_name, condition_id, query, limit=5):
+	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+
+	results = db.session.query(Measure)\
+		.join(Study, Study.id == Measure.study)\
+		.join(StudyCondition, StudyCondition.study == Study.id)\
+		.join(Group, Group.study == Study.id)\
+		.join(Administration, Administration.group == Group.id)\
+		.join(Treatment, Treatment.id == Administration.treatment)\
+		.filter(StudyCondition.condition == condition_id)\
+		.filter(Treatment.name == treatment_name)\
+		.filter(func.lower(Measure.title).match(processedQuery) | func.lower(Measure.title).like(f'%{processedQuery}%'))\
+		.limit(limit)
+
+	return results.all();
 
 
 def get_top_treatments():
@@ -35,6 +51,18 @@ def get_top_treatments():
 		.all()
 
 	return results
+
+
+def create_treatment(treatment_data):
+	new_id = db.session.query(func.max(Treatment.id)).first()[0] + 1
+
+	new_treatment = Treatment()
+	new_treatment.from_dict({'id': new_id, **treatment_data})
+
+	db.session.add(new_treatment)
+	db.session.commit()
+
+	return new_treatment
 
 
 def get_demographics(treatment_name, args=None):
@@ -271,6 +299,101 @@ def get_placebo_analytics(measure_id, treatment_id):
 		del analytic2treats[analytic_id]
 
 	return [x['analytic'] for x in analytic2treats.values()]
+
+
+def get_measures_data(treatment_id, measure_ids):
+	bunch_of_data = db.session.query(Measure, Group)\
+		.filter(Measure.id.in_(measure_ids))\
+		.join(Outcome, Outcome.measure == Measure.id)\
+		.join(Group, Group.id == Outcome.group)\
+		.options(
+			contains_eager(Measure.outcomes),
+			joinedload(Group.administrations).joinedload(Administration.treatments),
+			raiseload('*'))\
+		.order_by(case([
+			(Measure.type == measure_type.PRIMARY, 1),
+			(Measure.type == measure_type.SECONDARY, 2)
+		])).all()
+
+	# put all the measure outcomes into their groups
+	# filter out all groups that don't have the treatment or a placebo
+	id2Group = {}
+	id2Measure = {}
+	for measure, group in bunch_of_data:
+		if (group.id not in id2Group):
+			id2Group[group.id] = group.to_dict()
+
+		if (measure.id not in id2Measure):
+			id2Measure[measure.id] = measure
+
+
+	measures_outcomes = []
+	calculable_measures = [measure for measure in id2Measure.values() if str(measure.dispersion) not in non_calculable]
+	for measure in calculable_measures:
+		group2outcome = {}
+
+		for outcome in measure.outcomes:
+			if outcome.group not in group2outcome:
+				group2outcome[outcome.group] = { 
+					**id2Group[outcome.group],
+					'outcomes': []
+				}
+
+			group2outcome[outcome.group]['outcomes'].append(outcome)
+
+		measures_outcomes.append({
+			**measure.to_small_dict(),
+			'groups': [x for x in group2outcome.values()]
+		})
+
+	comparisons = []
+	for measure in measures_outcomes:
+		for i in range(len(measure['groups'])):
+			for j in range(i, len(measure['groups'])):
+				group_a = measure['groups'][i]
+				group_b = measure['groups'][j]
+
+				group_a_is_treat = group_a['administrations'][0]['id'] == treatment_id
+				group_a_is_compare = group_a['administrations'][0]['id'] == 2182
+
+				group_b_is_treat = group_b['administrations'][0]['id'] == treatment_id
+				group_b_is_compare = group_b['administrations'][0]['id'] == 2182
+
+				if ((group_a_is_treat and group_b_is_treat) or (group_a_is_compare and group_b_is_compare)):
+					continue
+
+				treat_group = group_a if group_a_is_treat else group_b
+				compare_group = group_a if group_a_is_compare else group_b
+
+				outcome_a = treat_group['outcomes'][0]
+				outcome_b = compare_group['outcomes'][0]
+
+				if (treat_group['outcomes'][0].title != 'NA'):
+					outcome_a, outcome_b = pick_top_point(treat_group['outcomes'], compare_group['outcomes'], measure['dispersion'])
+
+				d = cohen_d(outcome_a, outcome_b, measure['dispersion'])
+				if d == 0:
+					continue
+
+				comparisons.append({
+					'compare_title': compare_group['title'],
+					'compare_outcome_id': outcome_b.id,
+					'treat_title': treat_group['title'],
+					'treat_outcome_id': outcome_a.id,
+					'measure_title': measure['title'],
+					'study': measure['study'],
+					'cohen_d': d
+				})
+
+	return comparisons 
+
+
+def get_measure(measure_id):
+	measure = db.session.query(Measure)\
+		.filter(Measure.id == measure_id)\
+		.first()
+
+	return measure
 
 
 def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_id = 1):

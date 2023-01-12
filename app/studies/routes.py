@@ -131,6 +131,15 @@ def get_groups(study_id):
 	return {'groups': [group.to_dict() for group in groups]}
 
 
+@bp.route('/groups/<int:group_id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
+def update_group(group_id):
+	data = request.get_json()
+	group = controller.update_group(data, group_id)
+
+	return {'group': group.to_dict()}
+
+
 @bp.route('/<string:study_id>/criteria')
 @cross_origin(supports_credentials=True)
 def get_criteria(study_id):

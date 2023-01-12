@@ -11,15 +11,18 @@ cors = CORS()
 def create_app(config_file=None):
 	app = Flask(__name__, instance_relative_config=True)
 	app.config.from_pyfile(config_file)
-	register_blueprints(app)
 	initialize_extensions(app)
+	register_blueprints(app)
 	return app
 
 
 def initialize_extensions(app):
+	from app.extensions import IntListConverter
+
 	db.init_app(app)
 	migrate.init_app(app, db)
 	cors.init_app(app, support_credentials=True)
+	app.url_map.converters['int_list'] = IntListConverter
 
 
 def register_blueprints(app):

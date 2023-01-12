@@ -53,7 +53,7 @@ def get_treatment_demographics(name):
 def get_treatment_effects(name):
 	limit = int(request.args.get('limit'))
 	effects = treatments.get_effects(name, limit, request.args)
-	return {'effects': [{'name': name, 'no_effected': effected, 'at_risk': at_risk, 'no_studies': count, 'studies': studies} for name, effected, at_risk, count, studies in effects]}
+	return {'effects': [{'name': name, 'no_effected': effected, 'no_at_risk': at_risk, 'no_studies': count, 'studies': studies} for name, effected, at_risk, count, studies in effects]}
 
 
 @bp.route('/<string:name>/conditions')
@@ -78,12 +78,46 @@ def get_treatment_condition_analytics(name):
 	return {'conditions': list(id_2_condition.values())}
 
 
+@bp.route('/new', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def create_new_treatment():
+	data = request.get_json()
+	new_treatment = treatments.create_treatment(data)
+
+	return {'treatment': new_treatment.to_dict()}
+
+
 @bp.route('/<string:name>/analytics')
 @cross_origin(supports_credentials=True)
 def get_treatment_analytics(name):
 	analytics = treatments.get_analytics(name, request.args)
 
 	return {'analytics': [analytic.to_small_dict() for analytic in analytics]}
+
+
+@bp.route('/<string:name>/condition/<int:condition_id>/measures')
+@cross_origin(supports_credentials=True)
+def search_measures(name, condition_id):
+	query = request.args.get('q', '', type=str)
+	measures = treatments.search_measures(name, condition_id, query)
+
+	return {'measures': [measure.to_small_dict() for measure in measures]}
+
+
+@bp.route('/<int:treatment_id>/measures/<int_list:measure_ids>/data')
+@cross_origin(supports_credentials=True)
+def get_measures_data(treatment_id, measure_ids):
+	outcomes = treatments.get_measures_data(treatment_id, measure_ids)
+
+	return {'outcomes': outcomes}
+
+
+@bp.route('/measures/<int:id>')
+@cross_origin(supports_credentials=True)
+def get_measure(id):
+	measure = treatments.get_measure(id)
+
+	return { 'measure': measure.to_small_dict() }
 
 
 @bp.route('/<string:name>/no_analytics')
