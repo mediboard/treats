@@ -148,9 +148,15 @@ def get_effects(study_id):
 	return effect_groups.all()
 
 
-# def get_analytics(study_id):
-# 	analytics = db.session.query(Analytics)\
+def update_group(group_data, group_id):
+	group = db.session.query(Group)\
+		.filter(Group.id == group_id)\
+		.first()
+	group.from_dict(group_data)
 
+	db.session.commit()
+
+	return group
 
 
 def add_admin(admin_data):
