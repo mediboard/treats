@@ -7,6 +7,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Data files
+*.pkl
+*.csv
+notebooks/AllAPIJSON
+
 # Distribution / packaging
 .Python
 build/
