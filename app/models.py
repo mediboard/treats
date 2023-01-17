@@ -5,6 +5,8 @@ from sqlalchemy import func, select
 import enum
 
 
+BOARD_ID_SEQ = db.Sequence('board_id_seq')
+
 class baseline_type(enum.Enum):
 	RACE='Race'
 	GENDER='Gender'
@@ -241,7 +243,8 @@ class Study(db.Model):
 
 	__tablename__ = 'studies'
 
-	id = db.Column(db.String(11), primary_key=True)
+	id = db.Column(db.Integer, BOARD_ID_SEQ, server_default=BOARD_ID_SEQ.next_value(), primary_key=True)
+	nct_id = db.Column(db.String(11))
 	upload_date = db.Column(db.Date)
 	short_title = db.Column(db.String(300))
 	official_title = db.Column(db.String(600))
@@ -346,7 +349,7 @@ class Insight(db.Model):
 	__tablename__ = 'insights'
 
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
 	type = db.Column(db.Enum(insight_Type))
 	body = db.Column(db.String(1000))
@@ -370,7 +373,7 @@ class Criteria(db.Model):
 	__tablename__ = 'criteria'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	criteria = db.Column(db.String(500))
 	is_inclusion = db.Column(db.Boolean)
 
@@ -438,7 +441,7 @@ class StudyCondition(db.Model):
 	__tablename__ = 'study_conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer), db.ForeignKey('studies.id'))
 	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
 
 
@@ -457,7 +460,7 @@ class StudyTreatment(db.Model):
 	__tablename__ = 'study_treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
 
 
@@ -498,7 +501,7 @@ class Measure(db.Model):
 	__tablename__ = 'measures'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.Enum(measure_dispersion_param))
@@ -613,9 +616,9 @@ class Group(db.Model): # These are just the outcome groups for now
 	__tablename__ = 'groups'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	title = db.Column(db.String(100))
-	study_id = db.Column(db.String(7))
+	study_id = db.Column(db.Integer)
 	description = db.Column(db.String(1500))
 	annotated = db.Column(db.Boolean)
 
@@ -656,7 +659,7 @@ class Outcome(db.Model):
 	__tablename__ = 'outcomes'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
 	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
 	title = db.Column(db.String(225))
@@ -708,7 +711,7 @@ class Analytics(db.Model):
 	__tablename__ = 'analytics'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
 	from_study = db.Column(db.Boolean)
 	method = db.Column(db.String(100))
@@ -788,7 +791,7 @@ class Baseline(db.Model):
 	__tablename__ = 'baselines'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	base = db.Column(db.String(100))
 	clss = db.Column(db.String(100))
 	category = db.Column(db.String(100))
@@ -839,7 +842,7 @@ class Effect(db.Model):
 	__tablename__ = 'effects'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
 	cluster = db.Column(db.Integer, db.ForeignKey('effects_cluster.id'))
 	cluster_name = db.Column(db.String(100))
@@ -881,10 +884,10 @@ class EffectGroup(db.Model):
 	__tablename__ = 'effectsgroups'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.String(11), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	title = db.Column(db.String(101))
 	description = db.Column(db.String(1500))
-	study_id = db.Column(db.String(7))
+	study_id = db.Column(db.Integer)
 
 	effects = db.relationship('Effect', lazy='joined')
 	administrations = db.relationship('EffectAdministration', lazy='joined')
