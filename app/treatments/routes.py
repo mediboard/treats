@@ -23,6 +23,14 @@ def search_treatments():
 	return {'results': [x.to_dict() for x in results]}
 
 
+@bp.route('/<int:treatment_id>/scan')
+@cross_origin(supports_credentials=True)
+def scan_treatments(treatment_id):
+	results = treatments.get_treatment_diffs(treatment_id)
+
+	return results
+
+
 @bp.route('/top')
 @cross_origin(supports_credentials=True)
 def get_top_treatments():

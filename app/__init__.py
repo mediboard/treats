@@ -23,10 +23,8 @@ def create_app(config_file=None):
 				'graphql',
 				schema=schema,
 				graphiql=True))
-	
 	initialize_extensions(app)
 	register_blueprints(app)
-	
 	
 	return app
 

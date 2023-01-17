@@ -308,7 +308,7 @@ def get_measures_data(treatment_id, measure_ids):
 		.join(Group, Group.id == Outcome.group)\
 		.options(
 			contains_eager(Measure.outcomes),
-			joinedload(Group.administrations).joinedload(Administration.treatments),
+			joinedload(Group.treatments),
 			raiseload('*'))\
 		.order_by(case([
 			(Measure.type == measure_type.PRIMARY, 1),
@@ -394,6 +394,45 @@ def get_measure(measure_id):
 		.first()
 
 	return measure
+
+
+# I think we need to pre-compute a diff_table
+def get_treatment_diffs(treatment_id):
+	# Get the comparisons where thr groups diff by treatment
+	# Sort ascending by diff size
+
+	# Get all groups with treament
+	# Get all groups in same studies without treatment
+
+	# We nee to get the treatments in each comp and diff them
+	# Diff teh strings in positive vs negative
+	positive_comps = db.session.query(Comparison, func.string_agg(Treatment.name, aggregate_order_by(literal_column("'%'"), Treatment.name)).label('pos_treats'))\
+		.join(Group, Group.id == Comparison.group)\
+		.join(Administration, Administration.group == Group.id)\
+		.join(Treatment, Treatment.id == Administration.treatment)\
+		.filter(Treatment.id == treatment_id)\
+		.group_by(Comparison.id)\
+		.subquery()
+
+	negative_comps = db.session.query(Comparison, func.string_agg(Treatment.name, aggregate_order_by(literal_column("'%'"), Treatment.name)).label('neg_treats'))\
+		.join(Group, Group.id == Comparison.group)\
+		.filter(~Group.treatments.any(Treatment.id == treatment_id))\
+		.join(Administration, Administration.group == Group.id)\
+		.join(Treatment, Treatment.id == Administration.treatment)\
+		.group_by(Comparison.id)\
+		.subquery()
+
+	stuff = db.session.query(
+		Analytics,
+		func.string_agg(func.concat(negative_comps.c.neg_treats,positive_comps.c.pos_treats), '$').label('treat_comps'))\
+		.join(negative_comps, negative_comps.c.analytic == Analytics.id)\
+		.join(positive_comps, positive_comps.c.analytic == negative_comps.c.analytic)\
+		.filter(negative_comps.c.neg_treats != '')\
+		.filter(positive_comps.c.pos_treats != '')\
+		.group_by(Analytics.id)\
+		.all()
+
+	print(stuff)
 
 
 def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_id = 1):
