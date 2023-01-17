@@ -256,6 +256,10 @@ def store_pre_cleaned_studies_table_pkl(studies_table: pd.DataFrame) -> None:
 def studies_workflow(update_studies: bool) -> None:
     # TODO add versioning on studies uploads in S3 (check if latest)
     if update_studies:
+        studies_path = f'{DATA_PATH}/clinical_trials/'
+        if not os.path.exists(studies_path):
+            os.path.join(DATA_PATH, 'clinical_trials/')
+            os.mkdir(studies_path)
         delete_old_studies()
         update_studies_pkl()
     studies_table = create_studies_table()
@@ -263,9 +267,9 @@ def studies_workflow(update_studies: bool) -> None:
     studies_table = clean_studies_table(studies_table)
     upload_to_db(studies_table)
 
-    # print(studies_table)
-    # print(studies_table.keys())
-    # print(studies_table.iloc[1])
+    print(studies_table)
+    print(studies_table.keys())
+    print(studies_table.iloc[1])
 
 
 # TODO add argparse to check if overwrite local studies pkl files
