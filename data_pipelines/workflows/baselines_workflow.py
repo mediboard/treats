@@ -1,3 +1,47 @@
+"""writes baselines_table + download raw studies to disk"""
+import typing
+import os
+import os
+import glob
+import pandas as pd
+import pickle
+
+# TODO: Pipelines that read from the blob should have their own class
+# --------------------- #
+import boto3.session
+
+from sqlalchemy import create_engine
+
+DATA_PATH = os.environ.get('DATA_PATH', default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
+
+
+cred = boto3.Session().get_credentials()
+ACCESS_KEY = cred.access_key
+SECRET_KEY = cred.secret_key
+SESSION_TOKEN = cred.token
+
+s3_resource = boto3.resource('s3',
+                             aws_access_key_id=ACCESS_KEY,
+                             aws_secret_access_key=SECRET_KEY,
+                             aws_session_token=SESSION_TOKEN)
+
+s3_client = boto3.client('s3',
+                         aws_access_key_id=ACCESS_KEY,
+                         aws_secret_access_key=SECRET_KEY,
+                         aws_session_token=SESSION_TOKEN)
+
+# --------------------- #
+
+
+def update_studies_pkl() -> None:
+    print(f"Downloading parsed studies from S3...")
+    s3_bucket = s3_resource.Bucket('medboard-data')
+    for obj in s3_bucket.objects.filter(Prefix='clinical_trials/studies_'):
+        print(f'Downloading file {obj.key} to {DATA_PATH + obj.key}')
+        print(obj.key)
+        s3_bucket.download_file(Key=obj.key, Filename=DATA_PATH + obj.key)
+
 def create_baselines_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
     df = {
         'study': [],
@@ -79,7 +123,23 @@ def create_baselines_table() -> pd.DataFrame:
     return studies_table
 
 
+def delete_old_studies():
+    files = glob.glob(DATA_PATH + 'clinical_trials/*')
+    for f in files:
+        os.rmdir(f)
+
+
 def baselines_workflow():
+    if update_studies:
+        studies_path = f'{DATA_PATH}/clinical_trials/'
+        
+        if not os.path.exists(studies_path):
+            os.path.join(DATA_PATH, 'clinical_trials/')
+            os.mkdir(studies_path)
+
+        delete_old_studies()
+        update_studies_pkl()
+
     baselines_table = create_baselines_table()
     store_pre_cleaned_baselines_table_pkl(baselines_table)
     baselines_table = clean_baselines_table(baselines_table)

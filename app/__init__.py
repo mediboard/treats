@@ -24,8 +24,8 @@ def create_app(config_file=None):
 				schema=schema,
 				graphiql=True))
 
-	register_blueprints(app)
 	initialize_extensions(app)
+	register_blueprints(app)
 	
 	return app
 
