@@ -12,7 +12,7 @@ import boto3.session
 
 from sqlalchemy import create_engine
 
-DATA_PATH = os.environ.get('DATA_PATH', default="/Users/porterhunley/datasets")
+DATA_PATH = os.environ.get('DATA_PATH', default="/Users/davonprewitt/data")
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
 
 
@@ -235,7 +235,7 @@ def create_studies_table() -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame):
-    studies_table = studies_table.rename_axis('id').reset_index()
+    # studies_table = studies_table.rename_axis('id').reset_index()
     db = create_engine(DATABASE_URL)
     studies_table.to_sql('studies', db, index=False, if_exists='append')
 
