@@ -12,7 +12,7 @@ import boto3.session
 
 from sqlalchemy import create_engine
 
-DATA_PATH = os.environ.get('DATA_PATH', default="/Users/davonprewitt/data")
+DATA_PATH = os.environ.get('DATA_PATH', default="/Users/porterhunley/datasets")
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
 
 
@@ -46,15 +46,15 @@ def update_studies_pkl() -> None:
 
 def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
     buffer = {
-        'study_id': [], 'official_title': [], 'short_title': [], 'conditions': [],
+        'nct_id': [], 'official_title': [], 'short_title': [], 'conditions': [],
         'verified_date': [], 'responsible_party': [], 'sponsor': [], 'type': [], 'description': [],
         'interventions': [], 'purpose': [], 'intervention_type': [], 'mesh_terms': [],
         'criteria': [], 'min_age': [], 'max_age': [], 'gender': []}
     for _, study in enumerate(studies):
         try:
-            buffer['study_id'].append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
+            buffer['nct_id'].append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
         except KeyError as e:
-            buffer['study_id'].append('NA')
+            buffer['nct_id'].append('NA')
 
         try:
             buffer['official_title'].append(study['Study']['ProtocolSection']['IdentificationModule']['OfficialTitle'])
@@ -151,7 +151,7 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
 
 def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table = studies_table[
-        ['study_id',
+        ['nct_id',
          'verified_date',
          'short_title',
          'official_title',
@@ -188,8 +188,6 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['min_age'] = db_studies_table['min_age'].apply(int)
     db_studies_table['max_age'] = db_studies_table['max_age'].apply(int)
 
-    db_studies_table = db_studies_table.set_index('id')
-
     month_dict = {
         'January': 1,
         'February': 2,
@@ -213,7 +211,7 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['type'] = db_studies_table['type'].str.upper()
     db_studies_table['type'] = db_studies_table['type'].str.replace(' ', '_')
     db_studies_table['purpose'] = db_studies_table['purpose'].str.upper()
-    db_studies_table['purpose'] = db_studies_table['purpose'].str.replace(' ', '_')
+    db_studies_table['purpose'] = db_studies_table['purpose'].str.replace(' ', '_').str.replace('/', '_')
     db_studies_table['min_age_units'] = db_studies_table['min_age_units'].str.upper()
     db_studies_table['max_age_units'] = db_studies_table['max_age_units'].str.upper()
     db_studies_table['gender'] = db_studies_table['gender'].str.upper()
@@ -223,7 +221,7 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
 
 def create_studies_table() -> pd.DataFrame:
     studies_table_dfs = []
-    directory = DATA_PATH + 'clinical_trials/'
+    directory = DATA_PATH + '/clinical_trials/'
     for studies_data_pickle_file in os.listdir(directory):
         studies_file = os.path.join(directory, studies_data_pickle_file)
         print(f"Deserializing {studies_file}")
@@ -237,13 +235,13 @@ def create_studies_table() -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame):
-    # studies_table = studies_table.rename_axis('id').reset_index()
+    studies_table = studies_table.rename_axis('id').reset_index()
     db = create_engine(DATABASE_URL)
     studies_table.to_sql('studies', db, index=False, if_exists='append')
 
 
 def delete_old_studies():
-    files = glob.glob(DATA_PATH + 'clinical_trials/*')
+    files = glob.glob(DATA_PATH + '/clinical_trials/*')
     for f in files:
         os.rmdir(f)
 

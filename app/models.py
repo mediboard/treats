@@ -116,6 +116,7 @@ class purpose(enum.Enum):
 	HEALTH_SERVICES_RESEARCH='Health Services Research'
 	SCREENING='Screening'
 	DEVICE_FEASIBILITY='Device Feasibility'
+	EDUCATIONAL_COUNSELING_TRAINING = 'Educational/Counseling/Training'
 	NA='NA'
 
 class gender(enum.Enum):
