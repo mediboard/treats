@@ -116,6 +116,7 @@ class purpose(enum.Enum):
 	HEALTH_SERVICES_RESEARCH='Health Services Research'
 	SCREENING='Screening'
 	DEVICE_FEASIBILITY='Device Feasibility'
+	EDUCATIONAL_COUNSELING_TRAINING = 'Educational/Counseling/Training'
 	NA='NA'
 
 class gender(enum.Enum):
@@ -441,7 +442,7 @@ class StudyCondition(db.Model):
 	__tablename__ = 'study_conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer), db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
 
 
