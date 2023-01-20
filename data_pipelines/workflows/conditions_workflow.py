@@ -44,6 +44,7 @@ def create_study_conditions_table(conditions: pd.DataFrame) -> pd.DataFrame:
     }).reset_index(drop=True)
     return study_conditions
 
+
 def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
     db = create_engine(DATABASE_URL)
     study_ids = pd.read_sql('select id, nct_id from studies', db.connect())
@@ -68,7 +69,6 @@ def conditions_workflow() -> None:
     study_conditions_table = create_study_conditions_table(conditions=conditions)
     study_conditions_table = add_study_id(study_conditions_table)
     upload_to_db('study_conditions', study_conditions_table)
-
 
     print(conditions_table)
     print(conditions_table.keys())
