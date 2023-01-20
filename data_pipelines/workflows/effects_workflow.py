@@ -216,7 +216,7 @@ def effects_workflow():
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table
     )
     effects_groups_table = add_study_id(effects_groups_table)
-    upload_to_db("effects_groups", effects_groups_table)
+    upload_to_db("effectsgroups", effects_groups_table)
     effects_table = clean_effects_table(
         pre_cleaned_effects_table=pre_cleaned_effects_table,
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table,
