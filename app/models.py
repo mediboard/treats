@@ -512,7 +512,7 @@ class Measure(db.Model):
 	measureGroups = db.relationship(
 		'MeasureGroup',
 		secondary='measure_group_measures',
-		back_populates='measures', lazy='joined')
+		back_populates='measures')
     
 	def to_dict(self):
 		return {

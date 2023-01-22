@@ -1,3 +1,4 @@
+import pinecone
 import graphene
 from flask import Flask 
 from flask_sqlalchemy import SQLAlchemy
@@ -9,6 +10,9 @@ from flask_graphql import GraphQLView
 db = SQLAlchemy()
 migrate = Migrate()
 cors = CORS()
+
+pinecone.init(api_key="61d34f18-529b-45ce-9b2c-dcf90cb7f3d4", environment="us-west1-gcp")
+gpt_vectors = pinecone.Index('gpt')
 
 def create_app(config_file=None):
 	app = Flask(__name__, instance_relative_config=True)
@@ -31,6 +35,10 @@ def create_app(config_file=None):
 
 def initialize_extensions(app):
 	from app.extensions import IntListConverter
+	import openai
+
+	openai.organization = "org-j6fGVx3OgjgpAbCQFHOmdEUe"
+	openai.api_key = app.config['OPENAI_API_KEY']
 
 	db.init_app(app)
 	migrate.init_app(app, db)
@@ -44,9 +52,11 @@ def register_blueprints(app):
 	from app.conditions import bp as conditions_bp
 	from app.blogs import bp as blogs_bp
 	from app.feedback import bp as feedback_bp
+	from app.measures import bp as measures_bp 
 
 	app.register_blueprint(treatments_bp, url_prefix='/treatments')
 	app.register_blueprint(studies_bp, url_prefix='/studies')
 	app.register_blueprint(conditions_bp, url_prefix='/conditions')
 	app.register_blueprint(blogs_bp, url_prefix='/blogs')
 	app.register_blueprint(feedback_bp, url_prefix='/feedback')
+	app.register_blueprint(measures_bp, url_prefix='/measures')
