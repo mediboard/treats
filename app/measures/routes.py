@@ -22,3 +22,14 @@ def search_measures_by_vector():
   results = controller.search_measures_by_vector(q_vector)
 
   return {'measures': [{**x[0].to_small_dict(), 'score': x[1]} for x in results]}
+
+
+@bp.route('<int:measure_id>/data')
+@cross_origin(supports_credentials=True)
+def get_data(measure_id):
+  measure, groups = controller.get_data(measure_id)
+
+  return {
+    **measure.to_outcome_dict(),
+    'groups': [group.to_small_dict() for group in groups]
+  }

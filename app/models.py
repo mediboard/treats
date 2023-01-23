@@ -518,8 +518,13 @@ class Measure(db.Model):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
-			'measureGroups': [x.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
+		}
+    
+	def to_outcome_dict(self):
+		return {
+			**self.to_small_dict(),
+			'outcomes': [x.to_dict() for x in self.outcomes],
 		}
 
 	def to_small_dict(self):
@@ -643,6 +648,17 @@ class Group(db.Model): # These are just the outcome groups for now
 		back_populates='groups')
 	outcomes = db.relationship('Outcome', backref='groups')
 
+	def to_small_dict(self):
+		return {
+			'id': self.id,
+			'title': self.title,
+			'study_id': self.study_id,
+			'description': self.description,
+			'study': self.study,
+			'annotated': self.annotated,
+			'treatments': [x.to_dict() for x in self.treatments]
+		}
+
 	def to_measure_dict(self):
 		return {
 			**self.to_dict(),
@@ -651,12 +667,7 @@ class Group(db.Model): # These are just the outcome groups for now
 
 	def to_dict(self):
 		return {
-			'id': self.id,
-			'title': self.title,
-			'study_id': self.study_id,
-			'description': self.description,
-			'study': self.study,
-			'annotated': self.annotated,
+			**self.to_small_dict(),
 			'administrations': [{
 				'admin_id': x.id,
 				**x.treatments.to_dict()

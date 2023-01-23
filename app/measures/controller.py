@@ -1,7 +1,8 @@
 from app import db, gpt_vectors
+from sqlalchemy.orm import joinedload, raiseload
 from app.models import Condition, StudyCondition, Baseline, baseline_type, \
   Treatment, StudyTreatment, Analytics, Measure, measure_type, Study, MeasureGroup, MeasureGroupMeasure, \
-  ConditionGroup
+  ConditionGroup, Group
 
 def search_measures_by_vector(vector):
   response = gpt_vectors.query(
@@ -23,3 +24,25 @@ def get_measures(measure_ids):
   results = query.all()
 
   return results
+
+
+def get_data(measure_id):
+  measure_data = db.session.query(Measure)\
+    .filter(Measure.id == measure_id)\
+    .options(
+      joinedload(Measure.outcomes),
+      joinedload(Measure.analytics).joinedload(Analytics.groups),
+      raiseload('*'))\
+    .first()
+
+  groups = db.session.query(Group)\
+    .join(Measure, Measure.study == Group.study)\
+    .filter(Measure.id == measure_id)\
+    .options(
+      joinedload(Group.treatments),
+      raiseload('*')
+    )\
+    .all()
+
+  return measure_data, groups
+
