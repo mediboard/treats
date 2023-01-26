@@ -668,10 +668,6 @@ class Group(db.Model): # These are just the outcome groups for now
 	def to_dict(self):
 		return {
 			**self.to_small_dict(),
-			'administrations': [{
-				'admin_id': x.id,
-				**x.treatments.to_dict()
-			} for x in self.administrations]
 		}
 
 	def from_dict(self, data):
