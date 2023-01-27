@@ -4,6 +4,8 @@ import pickle
 import pandas as pd
 from sqlalchemy import create_engine
 
+import utils
+
 
 DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/data")
 DATABASE_URL = os.environ.get(
@@ -11,32 +13,8 @@ DATABASE_URL = os.environ.get(
 )
 
 
-def get_outcome_modules(studies):
-    outcome_modules = []
-    for study in studies:
-        if (
-            "ResultsSection" in study["Study"]
-            and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
-        ):
-            outcome_modules.append(
-                study["Study"]["ResultsSection"]["OutcomeMeasuresModule"]
-            )
-            continue
-
-        identification_module = study["Study"]["ProtocolSection"][
-            "IdentificationModule"
-        ]
-        if "OfficialTitle" in identification_module:
-            study_title = identification_module["OfficialTitle"]
-        else:
-            study_title = identification_module["BriefTitle"]
-        print("No Results: ", study_title)
-
-    return outcome_modules
-
-
 def create_measurements_table_helper(studies):
-    outcome_modules = get_outcome_modules(studies)
+    outcome_modules = utils.get_outcome_modules(studies)
     df = {
         "study_id": [],
         "measure": [],
