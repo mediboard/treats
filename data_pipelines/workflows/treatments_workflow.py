@@ -1,3 +1,4 @@
+"""creates treatments table, administrations table, and effectadministrations table"""
 import typing
 import os
 import os
@@ -14,11 +15,20 @@ from tqdm import tqdm
 
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
 MODEL_PATH = os.environ.get('MODEL_PATH', default="postgresql://davonprewitt@localhost:5432")
+DEVICE = get_device()
+
+
+def get_device():
+    device = torch.device('cpu')
+    if (torch.cuda.is_available()):
+        device = torch.device("cuda")
+
+    return device
 
 
 def get_ner_from_string(string, model):
     tokenized_sentence = tokenizer.encode(string)
-    input_ids = torch.tensor([tokenized_sentence]).to(device)
+    input_ids = torch.tensor([tokenized_sentence]).to(DEVICE)
 
     with torch.no_grad():
         output = model(input_ids)
@@ -82,6 +92,10 @@ def load_ner_model():
     return model
 
 
+def upload_to_db(data: pd.DataFrame, table_name);
+    db = create_engine(DATABASE_URL)
+    unique_treatments.to_sql(table_name, db, index=False, if_exists='append')   
+
 
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
     model = load_ner_model()
@@ -90,17 +104,60 @@ def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
     groups['treatments'] = groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
     effect_groups['treatments'] = effect_groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
 
-    unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0).drop_duplicates()
+    unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0).explode('treatments').drop_duplicates()
+    unique_treatments = unique_treatments.rename(columns={ 'treatments': 'name'})
+    unique_treatments['id'] = range(1, len(unique_treatments) + 1)
+    unique_treatments = unique_treatments.reset_index(drop=True)
 
-    db = create_engine(DATABASE_URL)
-    unique_treatments.to_sql('treatments', db, index=False, if_exists='append')
+    upload_to_db(unique_treatments, 'treatments')
 
+    return groups, effect_groups
+
+
+def create_groups_admins(groups: pd.DataFrame):
+    exploded = groups.explode('treatments')
+
+    treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
+    admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
+
+    admins['new_id'] = range(1, len(admins) + 1)
+
+    admins = admins[['id', 'new_id', 'treat_id']].rename({
+        'id': 'group',
+        'new_id': 'id',
+        'treat_id': 'treatment'
+    })
+
+    upload_to_db(admins, 'administrations')
+
+
+def create_effects_admins(effect_groups: pd.DataFrame);
+    exploded = effect_groups.explode('treatments')
+
+    treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
+    admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
+
+    admins['new_id'] = range(1, len(admins) + 1)
+
+    admins = admins[['id', 'new_id', 'treat_id']].rename({
+        'id': 'group',
+        'new_id': 'id',
+        'treat_id': 'treatment'
+    })
+
+    upload_to_db(admins, 'effectsadministrations')
 
 
 def treatments_workflow():
-    device = torch.device('cpu')
-    if (torch.cuda.is_available()):
-        device = torch.device("cuda")
+    groups = get_groups()
+    effect_groups = get_effect_groups()
+
+    treat_groups, treat_effect_groups = parse_treatments(groups, effect_groups)
+
+    create_groups_admins(treat_groups)
+    create_effects_admins(treat_effect_groups)
+
+
 
 
 
