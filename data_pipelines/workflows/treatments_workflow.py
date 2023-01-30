@@ -5,22 +5,25 @@ import os
 import glob
 import pandas as pd
 import pickle
+import boto3
 import torch
 import transformers
 
-from transformers import BertForTokenClassification,
+from transformers import BertForTokenClassification
 from sqlalchemy import create_engine
 from tqdm import tqdm
+from utils import get_device
 
 
-DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
+DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://meditreats@localhost:5432")
 MODEL_PATH = os.environ.get('MODEL_PATH', default="/Users/porterhunley/models")
-DEVICE = get_device()
 
 cred = boto3.Session().get_credentials()
 ACCESS_KEY = cred.access_key
 SECRET_KEY = cred.secret_key
 SESSION_TOKEN = cred.token
+
+db_engine = create_engine(DATABASE_URL)
 
 s3_resource = boto3.resource('s3',
                              aws_access_key_id=ACCESS_KEY,
@@ -40,6 +43,17 @@ def get_device():
 
     return device
 
+
+DEVICE = get_device()
+
+
+tag2idx = {
+    'B': 2,
+    'I': 0,
+    'O': 1,
+    'PAD': 3
+}
+    
 
 def get_ner_from_string(string, model):
     tokenized_sentence = tokenizer.encode(string)
@@ -82,24 +96,27 @@ def get_unique_treatments(string, model):
 
 
 def get_groups():
-    groups = pd.read_sql("select id, title, description from groups")
+    print("Reading groups...")
+    groups = pd.read_sql("select id, title, description from groups", db_engine.connect())
     groups['text'] = 'Title: ' + groups['title'] + ' Description: ' + groups['description']
 
     return groups
 
 
 def get_effect_groups():
-    effect_groups = pd.read_sql("select id, title, description from effect_groups")
+    print("Reading effects groups...")
+    effect_groups = pd.read_sql("select id, title, description from effectsgroups", db_engine.connect())
     effect_groups['text'] = 'Title: ' + effect_groups['title'] + ' Description: ' + effect_groups['description']
 
     return effect_groups
 
 
 def download_model():
-    s3_client.download_file('medboard-data', 'models/ClinicalBertNERModel.pt', MODEL_PATH)
+    s3_client.download_file('medboard-data', 'models/ClinicalBertNERModel.pt', MODEL_PATH+'/ClinicalBertNERModel.pt')
 
 
 def load_ner_model():
+    print("Loading NER model")
     model_path = f'{MODEL_PATH}/ClinicalBertNERModel.pt'
     if (not os.path.exists(model_path)):
         download_model()
@@ -110,14 +127,13 @@ def load_ner_model():
         output_attentions = False,
         output_hidden_states = False)
 
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
     return model
 
 
-def upload_to_db(data: pd.DataFrame, table_name);
-    db = create_engine(DATABASE_URL)
-    unique_treatments.to_sql(table_name, db, index=False, if_exists='append')   
+def upload_to_db(data: pd.DataFrame, table_name):
+    data.to_sql(table_name, db_engine, index=False, if_exists='append')   
 
 
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
@@ -126,9 +142,14 @@ def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
     tqdm.pandas()
 
     groups['treatments'] = groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
+    print(groups['treatments'])
     effect_groups['treatments'] = effect_groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
 
-    unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0).explode('treatments').drop_duplicates()
+    unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0)\
+        .explode('treatments')\
+        .drop_duplicates()\
+        .to_frame()
+
     unique_treatments = unique_treatments.rename(columns={ 'treatments': 'name'})
     unique_treatments['id'] = range(1, len(unique_treatments) + 1)
     unique_treatments = unique_treatments.reset_index(drop=True)
@@ -139,6 +160,7 @@ def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
 
 
 def create_groups_admins(groups: pd.DataFrame):
+    print("Creating admins table")
     exploded = groups.explode('treatments')
 
     treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
@@ -155,7 +177,8 @@ def create_groups_admins(groups: pd.DataFrame):
     upload_to_db(admins, 'administrations')
 
 
-def create_effects_admins(effect_groups: pd.DataFrame);
+def create_effects_admins(effect_groups: pd.DataFrame):
+    print("Creating effects admins table")
     exploded = effect_groups.explode('treatments')
 
     treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
@@ -183,11 +206,3 @@ def run_treatments_workflow():
 
 if (__name__ == '__main__'):
     run_treatments_workflow()
-
-
-
-
-
-
-
-

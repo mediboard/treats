@@ -37,11 +37,20 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
                         admin.get("OutcomeGroupDescription", "NA")
                     )
             except KeyError as e:
-                print(e)
                 continue
 
     groups_table_df = pd.DataFrame.from_dict(group_df).reset_index(drop=True)
     return groups_table_df
+
+
+def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
+    db = create_engine(DATABASE_URL)
+    study_ids = pd.read_sql("select id as std_id, nct_id from studies", db.connect())
+    merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
+        .drop(columns=['study'], axis=1)\
+        .rename(columns={ 'std_id': 'study' })
+
+    return merged_table[["id", "study", "title", "study_id", "description"]]
 
 
 # this takes in initial studies parsing
@@ -66,7 +75,10 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
             "study_id": "study",
             "group_id": "study_id",
         }
-    )[["title", "study_id", "description", "study"]]
+    )[["title", "study_id", "description", "study"]].drop_duplicates()
+
+    groups_table['id'] = range(1, len(groups_table) + 1)
+
     return groups_table
 
 
@@ -78,6 +90,8 @@ def upload_to_db(studies_table: pd.DataFrame):
 def groups_workflow() -> None:
     pre_cleaned_groups_table = create_groups_table()
     groups_table = clean_groups_table(pre_cleaned_groups_table)
+    groups_table = add_study_id(groups_table)
+
     upload_to_db(groups_table)
 
     print(groups_table)

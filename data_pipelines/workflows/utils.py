@@ -17,6 +17,5 @@ def get_outcome_modules(studies):
             study_title = identification_module["OfficialTitle"]
         else:
             study_title = identification_module["BriefTitle"]
-        print("No Results: ", study_title)
 
     return outcome_modules
