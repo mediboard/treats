@@ -14,8 +14,23 @@ from tqdm import tqdm
 
 
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
-MODEL_PATH = os.environ.get('MODEL_PATH', default="postgresql://davonprewitt@localhost:5432")
+MODEL_PATH = os.environ.get('MODEL_PATH', default="/Users/porterhunley/models")
 DEVICE = get_device()
+
+cred = boto3.Session().get_credentials()
+ACCESS_KEY = cred.access_key
+SECRET_KEY = cred.secret_key
+SESSION_TOKEN = cred.token
+
+s3_resource = boto3.resource('s3',
+                             aws_access_key_id=ACCESS_KEY,
+                             aws_secret_access_key=SECRET_KEY,
+                             aws_session_token=SESSION_TOKEN)
+
+s3_client = boto3.client('s3',
+                         aws_access_key_id=ACCESS_KEY,
+                         aws_secret_access_key=SECRET_KEY,
+                         aws_session_token=SESSION_TOKEN)
 
 
 def get_device():
@@ -80,14 +95,22 @@ def get_effect_groups():
     return effect_groups
 
 
+def download_model():
+    s3_client.download_file('medboard-data', 'models/ClinicalBertNERModel.pt', MODEL_PATH)
+
+
 def load_ner_model():
+    model_path = f'{MODEL_PATH}/ClinicalBertNERModel.pt'
+    if (not os.path.exists(model_path)):
+        download_model()
+
     model = BertForTokenClassification.from_pretrained(
         "emilyalsentzer/Bio_ClinicalBERT",
         num_labels=len(tag2idx),
         output_attentions = False,
         output_hidden_states = False)
 
-    model.load_state_dict(torch.load(MODEL_PATH))
+    model.load_state_dict(torch.load(model_path))
 
     return model
 
@@ -98,6 +121,7 @@ def upload_to_db(data: pd.DataFrame, table_name);
 
 
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
+    # TODO - this should be batched
     model = load_ner_model()
     tqdm.pandas()
 
@@ -148,7 +172,7 @@ def create_effects_admins(effect_groups: pd.DataFrame);
     upload_to_db(admins, 'effectsadministrations')
 
 
-def treatments_workflow():
+def run_treatments_workflow():
     groups = get_groups()
     effect_groups = get_effect_groups()
 
@@ -156,6 +180,10 @@ def treatments_workflow():
 
     create_groups_admins(treat_groups)
     create_effects_admins(treat_effect_groups)
+
+if (__name__ == '__main__'):
+    run_treatments_workflow()
+
 
 
 
