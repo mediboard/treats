@@ -92,7 +92,11 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
 
         try:
             phases = study['Study']['ProtocolSection']['DesignModule']['PhaseList']['Phase']
-            buffer['phase'].append('NA' if phases[-1] == 'Not Applicable' else phases[-1])
+            if len(phases) > 1:
+                phase = ' '.join(phases)
+            else:
+                phase = 'NA' if phases[0] == 'Not Applicable' else phases[0]
+            buffer['phase'].append(phase)
         except KeyError as e:
             buffer['phase'].append('NA')
 

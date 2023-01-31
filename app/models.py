@@ -103,7 +103,9 @@ class phase_type(enum.Enum):
 	NA = 'NA'
 	EARLY_PHASE_1 = 'Early Phase 1'
 	PHASE_1 = 'Phase 1'
+	PHASE_1_PHASE_2 = 'Phase 1 Phase 2'
 	PHASE_2 = 'Phase 2'
+	PHASE_2_PHASE_3 = 'Phase 2 Phase 3'
 	PHASE_3 = 'Phase 3'
 	PHASE_4 = 'Phase 4'
 
