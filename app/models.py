@@ -99,6 +99,15 @@ class measure_param(enum.Enum):
 	NA='NA'
 
 
+class phase_type(enum.Enum):
+	NA = 'NA'
+	EARLY_PHASE_1 = 'Early Phase 1'
+	PHASE_1 = 'Phase 1'
+	PHASE_2 = 'Phase 2'
+	PHASE_3 = 'Phase 3'
+	PHASE_4 = 'Phase 4'
+
+
 class study_type(enum.Enum):
 	INTERVENTIONAL= 'Interventional'
 	OBSERVATIONAL= 'Observational'
@@ -252,6 +261,7 @@ class Study(db.Model):
 	description = db.Column(db.String(5000))
 	responsible_party = db.Column(db.String(160))
 	sponsor = db.Column(db.String(160))
+	phase = db.Column(db.Enum(phase_type))
 	type = db.Column(db.Enum(study_type))
 	purpose = db.Column(db.Enum(purpose))
 	intervention_type = db.Column(db.Enum(intervention_type))
