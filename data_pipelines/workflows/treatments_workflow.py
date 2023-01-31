@@ -4,15 +4,15 @@ import os
 import os
 import glob
 import pandas as pd
+import numpy as np
 import pickle
 import boto3
 import torch
 import transformers
 
-from transformers import BertForTokenClassification
+from transformers import BertForTokenClassification, BertTokenizer
 from sqlalchemy import create_engine
 from tqdm import tqdm
-from utils import get_device
 
 
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://meditreats@localhost:5432")
@@ -53,9 +53,9 @@ tag2idx = {
     'O': 1,
     'PAD': 3
 }
-    
+idx2tag = {v: k for k,v in tag2idx.items()}
 
-def get_ner_from_string(string, model):
+def get_ner_from_string(string, model, tokenizer):
     tokenized_sentence = tokenizer.encode(string)
     input_ids = torch.tensor([tokenized_sentence]).to(DEVICE)
 
@@ -78,8 +78,8 @@ def get_ner_from_string(string, model):
     return new_tokens, new_labels
 
 
-def get_unique_treatments(string, model):
-  tokens, labels = get_ner_from_string(string, model)
+def get_unique_treatments(string, model, tokenizer):
+  tokens, labels = get_ner_from_string(string, model, tokenizer)
   treatments = []
 
   for i in range(len(tokens)):
@@ -116,7 +116,7 @@ def download_model():
 
 
 def load_ner_model():
-    print("Loading NER model")
+    print("Loading NER model...")
     model_path = f'{MODEL_PATH}/ClinicalBertNERModel.pt'
     if (not os.path.exists(model_path)):
         download_model()
@@ -132,6 +132,11 @@ def load_ner_model():
     return model
 
 
+def load_tokenizer():
+    print("Loading tokenizer...")
+    return BertTokenizer.from_pretrained('emilyalsentzer/Bio_ClinicalBERT', do_lower_case=True)
+
+
 def upload_to_db(data: pd.DataFrame, table_name):
     data.to_sql(table_name, db_engine, index=False, if_exists='append')   
 
@@ -139,11 +144,13 @@ def upload_to_db(data: pd.DataFrame, table_name):
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
     # TODO - this should be batched
     model = load_ner_model()
+    tokenizer = load_tokenizer()
+
     tqdm.pandas()
 
-    groups['treatments'] = groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
+    groups['treatments'] = groups['text'].progress_apply(lambda x: get_unique_treatments(x, model, tokenizer))
     print(groups['treatments'])
-    effect_groups['treatments'] = effect_groups['text'].progress_apply(lambda x: get_unique_treatments(x, model))
+    effect_groups['treatments'] = effect_groups['text'].progress_apply(lambda x: get_unique_treatments(x, model, tokenizer))
 
     unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0)\
         .explode('treatments')\
@@ -163,12 +170,12 @@ def create_groups_admins(groups: pd.DataFrame):
     print("Creating admins table")
     exploded = groups.explode('treatments')
 
-    treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
+    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', db_engine.connect())
     admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
 
     admins['new_id'] = range(1, len(admins) + 1)
 
-    admins = admins[['id', 'new_id', 'treat_id']].rename({
+    admins = admins[['id', 'new_id', 'treat_id']].rename(columns = {
         'id': 'group',
         'new_id': 'id',
         'treat_id': 'treatment'
@@ -181,12 +188,12 @@ def create_effects_admins(effect_groups: pd.DataFrame):
     print("Creating effects admins table")
     exploded = effect_groups.explode('treatments')
 
-    treats = pd.from_sql('select id as treat_id, name as treatments from treatments')
+    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', db_engine.connect())
     admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
 
     admins['new_id'] = range(1, len(admins) + 1)
 
-    admins = admins[['id', 'new_id', 'treat_id']].rename({
+    admins = admins[['id', 'new_id', 'treat_id']].rename(columns = {
         'id': 'group',
         'new_id': 'id',
         'treat_id': 'treatment'
