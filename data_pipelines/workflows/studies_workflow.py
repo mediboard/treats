@@ -12,7 +12,7 @@ import boto3.session
 
 from sqlalchemy import create_engine
 
-DATA_PATH = os.environ.get('DATA_PATH', default="/Users/davonprewitt/datas")
+DATA_PATH = os.environ.get('DATA_PATH', default="/Users/davonprewitt/data")
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
 
 
