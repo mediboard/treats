@@ -154,6 +154,7 @@ def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
 
     unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0)\
         .explode('treatments')\
+        .str.lower()\
         .drop_duplicates()\
         .to_frame()
 
