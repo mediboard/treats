@@ -1,5 +1,6 @@
-def get_outcome_modules(studies):
+def get_outcome_and_intervention_modules(studies):
     outcome_modules = []
+    intervention_modules = []
     for study in studies:
         if (
             "ResultsSection" in study["Study"]
@@ -7,6 +8,11 @@ def get_outcome_modules(studies):
         ):
             outcome_modules.append(
                 study["Study"]["ResultsSection"]["OutcomeMeasuresModule"]
+            )
+            continue
+        elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
+            intervention_modules.append(
+                study["Study"]["ProtocolSection"]["ArmsInterventionsModule"]
             )
             continue
 
@@ -19,4 +25,4 @@ def get_outcome_modules(studies):
             study_title = identification_module["BriefTitle"]
         print("No Results: ", study_title)
 
-    return outcome_modules
+    return outcome_modules, intervention_modules
