@@ -13,7 +13,9 @@ DATABASE_URL = os.environ.get(
 
 
 def create_outcomes_table_helper(studies) -> pd.DataFrame:
-    outcome_modules = utils.get_outcome_modules(studies)
+    outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
+        studies
+    )
     group_df = {
         "study_id": [],
         "group_id": [],
@@ -39,6 +41,21 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
             except KeyError as e:
                 print(e)
                 continue
+
+    for i, module in enumerate(intervention_modules):
+        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
+            "NCTId"
+        ]
+        try:
+            for group in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
+                group_df["study_id"].append(study_id)
+                # Group IDs aren't present for studies without results
+                group_df["group_id"].append("NA")
+                group_df["title"].append(group.get("ArmGroupLabel", "NA"))
+                group_df["description"].append(group.get("ArmGroupDescription", "NA"))
+        except KeyError as e:
+            print(e)
+            continue
 
     groups_table_df = pd.DataFrame.from_dict(group_df).reset_index(drop=True)
     return groups_table_df

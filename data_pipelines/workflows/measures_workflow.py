@@ -7,14 +7,16 @@ from sqlalchemy import create_engine
 import utils
 
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/data")
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
 )
 
 
 def create_measurements_table_helper(studies):
-    outcome_modules = utils.get_outcome_modules(studies)
+    outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
+        studies
+    )
     df = {
         "study_id": [],
         "measure": [],
@@ -40,6 +42,19 @@ def create_measurements_table_helper(studies):
             df["units"].append(measure.get("OutcomeMeasureUnitOfMeasure", "NA"))
             df["study_id"].append(study_id)
 
+    for i, module in enumerate(intervention_modules):
+        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
+            "NCTId"
+        ]
+        for measure in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
+            # Measure data is unstructured and often has other fields in the description.
+            df["type"].append("NA")
+            df["measure"].append(measure.get("ArmGroupLabel", "NA"))
+            df["description"].append(measure.get("ArmGroupDescription", "NA"))
+            df["measure_param"].append("NA")
+            df["dispersion_param"].append("NA")
+            df["units"].append("NA")
+            df["study_id"].append(study_id)
     return pd.DataFrame.from_dict(df).reset_index(drop=True)
 
 
@@ -108,6 +123,7 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
         "Secondary": "SECONDARY",
         "Other Pre-specified": "OTHER",
         "Post-Hoc": "OTHER",
+        "NA": "NA",
     }
 
     db_measures_table["type"] = db_measures_table["type"].apply(
