@@ -565,7 +565,7 @@ class Treatment(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	treatmentGroup = db.Column(db.Integer, db.ForeignKey('treatment_groups.id'))
-	name = db.Column(db.String(400))
+	name = db.Column(db.String(400), unique=True)
 	description = db.Column(db.String(5000))
 	from_study = db.Column(db.Boolean)
 	no_studies = db.Column(db.Integer)
