@@ -47,7 +47,7 @@ def update_studies_pkl() -> None:
 def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
     buffer = {
         'nct_id': [], 'official_title': [], 'short_title': [], 'conditions': [],
-        'verified_date': [], 'responsible_party': [], 'sponsor': [], 'type': [], 'description': [],
+        'verified_date': [], 'responsible_party': [], 'sponsor': [], 'phase': [], 'type': [], 'description': [],
         'interventions': [], 'purpose': [], 'intervention_type': [], 'mesh_terms': [],
         'criteria': [], 'min_age': [], 'max_age': [], 'gender': []}
     for _, study in enumerate(studies):
@@ -89,6 +89,16 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
                 study['Study']['ProtocolSection']['ConditionsModule']['ConditionList']['Condition'])
         except KeyError as e:
             buffer['conditions'].append('NA')
+
+        try:
+            phases = study['Study']['ProtocolSection']['DesignModule']['PhaseList']['Phase']
+            if len(phases) > 1:
+                phase = ' '.join(phases)
+            else:
+                phase = 'NA' if phases[0] == 'Not Applicable' else phases[0]
+            buffer['phase'].append(phase)
+        except KeyError as e:
+            buffer['phase'].append('NA')
 
         try:
             buffer['type'].append(study['Study']['ProtocolSection']['DesignModule']['StudyType'])
@@ -158,6 +168,7 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
          'description',
          'responsible_party',
          'sponsor',
+         'phase',
          'type',
          'purpose',
          'intervention_type',
@@ -208,6 +219,8 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
         db_studies_table['upload_date'].str.split(' ').apply(lambda x: str(month_dict[x[0]])) + "-01"
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.upper()
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.replace(' ', '_')
+    db_studies_table['phase'] = db_studies_table['phase'].str.upper()
+    db_studies_table['phase'] = db_studies_table['phase'].str.replace(' ', '_')
     db_studies_table['type'] = db_studies_table['type'].str.upper()
     db_studies_table['type'] = db_studies_table['type'].str.replace(' ', '_')
     db_studies_table['purpose'] = db_studies_table['purpose'].str.upper()
