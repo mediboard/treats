@@ -142,7 +142,8 @@ def clean_effects_groups_table(
 ) -> pd.DataFrame:
     effects_groups_table = pre_cleaned_effects_groups_table.rename(
         columns={"study_id": "study", "group_id": "study_id"}
-    )[["title", "description", "study_id"]]
+    )[["title", "description", "study_id", "study"]].drop_duplicates()
+
     return effects_groups_table.rename_axis(["id"], axis=0)
 
 
@@ -150,13 +151,15 @@ def clean_effects_table(
     pre_cleaned_effects_table: pd.DataFrame,
     pre_cleaned_effects_groups_table: pd.DataFrame,
 ) -> pd.DataFrame:
+    print(pre_cleaned_effects_table)
+    print(pre_cleaned_effects_groups_table)
     pre_cleaned_effects_groups_table = pre_cleaned_effects_groups_table.drop(
-        "title", axis=1
+        columns=["title", "description"], axis=1
     )
-    pre_cleaned_effects_groups_table = pre_cleaned_effects_groups_table.drop(
-        "description", axis=1
-    )
+    pre_cleaned_effects_groups_table['id'] = pre_cleaned_effects_groups_table['id'] + 1
+    
     effects_table = pre_cleaned_effects_table.merge(pre_cleaned_effects_groups_table)
+
     effects_table = effects_table.rename(
         columns={"id": "group", "study_id": "study", "effect_name": "name"}
     )
@@ -189,8 +192,10 @@ def clean_effects_table(
 
 def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
     db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id, nct_id from studies", db.connect())
-    merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")
+    study_ids = pd.read_sql("select id as std_id, nct_id from studies", db.connect())
+    merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
+        .drop(columns=['study', 'nct_id'], axis=1)\
+        .rename(columns={ 'std_id': 'study' })
 
     return merged_table
 
@@ -201,7 +206,7 @@ def upload_to_db(table_name: str, table: pd.DataFrame):
 
 
 # requires studies_workflow pulling down raw studies to disk
-def effects_workflow():
+def effects_workflow(upload_groups=False):
     (
         pre_cleaned_effects_groups_table,
         pre_cleaned_effects_table,
@@ -216,7 +221,10 @@ def effects_workflow():
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table
     )
     effects_groups_table = add_study_id(effects_groups_table)
-    upload_to_db("effectsgroups", effects_groups_table)
+
+    if (upload_groups):
+        upload_to_db("effectsgroups", effects_groups_table)
+
     effects_table = clean_effects_table(
         pre_cleaned_effects_table=pre_cleaned_effects_table,
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table,
