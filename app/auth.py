@@ -3,14 +3,19 @@ from app import cognito_client
 from app.errors import create_error
 
 
-basic_auth = HTTPBasicAuth()
+token_auth = HTTPTokenAuth()
 
 @token_auth.verify_token
 def verify_token(token):
-    user = cognito_client.admin_get_user(UserPoolId='us-west-2_QduzpPLXm', Username=user_name)
-    cognito_api_key = [x['Value'] for x in user['UserAttributes'] if x['Name'] == 'custom:apikey'][0]
+    try:
+        username = token.split('_', 1)[0]
+        user = cognito_client.admin_get_user(UserPoolId='us-west-2_QduzpPLXm', Username=username)
+        cognito_api_key = [x['Value'] for x in user['UserAttributes'] if x['Name'] == 'custom:apikey'][0]
 
-    return cognito_api_key == api_key
+        return token if cognito_api_key == token else None
+
+    except:
+        return None
 
 
 @token_auth.error_handler

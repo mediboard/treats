@@ -1,4 +1,5 @@
 from app.treatments import bp
+from app.auth import token_auth
 from app.errors import create_notfound_error
 from app.treatments.controllers import treatments
 from app.utils import removekey_oop
@@ -41,6 +42,7 @@ def get_top_treatments():
 
 @bp.route('/<string:name>')
 @cross_origin(supports_credentials=True)
+@token_auth.login_required
 def get_treatment(name):
 	treatment = treatments.get_treatment(name)
 	if not treatment:
