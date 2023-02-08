@@ -1,3 +1,6 @@
+import hashlib
+
+
 def removekey_oop(d, key):
     r = dict(d)
     del r[key]
@@ -17,3 +20,8 @@ def calculate_results_summary(mean, mn):
 
     return 0
 
+
+def hash_string(string):
+    sha256 = hashlib.sha256()
+    sha256.update(string.encode())
+    return sha256.hexdigest()
