@@ -34,7 +34,7 @@ def create_app(config_file=None):
 
 	initialize_extensions(app)
 	register_blueprints(app)
-
+	
 	return app
 
 
