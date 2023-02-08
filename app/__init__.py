@@ -64,7 +64,7 @@ def register_blueprints(app):
 	from app.blogs import bp as blogs_bp
 	from app.feedback import bp as feedback_bp
 	from app.measures import bp as measures_bp 
-	from app.users import bp as users_bp 
+	from app.api import bp as api_bp 
 
 	app.register_blueprint(treatments_bp, url_prefix='/treatments')
 	app.register_blueprint(studies_bp, url_prefix='/studies')
@@ -72,4 +72,4 @@ def register_blueprints(app):
 	app.register_blueprint(blogs_bp, url_prefix='/blogs')
 	app.register_blueprint(feedback_bp, url_prefix='/feedback')
 	app.register_blueprint(measures_bp, url_prefix='/measures')
-	app.register_blueprint(users_bp, url_prefix='/users')
+	app.register_blueprint(api_bp, url_prefix='/api')
