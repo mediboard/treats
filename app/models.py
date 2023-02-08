@@ -528,14 +528,19 @@ class Measure(db.Model):
 	measureGroups = db.relationship(
 		'MeasureGroup',
 		secondary='measure_group_measures',
-		back_populates='measures', lazy='joined')
+		back_populates='measures')
     
 	def to_dict(self):
 		return {
 			**self.to_small_dict(),
 			'outcomes': [x.to_dict() for x in self.outcomes],
-			'measureGroups': [x.to_dict() for x in self.measureGroups],
 			'analytics': [x.to_dict() for x in self.analytics]
+		}
+    
+	def to_outcome_dict(self):
+		return {
+			**self.to_small_dict(),
+			'outcomes': [x.to_dict() for x in self.outcomes],
 		}
 
 	def to_small_dict(self):
@@ -576,7 +581,21 @@ class Treatment(db.Model):
 		secondary='study_treatments',
 		back_populates='treatments')
 
-	administrations = db.relationship('Administration', lazy='dynamic', backref='treatments')
+	groups = db.relationship(
+		'Group',
+		secondary='administrations',
+		back_populates='treatments')
+
+	bases = db.relationship(
+		'TreatmentDiff',
+		secondary='base_treatments_diffs',
+		back_populates='bases')
+
+	diffs = db.relationship(
+		'TreatmentDiff',
+		secondary='diff_treatments_diffs',
+		back_populates='diffs')
+
 	condition_scores = db.relationship('ConditionScore', lazy='dynamic')
 	effect_administrations = db.relationship('EffectAdministration', lazy='select', backref='treatments')
 
@@ -635,12 +654,26 @@ class Group(db.Model): # These are just the outcome groups for now
 	description = db.Column(db.String(1500))
 	annotated = db.Column(db.Boolean)
 
-	administrations = db.relationship('Administration')
+	treatments = db.relationship(
+		'Treatment', 
+		secondary='administrations',
+		back_populates='groups')
 	analytics = db.relationship(
 		'Analytics', 
 		secondary='comparison',
 		back_populates='groups')
 	outcomes = db.relationship('Outcome', backref='groups')
+
+	def to_small_dict(self):
+		return {
+			'id': self.id,
+			'title': self.title,
+			'study_id': self.study_id,
+			'description': self.description,
+			'study': self.study,
+			'annotated': self.annotated,
+			'treatments': [x.to_dict() for x in self.treatments]
+		}
 
 	def to_measure_dict(self):
 		return {
@@ -650,16 +683,7 @@ class Group(db.Model): # These are just the outcome groups for now
 
 	def to_dict(self):
 		return {
-			'id': self.id,
-			'title': self.title,
-			'study_id': self.study_id,
-			'description': self.description,
-			'study': self.study,
-			'annotated': self.annotated,
-			'administrations': [{
-				'admin_id': x.id,
-				**x.treatments.to_dict()
-			} for x in self.administrations]
+			**self.to_small_dict(),
 		}
 
 	def from_dict(self, data):
@@ -717,6 +741,76 @@ class Administration(db.Model):
 	def from_dict(self, data):
 		for field, value in data.items():
 			setattr(self, field, value)
+
+
+class TreatmentDiff(db.Model):
+
+	__tablename__ = 'treatment_diffs'
+
+	id = db.Column(db.Integer, primary_key=True)
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
+
+	# base
+	# diff
+	# measures (or groups?? - groups are more specific, but we need pairs of groups)
+	# groups (how to store pairs?) (string or pairwise table)
+	# string would be easier to implement but harder to update
+	# I think we should do a pairwise table
+
+	bases = db.relationship(
+		'Treatment', 
+		secondary='base_treatments_diffs',
+		back_populates='bases')
+
+	diffs = db.relationship(
+		'Treatment', 
+		secondary='diff_treatments_diffs',
+		back_populates='diffs')
+
+	group_pairs = db.relationship(
+		'GroupPair', 
+		secondary='group_pair_diffs',
+		back_populates='diffs')
+
+class BaseTreatmentsDiff(db.Model):
+
+	__tablename__ = 'base_treatments_diffs'
+
+	id = db.Column(db.Integer, primary_key=True)
+	treatment_diff = db.Column(db.Integer, db.ForeignKey('treatment_diffs.id'))
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+
+
+class DiffTreatmentsDiff(db.Model):
+
+	__tablename__ = 'diff_treatments_diffs'
+
+	id = db.Column(db.Integer, primary_key=True)
+	treatment_diff = db.Column(db.Integer, db.ForeignKey('treatment_diffs.id'))
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+
+
+class GroupPairsDiff(db.Model):
+
+	__tablename__ = 'group_pair_diffs'
+
+	id = db.Column(db.Integer, primary_key=True)
+	group_pair = db.Column(db.Integer, db.ForeignKey('group_pairs.id'))
+	treatment_diff = db.Column(db.Integer, db.ForeignKey('treatment_diffs.id'))
+
+
+class GroupPair(db.Model):
+
+	__tablename__ = 'group_pairs'
+
+	id = db.Column(db.Integer, primary_key=True)
+	group_a = db.Column(db.Integer, db.ForeignKey('groups.id'))
+	group_b = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+	diffs = db.relationship(
+		'TreatmentDiff',
+		secondary='group_pair_diffs',
+		back_populates='group_pairs')
 
 
 class Analytics(db.Model):

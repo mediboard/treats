@@ -214,7 +214,7 @@ def remove_insight(insight_id):
 
 def get_measures(study_id, limit=None, primary=False):
 	measures = db.session.query(Measure)\
-		.options(joinedload(Measure.outcomes), joinedload(Measure.analytics).joinedload(Analytics.groups))\
+		.options(joinedload(Measure.outcomes))\
 		.filter(Measure.study == study_id)
 
 	if (primary):
@@ -228,7 +228,7 @@ def get_measures(study_id, limit=None, primary=False):
 
 def get_groups(study_id):
 	groups = db.session.query(Group)\
-		.options(joinedload(Group.administrations).joinedload(Administration.treatments))\
+		.options(joinedload(Group.treatments))\
 		.filter_by(study = study_id)
 
 	return groups.all()

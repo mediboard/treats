@@ -264,6 +264,10 @@ class Study(SQLAlchemyObjectType):
 		interfaces = (graphene.relay.Node, )
 		connection_field_factory = CustomField.factory
 
+# We have to do this with the graphQL api
+# Get all comparisons where one group has treatment and other does not
+# sort ascending by diff size
+
 
 class Query(graphene.ObjectType):
 	node = graphene.relay.Node.Field()
