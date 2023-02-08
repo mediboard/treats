@@ -14,7 +14,7 @@ from flask_graphql import GraphQLView
 db = SQLAlchemy()
 migrate = Migrate()
 cors = CORS()
-cognito_client = boto3.client('cognito-idp')
+cognito_client = boto3.client('cognito-idp', region_name='us-west-2')
 
 gpt_vectors = pinecone.Index('gpt')
 
