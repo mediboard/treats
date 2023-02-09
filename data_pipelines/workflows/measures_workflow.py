@@ -139,16 +139,15 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
     return db_measures_table
 
 
-def upload_to_db(studies_table: pd.DataFrame):
-    db = create_engine(DATABASE_URL)
-    studies_table.to_sql("measures", db, index=False, if_exists="append")
+def upload_to_db(measures_table: pd.DataFrame, connection):
+    merged_table.to_sql("measures", connection, index=False, if_exists="append")
 
 
 # requires studies_workflow pulling down raw studies to disk
-def measures_workflow() -> None:
+def measures_workflow(connection) -> None:
     measures_table = create_measurements_table()
     db_measures_table = clean_measures_table(measures_table=measures_table)
-    upload_to_db(db_measures_table)
+    upload_to_db(db_measures_table, connection)
 
     # used by outcomes workflow
     db_measures_table.to_pickle(DATA_PATH + "/measures_table.pkl")
@@ -159,4 +158,5 @@ def measures_workflow() -> None:
 
 
 if __name__ == "__main__":
-    measures_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    measures_workflow(connection)

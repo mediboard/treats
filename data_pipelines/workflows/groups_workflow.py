@@ -1,16 +1,13 @@
 import os
 import pickle
 import pandas as pd
+import utils
 
 from sqlalchemy import create_engine
 
-import utils
 
 DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
-)
-
+DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
 def create_outcomes_table_helper(studies) -> pd.DataFrame:
     outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
@@ -60,9 +57,8 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
     return groups_table_df
 
 
-def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
-    db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id as std_id, nct_id from studies", db.connect())
+def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
+    study_ids = pd.read_sql("select id as std_id, nct_id from studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -99,17 +95,16 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
     return groups_table
 
 
-def upload_to_db(studies_table: pd.DataFrame):
-    db = create_engine(DATABASE_URL)
-    studies_table.to_sql("groups", db, index=False, if_exists="append")
+def upload_to_db(studies_table: pd.DataFrame, connection):
+    studies_table.to_sql("groups", connection, index=False, if_exists="append")
 
 
-def groups_workflow() -> None:
+def groups_workflow(connection) -> None:
     pre_cleaned_groups_table = create_groups_table()
     groups_table = clean_groups_table(pre_cleaned_groups_table)
-    groups_table = add_study_id(groups_table)
+    groups_table = add_study_id(groups_table, connection)
 
-    upload_to_db(groups_table)
+    upload_to_db(groups_table, connection)
 
     print(groups_table)
     print(groups_table.keys())
@@ -117,4 +112,5 @@ def groups_workflow() -> None:
 
 
 if __name__ == "__main__":
-    groups_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    groups_workflow(connection)

@@ -247,10 +247,8 @@ def create_studies_table() -> pd.DataFrame:
     return studies_table
 
 
-def upload_to_db(studies_table: pd.DataFrame):
-    # studies_table = studies_table.rename_axis('id').reset_index()
-    db = create_engine(DATABASE_URL)
-    studies_table.to_sql('studies', db, index=False, if_exists='append')
+def upload_to_db(studies_table: pd.DataFrame, connection):
+    studies_table.to_sql('studies', connection, index=False, if_exists='append')
 
 
 def delete_old_studies():
@@ -276,7 +274,7 @@ def studies_workflow(update_studies: bool) -> None:
     studies_table = create_studies_table()
     store_pre_cleaned_studies_table_pkl(studies_table)
     studies_table = clean_studies_table(studies_table)
-    upload_to_db(studies_table)
+    upload_to_db(studies_table, connection)
 
     print(studies_table)
     print(studies_table.keys())
@@ -285,4 +283,5 @@ def studies_workflow(update_studies: bool) -> None:
 
 # TODO add argparse to check if overwrite local studies pkl files
 if __name__ == "__main__":
-    studies_workflow(update_studies=False)
+    connection = create_engine(DATABASE_URL).connect()
+    studies_workflow(update_studies=False, connection)

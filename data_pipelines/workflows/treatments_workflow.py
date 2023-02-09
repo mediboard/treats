@@ -23,8 +23,6 @@ ACCESS_KEY = cred.access_key
 SECRET_KEY = cred.secret_key
 SESSION_TOKEN = cred.token
 
-db_engine = create_engine(DATABASE_URL)
-
 s3_resource = boto3.resource('s3',
                              aws_access_key_id=ACCESS_KEY,
                              aws_secret_access_key=SECRET_KEY,
@@ -95,17 +93,24 @@ def get_unique_treatments(string, model, tokenizer):
   return list(set(treatments))
 
 
-def get_groups():
+def get_groups(connection):
     print("Reading groups...")
-    groups = pd.read_sql("select id, title, description from groups", db_engine.connect())
+    groups = pd.read_sql("select id, title, description from groups", connection)
     groups['text'] = 'Title: ' + groups['title'] + ' Description: ' + groups['description']
 
     return groups
 
 
-def get_effect_groups():
+def get_treatments(connection):
+    print("Reading treatments...")
+    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', connection)
+
+    return treats 
+
+
+def get_effect_groups(connection):
     print("Reading effects groups...")
-    effect_groups = pd.read_sql("select id, title, description from effectsgroups", db_engine.connect())
+    effect_groups = pd.read_sql("select id, title, description from effectsgroups", connection)
     effect_groups['text'] = 'Title: ' + effect_groups['title'] + ' Description: ' + effect_groups['description']
 
     return effect_groups
@@ -137,8 +142,8 @@ def load_tokenizer():
     return BertTokenizer.from_pretrained('emilyalsentzer/Bio_ClinicalBERT', do_lower_case=True)
 
 
-def upload_to_db(data: pd.DataFrame, table_name):
-    data.to_sql(table_name, db_engine, index=False, if_exists='append')   
+def upload_to_db(data: pd.DataFrame, table_name, connection):
+    data.to_sql(table_name, connection, index=False, if_exists='append')   
 
 
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
@@ -162,16 +167,13 @@ def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
     unique_treatments['id'] = range(1, len(unique_treatments) + 1)
     unique_treatments = unique_treatments.reset_index(drop=True)
 
-    upload_to_db(unique_treatments, 'treatments')
-
-    return groups, effect_groups
+    return unique_treatments, groups, effect_groups
 
 
-def create_groups_admins(groups: pd.DataFrame):
+def create_groups_admins(groups: pd.DataFrame, treats):
     print("Creating admins table")
     exploded = groups.explode('treatments')
 
-    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', db_engine.connect())
     admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
 
     admins['new_id'] = range(1, len(admins) + 1)
@@ -182,14 +184,13 @@ def create_groups_admins(groups: pd.DataFrame):
         'treat_id': 'treatment'
     })
 
-    upload_to_db(admins, 'administrations')
+    return admins
 
 
-def create_effects_admins(effect_groups: pd.DataFrame):
+def create_effects_admins(effect_groups: pd.DataFrame, treats):
     print("Creating effects admins table")
     exploded = effect_groups.explode('treatments')
 
-    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', db_engine.connect())
     admins = exploded[['id', 'treatments']].merge(treats, on='treatments').drop_duplicates()
 
     admins['new_id'] = range(1, len(admins) + 1)
@@ -200,17 +201,27 @@ def create_effects_admins(effect_groups: pd.DataFrame):
         'treat_id': 'treatment'
     })
 
-    upload_to_db(admins, 'effectsadministrations')
+    return admins
 
 
-def run_treatments_workflow():
+def run_treatments_workflow(connection):
     groups = get_groups()
     effect_groups = get_effect_groups()
 
-    treat_groups, treat_effect_groups = parse_treatments(groups, effect_groups)
+    treats, treat_groups, treat_effect_groups = parse_treatments(groups, effect_groups)
+    upload_to_db(treats, 'treatments', connection)
 
-    create_groups_admins(treat_groups)
-    create_effects_admins(treat_effect_groups)
+    # Need to refresh with id
+    treats = get_treatments(connection)
+
+    group_admins = create_groups_admins(treat_groups, treats)
+    upload_to_db(group_admins, 'administrations', connection)
+
+    effects_admins = create_effects_admins(treat_effect_groups, treats)
+    upload_to_db(effects_admins, 'effectsadministrations', connection)
+
+
 
 if (__name__ == '__main__'):
-    run_treatments_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    run_treatments_workflow(connection)
