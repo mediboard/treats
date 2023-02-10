@@ -12,9 +12,8 @@ import boto3.session
 
 from sqlalchemy import create_engine
 
-DATA_PATH = os.environ.get('DATA_PATH', default="/Users/davonprewitt/data")
-DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://davonprewitt@localhost:5432")
-
+DATA_PATH = os.environ.get('DATA_PATH', default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://meditreats:meditreats@localhost:5432/meditreats")
 
 cred = boto3.Session().get_credentials()
 ACCESS_KEY = cred.access_key
@@ -41,7 +40,6 @@ def update_studies_pkl() -> None:
         print(f'Downloading file {obj.key} to {DATA_PATH + obj.key}')
         print(obj.key)
         s3_bucket.download_file(Key=obj.key, Filename=DATA_PATH + obj.key)
-
 
 
 def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
@@ -248,7 +246,7 @@ def create_studies_table() -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame, connection):
-    studies_table.to_sql('studies', connection, index=False, if_exists='append')
+    studies_table.to_sql('studies', connection, index=False, if_exists='append', schema='temp_schema')
 
 
 def delete_old_studies():
@@ -262,7 +260,7 @@ def store_pre_cleaned_studies_table_pkl(studies_table: pd.DataFrame) -> None:
     studies_table.to_pickle(DATA_PATH + 'pre_cleaned_studies_table.pkl')
 
 
-def studies_workflow(update_studies: bool) -> None:
+def studies_workflow(connection, update_studies: bool) -> None:
     # TODO add versioning on studies uploads in S3 (check if latest)
     if update_studies:
         studies_path = f'{DATA_PATH}/clinical_trials/'
@@ -271,9 +269,11 @@ def studies_workflow(update_studies: bool) -> None:
             os.mkdir(studies_path)
         delete_old_studies()
         update_studies_pkl()
+
     studies_table = create_studies_table()
     store_pre_cleaned_studies_table_pkl(studies_table)
     studies_table = clean_studies_table(studies_table)
+    studies_table['id'] = [i for i, x in enumerate(studies_table.index)] 
     upload_to_db(studies_table, connection)
 
     print(studies_table)
@@ -284,4 +284,5 @@ def studies_workflow(update_studies: bool) -> None:
 # TODO add argparse to check if overwrite local studies pkl files
 if __name__ == "__main__":
     connection = create_engine(DATABASE_URL).connect()
-    studies_workflow(update_studies=False, connection)
+    print("Main file")
+    studies_workflow(connection, update_studies=False)
