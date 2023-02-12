@@ -2,19 +2,45 @@
 import os
 import pickle
 import pandas as pd
+
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
-import utils
 
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
-)
+def get_outcome_and_intervention_modules(studies):
+    outcome_modules = []
+    intervention_modules = []
+    for study in studies:
+        if (
+            "ResultsSection" in study["Study"]
+            and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
+        ):
+            outcome_modules.append(
+                study["Study"]["ResultsSection"]["OutcomeMeasuresModule"]
+            )
+            continue
+        elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
+            intervention_modules.append(
+                study["Study"]["ProtocolSection"]["ArmsInterventionsModule"]
+            )
+            continue
+
+        identification_module = study["Study"]["ProtocolSection"][
+            "IdentificationModule"
+        ]
+        if "OfficialTitle" in identification_module:
+            study_title = identification_module["OfficialTitle"]
+        else:
+            study_title = identification_module["BriefTitle"]
+
+    return outcome_modules, intervention_modules
 
 
 def create_measurements_table_helper(studies):
-    outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
+    outcome_modules, intervention_modules = get_outcome_and_intervention_modules(
         studies
     )
     df = {
@@ -36,9 +62,7 @@ def create_measurements_table_helper(studies):
             df["measure"].append(measure.get("OutcomeMeasureTitle", "NA"))
             df["description"].append(measure.get("OutcomeMeasureDescription", "NA"))
             df["measure_param"].append(measure.get("OutcomeMeasureParamType", "NA"))
-            df["dispersion_param"].append(
-                measure.get("OutcomeMeasureDispersionType", "NA")
-            )
+            df["dispersion_param"].append(measure.get("OutcomeMeasureDispersionType", "NA"))
             df["units"].append(measure.get("OutcomeMeasureUnitOfMeasure", "NA"))
             df["study_id"].append(study_id)
 
@@ -61,9 +85,9 @@ def create_measurements_table_helper(studies):
 def create_measurements_table():
     measurements_table_dfs = []
     directory = DATA_PATH + "/clinical_trials/"
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies...")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
         with open(studies_file, "rb") as f:
             studies_data = pickle.load(f)
             measurements_table_df = create_measurements_table_helper(
@@ -123,7 +147,7 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
         "Secondary": "SECONDARY",
         "Other Pre-specified": "OTHER",
         "Post-Hoc": "OTHER",
-        "NA": "NA",
+        "NA": "OTHER",
     }
 
     db_measures_table["type"] = db_measures_table["type"].apply(
@@ -140,13 +164,23 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def upload_to_db(measures_table: pd.DataFrame, connection):
-    merged_table.to_sql("measures", connection, index=False, if_exists="append")
+    measures_table.to_sql("measures", connection, index=False, if_exists="append", schema='temp_schema')
+
+
+def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
+    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
+    merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
+        .drop(columns=['study', 'nct_id'], axis=1)\
+        .rename(columns={ 'std_id': 'study' })
+
+    return merged_table
 
 
 # requires studies_workflow pulling down raw studies to disk
 def measures_workflow(connection) -> None:
     measures_table = create_measurements_table()
     db_measures_table = clean_measures_table(measures_table=measures_table)
+    db_measures_table = add_study_id(db_measures_table, connection)
     upload_to_db(db_measures_table, connection)
 
     # used by outcomes workflow

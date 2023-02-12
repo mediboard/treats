@@ -205,8 +205,8 @@ def create_effects_admins(effect_groups: pd.DataFrame, treats):
 
 
 def run_treatments_workflow(connection):
-    groups = get_groups()
-    effect_groups = get_effect_groups()
+    groups = get_groups(connection)
+    effect_groups = get_effect_groups(connection)
 
     treats, treat_groups, treat_effect_groups = parse_treatments(groups, effect_groups)
     upload_to_db(treats, 'treatments', connection)

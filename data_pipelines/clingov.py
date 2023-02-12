@@ -5,6 +5,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from workflows.studies_workflow import studies_workflow
+from workflows.treatments_workflow import run_treatments_workflow 
+from workflows.groups_workflow import groups_workflow 
+from workflows.measures_workflow import measures_workflow 
+from workflows.effects_workflow import effects_workflow
+from workflows.conditions_workflow import conditions_workflow 
 
 
 engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditreats")
@@ -35,6 +40,14 @@ engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditr
 def run_clingov_pipelines():
   connection = engine.connect()
   studies_workflow(connection, False)
+
+  # This takes a while
+  # run_treatments_workflow(connection)
+
+  # groups_workflow(connection)
+  # measures_workflow(connection)
+  # effects_workflow(connection, True)
+  conditions_workflow(connection)
 
 
 if __name__ == '__main__':

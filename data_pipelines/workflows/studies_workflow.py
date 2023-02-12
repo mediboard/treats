@@ -11,6 +11,7 @@ import pickle
 import boto3.session
 
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
 DATA_PATH = os.environ.get('DATA_PATH', default="/Users/porterhunley/datasets")
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://meditreats:meditreats@localhost:5432/meditreats")
@@ -233,9 +234,8 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
 def create_studies_table() -> pd.DataFrame:
     studies_table_dfs = []
     directory = DATA_PATH + '/clinical_trials/'
-    for studies_data_pickle_file in os.listdir(directory):
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
         with open(studies_file, 'rb') as f:
             studies_data = pickle.load(f)
             studies_table_df = create_studies_table_helper(studies=studies_data)
@@ -257,7 +257,7 @@ def delete_old_studies():
 
 # this serializes studies_table object referenced by some workflows
 def store_pre_cleaned_studies_table_pkl(studies_table: pd.DataFrame) -> None:
-    studies_table.to_pickle(DATA_PATH + 'pre_cleaned_studies_table.pkl')
+    studies_table.to_pickle(DATA_PATH + '/pre_cleaned_studies_table.pkl')
 
 
 def studies_workflow(connection, update_studies: bool) -> None:
@@ -284,5 +284,4 @@ def studies_workflow(connection, update_studies: bool) -> None:
 # TODO add argparse to check if overwrite local studies pkl files
 if __name__ == "__main__":
     connection = create_engine(DATABASE_URL).connect()
-    print("Main file")
     studies_workflow(connection, update_studies=False)

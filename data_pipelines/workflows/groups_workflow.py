@@ -1,16 +1,45 @@
 import os
 import pickle
 import pandas as pd
-import utils
 
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
 DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
+def get_outcome_and_intervention_modules(studies):
+    outcome_modules = []
+    intervention_modules = []
+    for study in studies:
+        if (
+            "ResultsSection" in study["Study"]
+            and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
+        ):
+            outcome_modules.append(
+                study["Study"]["ResultsSection"]["OutcomeMeasuresModule"]
+            )
+            continue
+        elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
+            intervention_modules.append(
+                study["Study"]["ProtocolSection"]["ArmsInterventionsModule"]
+            )
+            continue
+
+        identification_module = study["Study"]["ProtocolSection"][
+            "IdentificationModule"
+        ]
+        if "OfficialTitle" in identification_module:
+            study_title = identification_module["OfficialTitle"]
+        else:
+            study_title = identification_module["BriefTitle"]
+
+    return outcome_modules, intervention_modules
+
+
 def create_outcomes_table_helper(studies) -> pd.DataFrame:
-    outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
+    outcome_modules, intervention_modules = get_outcome_and_intervention_modules(
         studies
     )
     group_df = {
@@ -58,7 +87,7 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
 
 
 def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql("select id as std_id, nct_id from studies", connection)
+    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -70,9 +99,9 @@ def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
 def create_groups_table():
     groups_table_dfs = []
     directory = DATA_PATH + "/clinical_trials/"
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
         with open(studies_file, "rb") as f:
             studies_data = pickle.load(f)
             groups_table_df = create_outcomes_table_helper(studies=studies_data)
@@ -96,7 +125,7 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame, connection):
-    studies_table.to_sql("groups", connection, index=False, if_exists="append")
+    studies_table.to_sql("groups", connection, index=False, if_exists="append", schema='temp_schema')
 
 
 def groups_workflow(connection) -> None:
