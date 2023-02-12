@@ -10,6 +10,7 @@ import pickle
 # TODO: Pipelines that read from the blob should have their own class
 # --------------------- #
 import boto3.session
+from tqdm import tqdm
 
 from sqlalchemy import create_engine
 
@@ -259,9 +260,9 @@ def create_baselines_table() -> pd.DataFrame:
     baselines_table_dfs = []
     directory = DATA_PATH + '/clinical_trials/'
 
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies... ")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
 
         with open(studies_file, 'rb') as f:
             studies_data = pickle.load(f)
@@ -279,7 +280,7 @@ def delete_old_studies():
 
         
 def upload_to_db(baselines_table: pd.DataFrame, connection):
-    baselines_table.to_sql('baselines', connection, index=False, if_exists='append')
+    baselines_table.to_sql('baselines', connection, index=False, if_exists='append', schema='temp_schema')
 
 
 def baselines_workflow(connection, update_studies=False):
