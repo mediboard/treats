@@ -30,7 +30,7 @@ def upgrade():
     )
     op.create_index(op.f('ix_conditions_name'), 'conditions', ['name'], unique=True)
     op.create_table('studies',
-    sa.Column('id', sa.String(length=11), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('upload_date', sa.Date(), nullable=True),
     sa.Column('short_title', sa.String(length=300), nullable=True),
     sa.Column('official_title', sa.String(length=600), nullable=True),
@@ -49,7 +49,7 @@ def upgrade():
     )
     op.create_table('criteria',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('criteria', sa.String(length=500), nullable=True),
     sa.Column('is_inclusion', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
@@ -60,13 +60,13 @@ def upgrade():
     sa.Column('title', sa.String(length=100), nullable=True),
     sa.Column('study_id', sa.String(length=7), nullable=True),
     sa.Column('description', sa.String(length=1500), nullable=True),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('measures',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=256), nullable=True),
     sa.Column('description', sa.String(length=1005), nullable=True),
     sa.Column('dispersion', sa.Enum('STANDARD_DEVIATION', 'CONFIDENCE_INTERVAL_95', 'STANDARD_ERROR', 'FULL_RANGE', 'GEOMETRIC_COEFFICIENT_OF_VARIATION', 'INTER_QUARTILE_RANGE', 'CONFIDENCE_INTERVAL_90', 'CONFIDENCE_INTERVAL_80', 'CONFIDENCE_INTERVAL_97', 'CONFIDENCE_INTERVAL_99', 'CONFIDENCE_INTERVAL_60', 'CONFIDENCE_INTERVAL_96', 'CONFIDENCE_INTERVAL_98', 'CONFIDENCE_INTERVAL_70', 'CONFIDENCE_INTERVAL_85', 'CONFIDENCE_INTERVAL_75', 'CONFIDENCE_INTERVAL_94', 'CONFIDENCE_INTERVAL_100', 'NA', name='dispersion_param'), nullable=True),
@@ -78,7 +78,7 @@ def upgrade():
     )
     op.create_table('study_conditions',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('condition', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['condition'], ['conditions.id'], ),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
@@ -103,7 +103,7 @@ def upgrade():
     )
     op.create_table('analytics',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('measure', sa.Integer(), nullable=True),
     sa.Column('from_study', sa.Boolean(), nullable=True),
     sa.Column('method', sa.String(length=100), nullable=True),
@@ -134,13 +134,13 @@ def upgrade():
     sa.Column('lower', sa.Float(), nullable=True),
     sa.Column('type', sa.Enum('RACE', 'GENDER', 'ETHNICITY', 'AGE', 'OTHER', name='baseline_type'), nullable=True),
     sa.Column('sub_type', sa.Enum('WHITE', 'BLACK', 'ASIAN', 'INDIAN', 'PACIFIC', 'MALE', 'FEMALE', 'NA', name='baseline_subtype'), nullable=True),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('effects',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('group', sa.Integer(), nullable=True),
     sa.Column('name', sa.String(length=100), nullable=True),
     sa.Column('organ_system', sa.Enum('BLOOD_AND_LYMPHATIC_SYSTEM_DISORDERS', 'CARDIAC_DISORDERS', 'CONGENITAL_FAMILIAL_AND_GENETIC_DISORDERS', 'EAR_AND_LABYRINTH_DISORDERS', 'ENDOCRINE_DISORDERS', 'EYE_DISORDERS', 'GASTROINTESTINAL_DISORDERS', 'GENERAL_DISORDERS', 'HEPATOBILIARY_DISORDERS', 'IMMUNE_SYSTEM_DISORDERS', 'INFECTIONS_AND_INFESTATIONS', 'INJURY_POISONING_AND_PROCEDURAL_COMPLICATIONS', 'INVESTIGATIONS', 'METABOLISM_AND_NUTRITION_DISORDERS', 'MUSCULOSKELETAL_AND_CONNECTIVE_TISSUE_DISORDERS', 'NEOPLASMS_BENIGN_MALIGNANT_AND_UNSPECIFIED', 'NERVOUS_SYSTEM_DISORDERS', 'PREGNANCY_PUERPERIUM_AND_PERINATAL_CONDITIONS', 'PRODUCT_ISSUES', 'PSYCHIATRIC_DISORDERS', 'RENAL_AND_URINARY_DISORDERS', 'REPRODUCTIVE_SYSTEM_AND_BREAST_DISORDERS', 'RESPIRATORY_THORACIC_AND_MEDIASTINAL_DISORDERS', 'SKIN_AND_SUBCUTANEOUS_TISSUE_DISORDERS', 'SOCIAL_CIRCUMSTANCES', 'SURGICAL_AND_MEDICAL_PROCEDURES', 'VASCULAR_DISORDERS', name='organ_system'), nullable=True),
@@ -161,7 +161,7 @@ def upgrade():
     )
     op.create_table('outcomes',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('administration', sa.Integer(), nullable=True),
     sa.Column('measure', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=225), nullable=True),

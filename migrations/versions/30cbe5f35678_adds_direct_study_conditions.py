@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.create_table('study_treatments',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('study', sa.String(length=11), nullable=True),
+    sa.Column('study', sa.Integer(), nullable=True),
     sa.Column('treatment', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['study'], ['studies.id'], ),
     sa.ForeignKeyConstraint(['treatment'], ['treatments.id'], ),

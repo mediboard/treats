@@ -13,36 +13,23 @@ DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt
 def get_outcome_and_intervention_modules(studies):
     outcome_modules = []
     intervention_modules = []
+    study_ids = []
     for study in studies:
         if (
             "ResultsSection" in study["Study"]
             and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
         ):
-            outcome_modules.append(
-                study["Study"]["ResultsSection"]["OutcomeMeasuresModule"]
-            )
-            continue
+            outcome_modules.append(study["Study"]["ResultsSection"]["OutcomeMeasuresModule"])
+            study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
+
         elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
-            intervention_modules.append(
-                study["Study"]["ProtocolSection"]["ArmsInterventionsModule"]
-            )
-            continue
+            intervention_modules.append(study["Study"]["ProtocolSection"]["ArmsInterventionsModule"])
 
-        identification_module = study["Study"]["ProtocolSection"][
-            "IdentificationModule"
-        ]
-        if "OfficialTitle" in identification_module:
-            study_title = identification_module["OfficialTitle"]
-        else:
-            study_title = identification_module["BriefTitle"]
-
-    return outcome_modules, intervention_modules
+    return outcome_modules, intervention_modules, study_ids
 
 
 def create_measurements_table_helper(studies):
-    outcome_modules, intervention_modules = get_outcome_and_intervention_modules(
-        studies
-    )
+    outcome_modules, intervention_modules, study_ids = get_outcome_and_intervention_modules(studies)
     df = {
         "study_id": [],
         "measure": [],
@@ -54,9 +41,6 @@ def create_measurements_table_helper(studies):
     }
 
     for i, module in enumerate(outcome_modules):
-        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
-            "NCTId"
-        ]
         for measure in module["OutcomeMeasureList"]["OutcomeMeasure"]:
             df["type"].append(measure.get("OutcomeMeasureType", "NA"))
             df["measure"].append(measure.get("OutcomeMeasureTitle", "NA"))
@@ -64,21 +48,20 @@ def create_measurements_table_helper(studies):
             df["measure_param"].append(measure.get("OutcomeMeasureParamType", "NA"))
             df["dispersion_param"].append(measure.get("OutcomeMeasureDispersionType", "NA"))
             df["units"].append(measure.get("OutcomeMeasureUnitOfMeasure", "NA"))
-            df["study_id"].append(study_id)
+            df["study_id"].append(study_ids[i])
 
-    for i, module in enumerate(intervention_modules):
-        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
-            "NCTId"
-        ]
-        for measure in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
-            # Measure data is unstructured and often has other fields in the description.
-            df["type"].append("NA")
-            df["measure"].append(measure.get("ArmGroupLabel", "NA"))
-            df["description"].append(measure.get("ArmGroupDescription", "NA"))
-            df["measure_param"].append("NA")
-            df["dispersion_param"].append("NA")
-            df["units"].append("NA")
-            df["study_id"].append(study_id)
+    # This is for studies without results
+    # for i, module in enumerate(intervention_modules):
+    #     for measure in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
+    #         # Measure data is unstructured and often has other fields in the description.
+    #         df["type"].append("NA")
+    #         df["measure"].append(measure.get("ArmGroupLabel", "NA"))
+    #         df["description"].append(measure.get("ArmGroupDescription", "NA"))
+    #         df["measure_param"].append("NA")
+    #         df["dispersion_param"].append("NA")
+    #         df["units"].append("NA")
+    #         df["study_id"].append(study_ids[i])
+
     return pd.DataFrame.from_dict(df).reset_index(drop=True)
 
 

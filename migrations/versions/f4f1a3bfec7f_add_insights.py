@@ -20,7 +20,7 @@ depends_on = None
 def upgrade():
     op.create_table('insights',
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column('study', sa.String(length=11), nullable=True),
+        sa.Column('study', sa.Integer(), nullable=True),
         sa.Column('measure', sa.Integer(), nullable=True),
         sa.Column('type', sa.Enum('STUDY', 'BASELINE', 'MEASURE', 'ADVERSE_EFFECT', name='insight_type'), nullable=True),
         sa.Column('body', sa.String(length=1000), nullable=True),
