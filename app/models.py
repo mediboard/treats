@@ -115,6 +115,7 @@ class study_type(enum.Enum):
 	OBSERVATIONAL= 'Observational'
 	PATIENT_REGISTRY='Patient Registry'
 	EXPANDED_ACCESS='Expanded Access'
+	NA='NA'
 
 
 class purpose(enum.Enum):
@@ -251,6 +252,17 @@ class insight_Type(enum.Enum):
 	ADVERSE_EFFECT='adverse_effect'
 
 
+class study_status(enum.Enum):
+	PRE_RECRUITING='pre recruiting'
+	RECRUITING='recruiting'
+	ENROLLING='enrolling'
+	ACTIVE='active'
+	COMPLETED='completed'
+	SUSPENDED='suspended'
+	TERMINATED='terminated'
+	WITHDRAWN='withdrawn'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
@@ -273,6 +285,8 @@ class Study(db.Model):
 	max_age_units = db.Column(db.Enum(max_age_units))
 	gender = db.Column(db.Enum(gender))
 	results_summary = db.Column(db.Integer)
+	stopped_reason = db.Column(db.String(251))
+	status = db.Column(db.Enum(study_status))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
 

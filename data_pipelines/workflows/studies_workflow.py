@@ -199,6 +199,7 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['max_age'] = db_studies_table['max_age'].apply(int)
 
     month_dict = {
+        'NA': -1,
         'January': 1,
         'February': 2,
         'March': 3,
@@ -216,6 +217,9 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['upload_date'] = \
         db_studies_table['upload_date'].str.split(' ').apply(lambda x: x[-1]) + '-' + \
         db_studies_table['upload_date'].str.split(' ').apply(lambda x: str(month_dict[x[0]])) + "-01"
+
+    db_studies_table['upload_date'] = db_studies_table['upload_date'].apply(lambda x: None if 'NA' in x else x)
+
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.upper()
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.replace(' ', '_')
     db_studies_table['phase'] = db_studies_table['phase'].str.upper()
