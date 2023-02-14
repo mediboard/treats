@@ -92,35 +92,6 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
         }
     ).rename_axis(["id"], axis=0)
 
-    dispersion_map = {
-        "Standard Deviation": "STANDARD_DEVIATION",
-        "95% Confidence Interval": "CONFIDENCE_INTERVAL_95",
-        "Standard Error": "STANDARD_ERROR",
-        "Full Range": "FULL_RANGE",
-        "Geometric Coefficient of Variation": "GEOMETRIC_COEFFICIENT_OF_VARIATION",
-        "Inter-Quartile Range": "INTER_QUARTILE_RANGE",
-        "90% Confidence Interval": "CONFIDENCE_INTERVAL_90",
-        "80% Confidence Interval": "CONFIDENCE_INTERVAL_80",
-        "97% Confidence Interval": "CONFIDENCE_INTERVAL_97",
-        "99% Confidence Interval": "CONFIDENCE_INTERVAL_99",
-        "60% Confidence Interval": "CONFIDENCE_INTERVAL_60",
-        "96% Confidence Interval": "CONFIDENCE_INTERVAL_96",
-        "98% Confidence Interval": "CONFIDENCE_INTERVAL_98",
-        "70% Confidence Interval": "CONFIDENCE_INTERVAL_70",
-        "85% Confidence Interval": "CONFIDENCE_INTERVAL_85",
-        "75% Confidence Interval": "CONFIDENCE_INTERVAL_75",
-        "94% Confidence Interval": "CONFIDENCE_INTERVAL_94",
-        "100% Confidence Interval": "CONFIDENCE_INTERVAL_100",
-        "68% Confidence Interval": "CONFIDENCE_INTERVAL_68",
-        "NA": "NA",
-    }
-
-    db_measures_table["dispersion"] = (
-        db_measures_table["dispersion"]
-        .apply(lambda x: x if "." not in x else x[: x.index(".")] + x[x.index("%") :])
-        .apply(lambda x: dispersion_map[x])
-    )
-
     db_measures_table["param"] = (
         db_measures_table["param"].str.upper().str.replace(" ", "_")
     )

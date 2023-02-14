@@ -4,6 +4,7 @@ import math
 from app.models import measure_dispersion_param 
 
 
+# TODO need to refactor this to use strings
 continous_dispersions = [
 	'measure_dispersion_param.STANDARD_ERROR',
 	'measure_dispersion_param.STANDARD_DEVIATION']

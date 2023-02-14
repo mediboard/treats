@@ -44,7 +44,6 @@ def run_clingov_pipelines():
   connection = engine.connect()
   studies_workflow(connection, False)
 
-
   # groups_workflow(connection)
   # effects_workflow(connection, True)
   # conditions_workflow(connection)
