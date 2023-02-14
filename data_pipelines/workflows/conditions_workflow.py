@@ -6,11 +6,9 @@ import re
 
 from sqlalchemy import create_engine
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/data")
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
-)
 
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
 def load_pre_cleaned_studies_table() -> pd.DataFrame:
     with open(DATA_PATH + "/pre_cleaned_studies_table.pkl", "rb") as f:
@@ -19,7 +17,8 @@ def load_pre_cleaned_studies_table() -> pd.DataFrame:
 
 
 def get_conditions(studies_table: pd.DataFrame) -> pd.DataFrame:
-    conditions = studies_table.explode("conditions")[["conditions", "study_id"]]
+    print(studies_table)
+    conditions = studies_table.explode("conditions")[["conditions", "nct_id"]]
     conditions["alpha_num"] = conditions["conditions"].apply(
         lambda x: re.sub(r"[^a-zA-Z0-9 ]", "", x)
     )
@@ -31,6 +30,7 @@ def get_conditions(studies_table: pd.DataFrame) -> pd.DataFrame:
         lambda x: conditions_dict[x]
     )
     conditions["l_conditions"] = conditions["conditions"].apply(lambda x: [x])
+
     return conditions
 
 
@@ -44,42 +44,54 @@ def create_conditions_table(conditions: pd.DataFrame) -> pd.DataFrame:
     )
     conditions_table = conditions_table.set_axis(["name"], axis=1, inplace=False)
     conditions_table = conditions_table.rename_axis(["id"], axis=0)
+
+    print(conditions_table)
+    print(conditions_table['name'].str.len().max())
+
     return conditions_table
 
 
 def create_study_conditions_table(conditions: pd.DataFrame) -> pd.DataFrame:
     study_conditions = (
-        conditions[["study_id", "condition_id"]]
-        .rename(columns={"study_id": "study", "condition_id": "condition"})
+        conditions[["nct_id", "condition_id"]]
+        .rename(columns={"nct_id": "study", "condition_id": "condition"})
         .reset_index(drop=True)
     )
+
     return study_conditions
 
 
-def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
+def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
     db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id, nct_id from studies", db.connect())
+    study_ids = pd.read_sql("select id, nct_id from temp_schema.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")
+    print(merged_table)
 
-    return merged_table[["id", "study", "condition"]]
+    merged_table = merged_table.drop(columns=['nct_id', 'study']).rename(columns={
+        'id': 'study'
+    })
 
 
-def upload_to_db(table_name: str, table: pd.DataFrame):
-    db = create_engine(DATABASE_URL)
-    table.to_sql(str, db, index=False, if_exists="append")
+    return merged_table[["study", "condition"]]
+
+
+def upload_to_db(table_name: str, table: pd.DataFrame, connection):
+    table.to_sql(table_name, connection, index=False, if_exists="append", schema='temp_schema')
 
 
 # requires studies_workflow to write pre_cleaned studies_table to disk
-def conditions_workflow() -> None:
+def conditions_workflow(connection) -> None:
     studies_table = load_pre_cleaned_studies_table()
 
     conditions = get_conditions(studies_table=studies_table)
     conditions_table = create_conditions_table(conditions=conditions)
-    upload_to_db("conditions", conditions_table)
+    upload_to_db("conditions", conditions_table, connection)
 
     study_conditions_table = create_study_conditions_table(conditions=conditions)
-    study_conditions_table = add_study_id(study_conditions_table)
-    upload_to_db("study_conditions", study_conditions_table)
+    study_conditions_table = add_study_id(study_conditions_table, connection)
+    study_conditions_table['id'] = [i for i, x in enumerate(study_conditions_table.index)] 
+    study_conditions_table['condition'] = study_conditions_table['condition'] + 1
+    upload_to_db("study_conditions", study_conditions_table, connection)
 
     print(conditions_table)
     print(conditions_table.keys())
@@ -91,4 +103,5 @@ def conditions_workflow() -> None:
 
 
 if __name__ == "__main__":
-    conditions_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    conditions_workflow(connection)

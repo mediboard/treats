@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('effectsgroups', sa.Column('study', sa.String(length=11), nullable=True))
+    op.add_column('effectsgroups', sa.Column('study', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'effectsgroups', 'studies', ['study'], ['id'])
     op.create_index('effectsgroups_study_ind', 'effectsgroups', ['study'], unique=False)
     op.create_index('effects_study_ind', 'effects', ['study'], unique=False)

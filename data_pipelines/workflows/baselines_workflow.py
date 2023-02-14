@@ -10,6 +10,7 @@ import pickle
 # TODO: Pipelines that read from the blob should have their own class
 # --------------------- #
 import boto3.session
+from tqdm import tqdm
 
 from sqlalchemy import create_engine
 
@@ -241,9 +242,8 @@ def clean_baselines_table(baselines_table: pd.DataFrame) -> pd.DataFrame:
                             'unit','value','spread','upper','lower', 'sub_type']]
 
 
-def add_study_id(baselines_table: pd.DataFrame) -> pd.DataFrame:
-    db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql('select id, nct_id from studies', db.connect())
+def add_study_id(baselines_table: pd.DataFrame, connection) -> pd.DataFrame:
+    study_ids = pd.read_sql('select id, nct_id from studies', connection)
     merged_table = baselines_table.merge(study_ids, left_on='study', right_on='nct_id')
 
     return merged_table[['id','base','clss','category','param_type','dispersion',
@@ -260,9 +260,9 @@ def create_baselines_table() -> pd.DataFrame:
     baselines_table_dfs = []
     directory = DATA_PATH + '/clinical_trials/'
 
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies... ")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
 
         with open(studies_file, 'rb') as f:
             studies_data = pickle.load(f)
@@ -279,13 +279,11 @@ def delete_old_studies():
         os.rmdir(f)
 
         
-def upload_to_db(baselines_table: pd.DataFrame):
-    # studies_table = studies_table.rename_axis('id').reset_index()
-    db = create_engine(DATABASE_URL)
-    baselines_table.to_sql('baselines', db, index=False, if_exists='append')
+def upload_to_db(baselines_table: pd.DataFrame, connection):
+    baselines_table.to_sql('baselines', connection, index=False, if_exists='append', schema='temp_schema')
 
 
-def baselines_workflow(update_studies=False):
+def baselines_workflow(connection, update_studies=False):
     if update_studies:
         studies_path = f'{DATA_PATH}/clinical_trials/'
 
@@ -299,9 +297,10 @@ def baselines_workflow(update_studies=False):
     baselines_table = create_baselines_table()
     store_pre_cleaned_baselines_table_pkl(baselines_table)
     baselines_table = clean_baselines_table(baselines_table)
-    baselines_table = add_study_id(baselines_table)
-    upload_to_db(baselines_table)
+    baselines_table = add_study_id(baselines_table, connection)
+    upload_to_db(baselines_table, connection)
 
 
 if __name__ == '__main__':
-    baselines_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    baselines_workflow(connection)

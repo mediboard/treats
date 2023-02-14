@@ -3,19 +3,32 @@ import pickle
 import pandas as pd
 
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
-import utils
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
-)
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
+
+def get_outcome_and_intervention_modules(studies):
+    outcome_modules = []
+    intervention_modules = []
+    study_ids = []
+    for study in studies:
+        if (
+            "ResultsSection" in study["Study"]
+            and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
+        ):
+            outcome_modules.append(study["Study"]["ResultsSection"]["OutcomeMeasuresModule"])
+            study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
+
+        elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
+            intervention_modules.append(study["Study"]["ProtocolSection"]["ArmsInterventionsModule"])
+
+    return outcome_modules, intervention_modules, study_ids
 
 
 def create_outcomes_table_helper(studies) -> pd.DataFrame:
-    outcome_modules, intervention_modules = utils.get_outcome_and_intervention_modules(
-        studies
-    )
+    outcome_modules, intervention_modules, study_ids = get_outcome_and_intervention_modules(studies)
     group_df = {
         "study_id": [],
         "group_id": [],
@@ -24,15 +37,12 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
     }
 
     for i, module in enumerate(outcome_modules):
-        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
-            "NCTId"
-        ]
         for measure in module["OutcomeMeasureList"]["OutcomeMeasure"]:
             try:
                 for admin in measure.get("OutcomeGroupList", {"OutcomeGroup": []})[
                     "OutcomeGroup"
                 ]:
-                    group_df["study_id"].append(study_id)
+                    group_df["study_id"].append(study_ids[i])
                     group_df["group_id"].append(admin.get("OutcomeGroupId", "NA"))
                     group_df["title"].append(admin.get("OutcomeGroupTitle", "NA"))
                     group_df["description"].append(
@@ -41,28 +51,25 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
             except KeyError as e:
                 continue
 
-    for i, module in enumerate(intervention_modules):
-        study_id = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"][
-            "NCTId"
-        ]
-        try:
-            for group in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
-                group_df["study_id"].append(study_id)
-                # Group IDs aren't present for studies without results
-                group_df["group_id"].append("NA")
-                group_df["title"].append(group.get("ArmGroupLabel", "NA"))
-                group_df["description"].append(group.get("ArmGroupDescription", "NA"))
-        except KeyError as e:
-            print(e)
-            continue
+    # For studies without results
+    # for i, module in enumerate(intervention_modules):
+    #     try:
+    #         for group in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
+    #             group_df["study_id"].append(study_ids[i])
+    #             # Group IDs aren't present for studies without results
+    #             group_df["group_id"].append("NA")
+    #             group_df["title"].append(group.get("ArmGroupLabel", "NA"))
+    #             group_df["description"].append(group.get("ArmGroupDescription", "NA"))
+    #     except KeyError as e:
+    #         print(e)
+    #         continue
 
     groups_table_df = pd.DataFrame.from_dict(group_df).reset_index(drop=True)
     return groups_table_df
 
 
-def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
-    db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id as std_id, nct_id from studies", db.connect())
+def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
+    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -74,9 +81,9 @@ def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
 def create_groups_table():
     groups_table_dfs = []
     directory = DATA_PATH + "/clinical_trials/"
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
         with open(studies_file, "rb") as f:
             studies_data = pickle.load(f)
             groups_table_df = create_outcomes_table_helper(studies=studies_data)
@@ -99,17 +106,16 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
     return groups_table
 
 
-def upload_to_db(studies_table: pd.DataFrame):
-    db = create_engine(DATABASE_URL)
-    studies_table.to_sql("groups", db, index=False, if_exists="append")
+def upload_to_db(studies_table: pd.DataFrame, connection):
+    studies_table.to_sql("groups", connection, index=False, if_exists="append", schema='temp_schema')
 
 
-def groups_workflow() -> None:
+def groups_workflow(connection) -> None:
     pre_cleaned_groups_table = create_groups_table()
     groups_table = clean_groups_table(pre_cleaned_groups_table)
-    groups_table = add_study_id(groups_table)
+    groups_table = add_study_id(groups_table, connection)
 
-    upload_to_db(groups_table)
+    upload_to_db(groups_table, connection)
 
     print(groups_table)
     print(groups_table.keys())
@@ -117,4 +123,5 @@ def groups_workflow() -> None:
 
 
 if __name__ == "__main__":
-    groups_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    groups_workflow(connection)

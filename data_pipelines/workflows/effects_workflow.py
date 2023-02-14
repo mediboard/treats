@@ -5,12 +5,11 @@ import pandas as pd
 from typing import List
 
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
-DATA_PATH = os.environ.get("DATA_PATH", default="/Users/davonprewitt/datas")
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", default="postgresql://davonprewitt@localhost:5432"
-)
 
+DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
+DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
 def create_effects_groups_table_helper(studies: List[dict]) -> pd.DataFrame:
     df = {
@@ -114,9 +113,9 @@ def create_effects_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
     effects_groups_table_dfs = []
     effects_table_dfs = []
     directory = DATA_PATH + "/clinical_trials/"
-    for studies_data_pickle_file in os.listdir(directory):
+    print("Deserializing studies... ")
+    for studies_data_pickle_file in tqdm(os.listdir(directory)):
         studies_file = os.path.join(directory, studies_data_pickle_file)
-        print(f"Deserializing {studies_file}")
         with open(studies_file, "rb") as f:
             studies_data = pickle.load(f)
             effects_groups_table_df = create_effects_groups_table_helper(
@@ -190,9 +189,8 @@ def clean_effects_table(
     return effects_table.rename_axis(["id"], axis=0)
 
 
-def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
-    db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id as std_id, nct_id from studies", db.connect())
+def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
+    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study', 'nct_id'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -200,13 +198,12 @@ def add_study_id(table: pd.DataFrame) -> pd.DataFrame:
     return merged_table
 
 
-def upload_to_db(table_name: str, table: pd.DataFrame):
-    db = create_engine(DATABASE_URL)
-    table.to_sql(table_name, db, index=False, if_exists="append")
+def upload_to_db(table_name: str, table: pd.DataFrame, connection):
+    table.to_sql(table_name, connection, index=False, if_exists="append", schema='temp_schema')
 
 
 # requires studies_workflow pulling down raw studies to disk
-def effects_workflow(upload_groups=False):
+def effects_workflow(connection, upload_groups=False):
     (
         pre_cleaned_effects_groups_table,
         pre_cleaned_effects_table,
@@ -220,17 +217,17 @@ def effects_workflow(upload_groups=False):
     effects_groups_table = clean_effects_groups_table(
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table
     )
-    effects_groups_table = add_study_id(effects_groups_table)
+    effects_groups_table = add_study_id(effects_groups_table, connection)
 
     if (upload_groups):
-        upload_to_db("effectsgroups", effects_groups_table)
+        upload_to_db("effectsgroups", effects_groups_table, connection)
 
     effects_table = clean_effects_table(
         pre_cleaned_effects_table=pre_cleaned_effects_table,
         pre_cleaned_effects_groups_table=pre_cleaned_effects_groups_table,
     )
-    effects_table = add_study_id(effects_table)
-    upload_to_db("effects", effects_table)
+    effects_table = add_study_id(effects_table, connection)
+    upload_to_db("effects", effects_table, connection)
 
     print(effects_groups_table)
     print(effects_groups_table.keys())
@@ -242,4 +239,5 @@ def effects_workflow(upload_groups=False):
 
 
 if __name__ == "__main__":
-    effects_workflow()
+    connection = create_engine(DATABASE_URL).connect()
+    effects_workflow(True, connection)

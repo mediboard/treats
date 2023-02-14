@@ -414,7 +414,7 @@ class Condition(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	condition_group = db.Column(db.Integer, db.ForeignKey('condition_groups.id'))
-	name = db.Column(db.String(150), index=True, unique=True)
+	name = db.Column(db.String(200), index=True, unique=True)
 
 	studies = db.relationship(
 		'Study',
