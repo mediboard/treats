@@ -115,6 +115,7 @@ class study_type(enum.Enum):
 	OBSERVATIONAL= 'Observational'
 	PATIENT_REGISTRY='Patient Registry'
 	EXPANDED_ACCESS='Expanded Access'
+	NA='NA'
 
 
 class purpose(enum.Enum):
@@ -180,26 +181,26 @@ class non_inferiority_type(enum.Enum):
 	NA='NA'
 
 
-class baseline_dispersion_param(enum.Enum):
-	STANDARD_DEVIATION='Standard Deviation'
-	CONFIDENCE_INTERVAL_95='95% Confidence Interval'
-	STANDARD_ERROR='Standard Error'
-	FULL_RANGE='Full Range'
-	GEOMETRIC_COEFFICIENT_OF_VARIATION= 'Geometric Coefficient of Variation'
-	INTER_QUARTILE_RANGE='Inter-Quartile Range'
-	CONFIDENCE_INTERVAL_90='90% Confidence Interval'
-	CONFIDENCE_INTERVAL_80='80% Confidence Interval'
-	CONFIDENCE_INTERVAL_97='97% Confidence Interval'
-	CONFIDENCE_INTERVAL_99='99% Confidence Interval'
-	CONFIDENCE_INTERVAL_60='60% Confidence Interval'
-	CONFIDENCE_INTERVAL_96='96% Confidence Interval'
-	CONFIDENCE_INTERVAL_98='98% Confidence Interval'
-	CONFIDENCE_INTERVAL_70='70% Confidence Interval'
-	CONFIDENCE_INTERVAL_85='85% Confidence Interval'
-	CONFIDENCE_INTERVAL_75='75% Confidence Interval'
-	CONFIDENCE_INTERVAL_94='94% Confidence Interval'
-	CONFIDENCE_INTERVAL_100='100% Confidence Interval'
-	NA='NA'
+# class baseline_dispersion_param(enum.Enum):
+# 	STANDARD_DEVIATION='Standard Deviation'
+# 	CONFIDENCE_INTERVAL_95='95% Confidence Interval'
+# 	STANDARD_ERROR='Standard Error'
+# 	FULL_RANGE='Full Range'
+# 	GEOMETRIC_COEFFICIENT_OF_VARIATION= 'Geometric Coefficient of Variation'
+# 	INTER_QUARTILE_RANGE='Inter-Quartile Range'
+# 	CONFIDENCE_INTERVAL_90='90% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_80='80% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_97='97% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_99='99% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_60='60% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_96='96% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_98='98% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_70='70% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_85='85% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_75='75% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_94='94% Confidence Interval'
+# 	CONFIDENCE_INTERVAL_100='100% Confidence Interval'
+# 	NA='NA'
 
 
 class measure_dispersion_param(enum.Enum):
@@ -251,6 +252,31 @@ class insight_Type(enum.Enum):
 	ADVERSE_EFFECT='adverse_effect'
 
 
+class study_status(enum.Enum):
+	NOT_YET_RECRUITING='not yet recruiting'
+	RECRUITING='recruiting'
+	ENROLLING='enrolling'
+	ACTIVE='active'
+	ACTIVE_NOT_RECRUITING='active not recruiting'
+	COMPLETED='completed'
+	SUSPENDED='suspended'
+	TERMINATED='terminated'
+	WITHDRAWN='withdrawn'
+	ENROLLING_BY_INVITATION='enrolling by invitation'
+	NO_LONGER_AVAILABLE='no longer available'
+	AVAILABLE='available'
+	APPROVED_FOR_MARKETING='approved for marketing'
+	TEMPORARILY_NOT_AVAILABLE='temporarily not available'
+	UNKNOWN_STATUS='unknown status'
+	WITHHELD='withheld'
+
+
+class completion_date_type(enum.Enum):
+	ACTUAL='actual'
+	ANTICIPATED='anticipated'
+	NA='NA'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
@@ -273,6 +299,10 @@ class Study(db.Model):
 	max_age_units = db.Column(db.Enum(max_age_units))
 	gender = db.Column(db.Enum(gender))
 	results_summary = db.Column(db.Integer)
+	completion_date = db.Column(db.Date)
+	completion_date_type = db.Column(db.Enum(completion_date_type))
+	stopped_reason = db.Column(db.String(251))
+	status = db.Column(db.Enum(study_status))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
 
@@ -517,7 +547,7 @@ class Measure(db.Model):
 	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
-	dispersion = db.Column(db.Enum(measure_dispersion_param))
+	dispersion = db.Column(db.String(50))
 	type = db.Column(db.Enum(measure_type))
 	param = db.Column(db.Enum(measure_param))
 	units = db.Column(db.String(40))
@@ -903,7 +933,7 @@ class Baseline(db.Model):
 	clss = db.Column(db.String(100))
 	category = db.Column(db.String(100))
 	param_type = db.Column(db.Enum(baseline_param))
-	dispersion = db.Column(db.Enum(baseline_dispersion_param))
+	dispersion = db.Column(db.String(50))
 	unit = db.Column(db.String(40))
 	value = db.Column(db.Float)
 	spread = db.Column(db.Float)

@@ -10,26 +10,29 @@ from tqdm import tqdm
 DATA_PATH = os.environ.get("DATA_PATH", default="/Users/porterhunley/datasets")
 DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt@localhost:5432")
 
-def get_outcome_and_intervention_modules(studies):
+def get_outcome_modules(studies):
     outcome_modules = []
-    intervention_modules = []
-    study_ids = []
+    outcome_study_ids = []
+
+    endpoint_modules = []
+    endpoint_study_ids = []
     for study in studies:
         if (
             "ResultsSection" in study["Study"]
             and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
         ):
             outcome_modules.append(study["Study"]["ResultsSection"]["OutcomeMeasuresModule"])
-            study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
+            outcome_study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
 
-        elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
-            intervention_modules.append(study["Study"]["ProtocolSection"]["ArmsInterventionsModule"])
+        elif "OutcomesModule" in study['Study']['ProtocolSection']:
+            endpoint_modules.append(study["Study"]["ProtocolSection"]["OutcomesModule"])
+            endpoint_study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
 
-    return outcome_modules, intervention_modules, study_ids
+    return outcome_modules, outcome_study_ids, endpoint_modules, endpoint_study_ids
 
 
 def create_measurements_table_helper(studies):
-    outcome_modules, intervention_modules, study_ids = get_outcome_and_intervention_modules(studies)
+    outcome_modules, outcome_study_ids, endpoint_modules, endpoint_study_ids = get_outcome_modules(studies)
     df = {
         "study_id": [],
         "measure": [],
@@ -48,19 +51,36 @@ def create_measurements_table_helper(studies):
             df["measure_param"].append(measure.get("OutcomeMeasureParamType", "NA"))
             df["dispersion_param"].append(measure.get("OutcomeMeasureDispersionType", "NA"))
             df["units"].append(measure.get("OutcomeMeasureUnitOfMeasure", "NA"))
-            df["study_id"].append(study_ids[i])
+            df["study_id"].append(outcome_study_ids[i])
 
-    # This is for studies without results
-    # for i, module in enumerate(intervention_modules):
-    #     for measure in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
-    #         # Measure data is unstructured and often has other fields in the description.
-    #         df["type"].append("NA")
-    #         df["measure"].append(measure.get("ArmGroupLabel", "NA"))
-    #         df["description"].append(measure.get("ArmGroupDescription", "NA"))
-    #         df["measure_param"].append("NA")
-    #         df["dispersion_param"].append("NA")
-    #         df["units"].append("NA")
-    #         df["study_id"].append(study_ids[i])
+    for i, module in enumerate(endpoint_modules):
+        for measure in module.get("PrimaryOutcomeList", {"PrimaryOutcome": []})["PrimaryOutcome"]:
+            df["type"].append("Primary")
+            df["measure"].append(measure.get("PrimaryOutcomeMeasure", "NA"))
+            df["description"].append(measure.get("PrimaryOutcomeDescription", "NA"))
+            df["measure_param"].append(measure.get("PrimaryOutcomeParamType", "NA"))
+            df["dispersion_param"].append(measure.get("PrimaryOutcomeDispersionType", "NA"))
+            df["units"].append(measure.get("PrimaryOutcomeUnitOfMeasure", "NA"))
+            df["study_id"].append(endpoint_study_ids[i])
+
+        for measure in module.get("SecondaryOutcomeList", {"SecondaryOutcome": []})["SecondaryOutcome"]:
+            df["type"].append("Secondary")
+            df["measure"].append(measure.get("SecondaryOutcomeMeasure", "NA"))
+            df["description"].append(measure.get("SecondaryOutcomeDescription", "NA"))
+            df["measure_param"].append(measure.get("SecondaryOutcomeParamType", "NA"))
+            df["dispersion_param"].append(measure.get("SecondaryOutcomeDispersionType", "NA"))
+            df["units"].append(measure.get("SecondaryOutcomeUnitOfMeasure", "NA"))
+            df["study_id"].append(endpoint_study_ids[i])
+
+        for measure in module.get("OtherOutcomeList", {"OtherOutcome": []})["OtherOutcome"]:
+            df["type"].append("Other Pre-specified")
+            df["measure"].append(measure.get("OtherOutcomeMeasure", "NA"))
+            df["description"].append(measure.get("OtherOutcomeDescription", "NA"))
+            df["measure_param"].append(measure.get("OtherOutcomeParamType", "NA"))
+            df["dispersion_param"].append(measure.get("OtherOutcomeDispersionType", "NA"))
+            df["units"].append(measure.get("OtherOutcomeUnitOfMeasure", "NA"))
+            df["study_id"].append(endpoint_study_ids[i])
+
 
     return pd.DataFrame.from_dict(df).reset_index(drop=True)
 
@@ -91,35 +111,6 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
             "measure_param": "param",
         }
     ).rename_axis(["id"], axis=0)
-
-    dispersion_map = {
-        "Standard Deviation": "STANDARD_DEVIATION",
-        "95% Confidence Interval": "CONFIDENCE_INTERVAL_95",
-        "Standard Error": "STANDARD_ERROR",
-        "Full Range": "FULL_RANGE",
-        "Geometric Coefficient of Variation": "GEOMETRIC_COEFFICIENT_OF_VARIATION",
-        "Inter-Quartile Range": "INTER_QUARTILE_RANGE",
-        "90% Confidence Interval": "CONFIDENCE_INTERVAL_90",
-        "80% Confidence Interval": "CONFIDENCE_INTERVAL_80",
-        "97% Confidence Interval": "CONFIDENCE_INTERVAL_97",
-        "99% Confidence Interval": "CONFIDENCE_INTERVAL_99",
-        "60% Confidence Interval": "CONFIDENCE_INTERVAL_60",
-        "96% Confidence Interval": "CONFIDENCE_INTERVAL_96",
-        "98% Confidence Interval": "CONFIDENCE_INTERVAL_98",
-        "70% Confidence Interval": "CONFIDENCE_INTERVAL_70",
-        "85% Confidence Interval": "CONFIDENCE_INTERVAL_85",
-        "75% Confidence Interval": "CONFIDENCE_INTERVAL_75",
-        "94% Confidence Interval": "CONFIDENCE_INTERVAL_94",
-        "100% Confidence Interval": "CONFIDENCE_INTERVAL_100",
-        "68% Confidence Interval": "CONFIDENCE_INTERVAL_68",
-        "NA": "NA",
-    }
-
-    db_measures_table["dispersion"] = (
-        db_measures_table["dispersion"]
-        .apply(lambda x: x if "." not in x else x[: x.index(".")] + x[x.index("%") :])
-        .apply(lambda x: dispersion_map[x])
-    )
 
     db_measures_table["param"] = (
         db_measures_table["param"].str.upper().str.replace(" ", "_")

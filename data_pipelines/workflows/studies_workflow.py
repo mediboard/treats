@@ -48,7 +48,8 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
         'nct_id': [], 'official_title': [], 'short_title': [], 'conditions': [],
         'verified_date': [], 'responsible_party': [], 'sponsor': [], 'phase': [], 'type': [], 'description': [],
         'interventions': [], 'purpose': [], 'intervention_type': [], 'mesh_terms': [],
-        'criteria': [], 'min_age': [], 'max_age': [], 'gender': []}
+        'criteria': [], 'min_age': [], 'max_age': [], 'gender': [], 'completion_date': [], 'completion_date_type':[],
+        'status': [], 'stopped_reason': []}
     for _, study in enumerate(studies):
         try:
             buffer['nct_id'].append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
@@ -155,6 +156,26 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
         except KeyError as e:
             buffer['max_age'].append('NA')
 
+        try:
+            buffer['status'].append(study['Study']['ProtocolSection']['StatusModule']['OverallStatus'])
+        except KeyError as e:
+            buffer['status'].append('NA')
+            
+        try:
+            buffer['completion_date'].append(study['Study']['ProtocolSection']['StatusModule']['PrimaryCompletionDateStruct']['PrimaryCompletionDate'])
+        except KeyError as e:
+            buffer['completion_date'].append('NA')
+            
+        try:
+            buffer['completion_date_type'].append(study['Study']['ProtocolSection']['StatusModule']['PrimaryCompletionDateStruct']['PrimaryCompletionDateType'])
+        except KeyError as e:
+            buffer['completion_date_type'].append('NA')
+
+        try:
+            buffer['stopped_reason'].append(study['Study']['ProtocolSection']['StatusModule']['WhyStopped'])
+        except KeyError as e:
+            buffer['stopped_reason'].append('NA')
+
     return pd.DataFrame.from_dict(buffer).reset_index(drop=True)
 
 
@@ -174,7 +195,10 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
          'min_age',
          'max_age',
          'gender',
-         ]
+         'completion_date',
+         'completion_date_type',
+         'status',
+         'stopped_reason']
     ].rename(
         columns={
             'verified_date': 'upload_date'
@@ -199,6 +223,7 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['max_age'] = db_studies_table['max_age'].apply(int)
 
     month_dict = {
+        'NA': -1,
         'January': 1,
         'February': 2,
         'March': 3,
@@ -216,6 +241,15 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['upload_date'] = \
         db_studies_table['upload_date'].str.split(' ').apply(lambda x: x[-1]) + '-' + \
         db_studies_table['upload_date'].str.split(' ').apply(lambda x: str(month_dict[x[0]])) + "-01"
+
+    db_studies_table['upload_date'] = db_studies_table['upload_date'].apply(lambda x: None if 'NA' in x else x)
+    
+    db_studies_table['completion_date'] = \
+        db_studies_table['completion_date'].str.split(' ').apply(lambda x: x[-1]) + '-' + \
+        db_studies_table['completion_date'].str.split(' ').apply(lambda x: str(month_dict[x[0]])) + "-01"
+
+    db_studies_table['completion_date'] = db_studies_table['completion_date'].apply(lambda x: None if 'NA' in x else x)
+
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.upper()
     db_studies_table['intervention_type'] = db_studies_table['intervention_type'].str.replace(' ', '_')
     db_studies_table['phase'] = db_studies_table['phase'].str.upper()
@@ -227,6 +261,8 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['min_age_units'] = db_studies_table['min_age_units'].str.upper()
     db_studies_table['max_age_units'] = db_studies_table['max_age_units'].str.upper()
     db_studies_table['gender'] = db_studies_table['gender'].str.upper()
+    db_studies_table['status'] = db_studies_table['status'].str.upper().str.replace(' ', '_').str.replace(',','')
+    db_studies_table['completion_date_type'] = db_studies_table['completion_date_type'].str.upper().str.replace(' ', '_')
 
     return db_studies_table
 

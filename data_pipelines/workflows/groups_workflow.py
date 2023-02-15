@@ -12,23 +12,26 @@ DATABASE_URL = os.environ.get("DATABASE_URL", default="postgresql://davonprewitt
 def get_outcome_and_intervention_modules(studies):
     outcome_modules = []
     intervention_modules = []
-    study_ids = []
+
+    outcome_study_ids = []
+    arm_study_ids = []
     for study in studies:
         if (
             "ResultsSection" in study["Study"]
             and "OutcomeMeasuresModule" in study["Study"]["ResultsSection"]
         ):
             outcome_modules.append(study["Study"]["ResultsSection"]["OutcomeMeasuresModule"])
-            study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
+            outcome_study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
 
         elif "ArmsInterventionsModule" in study["Study"]["ProtocolSection"]:
             intervention_modules.append(study["Study"]["ProtocolSection"]["ArmsInterventionsModule"])
+            arm_study_ids.append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
 
-    return outcome_modules, intervention_modules, study_ids
+    return outcome_modules, outcome_study_ids, intervention_modules, arm_study_ids 
 
 
 def create_outcomes_table_helper(studies) -> pd.DataFrame:
-    outcome_modules, intervention_modules, study_ids = get_outcome_and_intervention_modules(studies)
+    outcome_modules, outcome_study_ids, intervention_modules, arm_study_ids = get_outcome_and_intervention_modules(studies)
     group_df = {
         "study_id": [],
         "group_id": [],
@@ -42,7 +45,7 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
                 for admin in measure.get("OutcomeGroupList", {"OutcomeGroup": []})[
                     "OutcomeGroup"
                 ]:
-                    group_df["study_id"].append(study_ids[i])
+                    group_df["study_id"].append(outcome_study_ids[i])
                     group_df["group_id"].append(admin.get("OutcomeGroupId", "NA"))
                     group_df["title"].append(admin.get("OutcomeGroupTitle", "NA"))
                     group_df["description"].append(
@@ -51,18 +54,17 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
             except KeyError as e:
                 continue
 
-    # For studies without results
-    # for i, module in enumerate(intervention_modules):
-    #     try:
-    #         for group in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
-    #             group_df["study_id"].append(study_ids[i])
-    #             # Group IDs aren't present for studies without results
-    #             group_df["group_id"].append("NA")
-    #             group_df["title"].append(group.get("ArmGroupLabel", "NA"))
-    #             group_df["description"].append(group.get("ArmGroupDescription", "NA"))
-    #     except KeyError as e:
-    #         print(e)
-    #         continue
+    #For studies without results
+    for i, module in enumerate(intervention_modules):
+        try:
+            for group in module.get("ArmGroupList", {"ArmGroup": []})["ArmGroup"]:
+                group_df["study_id"].append(arm_study_ids[i])
+                group_df["group_id"].append("NA")
+                group_df["title"].append(group.get("ArmGroupLabel", "NA"))
+                group_df["description"].append(group.get("ArmGroupDescription", "NA"))
+        except KeyError as e:
+            print(e)
+            continue
 
     groups_table_df = pd.DataFrame.from_dict(group_df).reset_index(drop=True)
     return groups_table_df
