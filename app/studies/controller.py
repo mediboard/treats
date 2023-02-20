@@ -34,6 +34,11 @@ def get_studies(args, page=1, subquery=False):
 	if (query):
 		processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
+
+	short_title = args.get('short_title')
+	if (short_title):
+		processedQuery = short_title.replace(' ', ' & ') if short_title[-1] != ' ' else short_title
+		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
 	
 	min_age = args.get('min_age', None, type=int)
 	min_age_units = args.get('min_age_units', None, type=str)
