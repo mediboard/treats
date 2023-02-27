@@ -70,6 +70,16 @@ def get_studies(args, page=1, subquery=False, limit=10):
 		phase_values = phase.split(',')
 		studies = studies.filter(Study.phase.in_(phase_values))
 
+	purpose = args.get('purpose')
+	if (purpose):
+		purpose_values = purpose.split(',')
+		studies = studies.filter(Study.purpose.in_(purpose_values))
+
+	status = args.get('status')
+	if (status):
+		status_values= status.split(',')
+		studies = studies.filter(Study.status.in_(status_values))
+
 	start_date = args.get('completion_date_start')
 	end_date = args.get('completion_date_end')
 	if (start_date and end_date):
