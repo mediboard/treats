@@ -9,7 +9,10 @@ from app.utils import calculate_results_summary
 @bp.route('/')
 @cross_origin(supports_credentials=True)
 def main():
-	studies, next_page, total = controller.get_studies(request.args, int(request.args.get('page')))
+	studies, next_page, total = controller.get_studies(
+			request.args,
+			int(request.args.get('page')),
+			limit=int(request.args.get('limit')))
 
 	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
@@ -22,6 +25,16 @@ def search():
 	studies = controller.search(query, limit)
 	
 	return {'studies': [x.to_core_dict() for x in studies]}
+
+
+@bp.route('<string:study_field>/values')
+@cross_origin(supports_credentials=True)
+def get_study_values(study_field):
+	query = request.args.get('q')
+	limit = request.args.get('limit')
+	values = controller.search_study_values(study_field, query, limit)
+
+	return {'values': [str(val) for val in values]}
 
 
 @bp.route('/banner')

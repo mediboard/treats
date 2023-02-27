@@ -2,6 +2,7 @@ from app import db
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy import func, select
+from app.utils import enum2String
 import enum
 
 
@@ -376,14 +377,19 @@ class Study(db.Model):
 			'responsible_party': self.responsible_party,
 			'results_summary': self.results_summary,
 			'sponsor': self.sponsor,
-			'type': str(self.type),
-			'purpose': str(self.purpose),
+			'type': enum2String(self.type),
+			'purpose': enum2String(self.purpose),
 			'intervention_type': str(self.intervention_type),
 			'min_age': self.min_age,
+			'phase': enum2String(self.phase),
 			'min_age_units': str(self.min_age_units),
 			'max_age': self.max_age,
 			'min_age_units': str(self.max_age_units),
 			'gender': str(self.gender),
+			'completion_date': str(self.completion_date),
+			'status': enum2String(self.status),
+			'stopped_reason': self.stopped_reason,
+			'external_ids': [self.nct_id]
 		}
 
 
