@@ -25,3 +25,7 @@ def hash_string(string):
     sha256 = hashlib.sha256()
     sha256.update(string.encode())
     return sha256.hexdigest()
+
+
+def enum2String(enum):
+    return str(enum).split('.')[-1]

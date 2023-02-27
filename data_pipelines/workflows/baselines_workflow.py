@@ -243,7 +243,7 @@ def clean_baselines_table(baselines_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_study_id(baselines_table: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql('select id, nct_id from studies', connection)
+    study_ids = pd.read_sql('select id, nct_id from temp_schema.studies', connection)
     merged_table = baselines_table.merge(study_ids, left_on='study', right_on='nct_id')
 
     return merged_table[['id','base','clss','category','param_type','dispersion',

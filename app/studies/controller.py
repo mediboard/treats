@@ -26,7 +26,28 @@ def get_banner_studies():
 	return banner_studies
 
 
-def get_studies(args, page=1, subquery=False):
+def search_study_values(study_value, query, limit=10):
+	if not query:
+		values = db.session.query(getattr(Study, study_value)).distinct().all()
+
+		return [str(value[0]).split('.')[-1] for value in values]
+
+	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
+	values = db.session.query(getattr(Study, study_value))\
+		.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
+		.limit(limit)\
+		.all()
+
+	return [value[0] for value in values]
+
+
+def get_all_study_values(study_value):
+	values = db.session.query(getattr(Study, study_value)).distinct().all()
+
+	return values
+
+
+def get_studies(args, page=1, subquery=False, limit=10):
 	# Need to filter by search string, condition(s), treatment(s), size, kids
 	studies = db.session.query(Study)
 
@@ -39,7 +60,21 @@ def get_studies(args, page=1, subquery=False):
 	if (short_title):
 		processedQuery = short_title.replace(' ', ' & ') if short_title[-1] != ' ' else short_title
 		studies = studies.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
-	
+
+	sponsor = args.get('sponsor')
+	if (sponsor):
+		studies = studies.filter(func.lower(sponsor) == func.lower(Study.sponsor))
+
+	phase = args.get('phase')
+	if (phase):
+		phase_values = phase.split(',')
+		studies = studies.filter(Study.phase.in_(phase_values))
+
+	start_date = args.get('completion_date_start')
+	end_date = args.get('completion_date_end')
+	if (start_date and end_date):
+		studies = studies.filter(and_(Study.completion_date >= start_date, Study.completion_date <= end_date))
+
 	min_age = args.get('min_age', None, type=int)
 	min_age_units = args.get('min_age_units', None, type=str)
 	max_age = args.get('max_age', None, type=int)
@@ -58,7 +93,6 @@ def get_studies(args, page=1, subquery=False):
 		# Maximum bound
 		max_age_years = max_age if max_age_units == "YEARS" else max_age / 12.0
 		max_age_months = max_age if max_age_units == "MONTHS" else max_age * 12.0
-
 		studies = studies.filter(
 			or_(and_(func.lower(Study.max_age_units).match("YEARS"), Study.max_age <= max_age_years, Study.max_age != -1),
 				and_(func.lower(Study.max_age_units).match("MONTHS"),Study.max_age <= max_age_months, Study.max_age != -1)))
@@ -95,7 +129,7 @@ def get_studies(args, page=1, subquery=False):
 	if (subquery):
 		return studies.subquery()
 
-	studies = studies.paginate(page, ROWS_PER_PAGE)
+	studies = studies.paginate(page, limit)
 
 	return studies.items, studies.next_num, studies.total
 
