@@ -11,15 +11,11 @@ ROWS_PER_PAGE=8
 
 def search(query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
-	conditions_counts = db.session.query(Condition, func.count(StudyCondition.study).label('no_studies'))\
+	conditions_counts = db.session.query(Condition)\
 		.filter(func.lower(Condition.name).match(processedQuery) | func.lower(Condition.name).like(f'%{processedQuery}%'))\
-		.join(StudyCondition, StudyCondition.condition == Condition.id)\
-		.group_by(Condition.id)\
-		.order_by(desc('no_studies'))\
 		.limit(limit)\
-		.all()
 
-	return conditions_counts
+	return conditions_counts.all()
 
 
 def get_top_conditions():

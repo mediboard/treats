@@ -28,4 +28,7 @@ def hash_string(string):
 
 
 def enum2String(enum):
-    return str(enum).split('.')[-1]
+    word = str(enum).split('.')[-1]
+    words = word.split('_')
+    capitalized_words = [word.capitalize() for word in words]
+    return ' '.join(capitalized_words)

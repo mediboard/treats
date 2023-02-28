@@ -3,6 +3,7 @@ from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, I
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
+from app.utils import enum2String
 
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -34,11 +35,12 @@ def search_study_values(study_value, query, limit=10):
 
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 	values = db.session.query(getattr(Study, study_value))\
-		.filter(func.lower(Study.short_title).match(processedQuery) | func.lower(Study.short_title).like(f'%{processedQuery}%'))\
-		.limit(limit)\
-		.all()
+		.filter(func.lower(getattr(Study, study_value)).match(processedQuery) | func.lower(getattr(Study, study_value)).like(f'%{processedQuery}%'))\
+		.limit(limit)
 
-	return [value[0] for value in values]
+	print(str(values))
+
+	return [value[0] for value in values.all()]
 
 
 def get_all_study_values(study_value):
@@ -133,8 +135,7 @@ def get_studies(args, page=1, subquery=False, limit=10):
 	studies = studies.options(
 		joinedload(Study.conditions),
 		joinedload(Study.treatments),
-		raiseload('*')
-	)
+		raiseload('*'))
 
 	if (subquery):
 		return studies.subquery()

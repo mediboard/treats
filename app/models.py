@@ -458,30 +458,11 @@ class Condition(db.Model):
 		back_populates='conditions')
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
-	@hybrid_property
-	def no_studies(self):
-		if self.studies:
-			return func.count(self.studies)
-		return 0
-
-	@no_studies.expression
-	def no_studies(cls):
-		return select([func.count(StudyCondition.id)]).\
-			where(StudyCondition.condition==cls.id).\
-			group_by(cls.id).\
-			label('no_studies')
-
 	def to_dict(self):
 		return {
 			'id': self.id,
 			'name': self.name,
 			'condition_group': self.condition_group,
-		}
-
-	def to_big_dic(self):
-		return {
-			**self.to_dict(),
-			'no_studies': self.no_studies,
 		}
 
 
