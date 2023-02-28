@@ -52,10 +52,17 @@ def initialize_extensions(app):
   stripe.api_key = app.config['STRIPE_SECRET_KEY']
   pinecone.init(api_key = app.config['PINECONE_API_KEY'], environment="us-west1-gcp")
 
+  sts_client = boto3.client('sts',
+    aws_access_key_id=app.config['AWS_ACCESS_KEY'],
+    aws_secret_access_key=app.config['AWS_SECRET_KEY'])
+
+  session_token = sts_client.get_session_token()['Credentials']['SessionToken']
+
   cognito_client = boto3.client('cognito-idp',
     aws_access_key_id=app.config['AWS_ACCESS_KEY'],
+    region_name='us-east-1',
     aws_secret_access_key=app.config['AWS_SECRET_KEY'],
-    aws_session_token=app.config['AWS_SESSION_TOKEN'])
+    aws_session_token=session_token)
 
   db.init_app(app)
   migrate.init_app(app, db)
