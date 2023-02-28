@@ -9,10 +9,11 @@ from app.utils import calculate_results_summary
 @bp.route('/')
 @cross_origin(supports_credentials=True)
 def main():
+	limit = int(request.args.get('limit') or '10')
 	studies, next_page, total = controller.get_studies(
 			request.args,
 			int(request.args.get('page')),
-			limit=int(request.args.get('limit')))
+			limit=limit)
 
 	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
