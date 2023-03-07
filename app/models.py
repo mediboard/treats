@@ -278,6 +278,50 @@ class completion_date_type(enum.Enum):
 	NA='NA'
 
 
+class design_allocation(enum.Enum):
+	RANDOMIZED='randomized'
+	NON_RANDOMIZED='non_randomized'
+	NA='NA'
+
+
+class observational_model(enum.Enum):
+	COHORT='cohort'
+	CASE_CONTROL='case control'
+	CASE_ONLY='case only'
+	OTHER='other'
+	ECOLOGIC_OR_COMMUNITY='ecologic or community'
+	CASE_CROSSOVER='case crossover'
+	DEFINED_POPULATION='defined population'
+	FAMILY_BASED='family based'
+	NATURAL_HISTORY='natural history'
+	NA='NA'
+
+
+class design_time_perspective(enum.Enum):
+	PROSPECTIVE='prospective'
+	RETROSPECTIVE='retrospective'
+	CROSS_SECTIONAL='cross sectional'
+	OTHER='other'
+	NA='NA'
+
+
+class design_masking(enum.Enum):
+	NONE='none'
+	SINGLE='single'
+	DOUBLE='double'
+	QUADRUPLE='quadruple'
+	TRIPLE='triple'
+	NA='NA'
+
+
+class who_masked(enum.Enum):
+	PARTICIPANT='participant'
+	INVESTIGATOR='investigator'
+	OUTCOMES_ASSESSOR='outcomes assessor'
+	CARE_PROVIDER='care provider'
+	NA='NA'
+
+
 class Study(db.Model):
 
 	__tablename__ = 'studies'
@@ -304,6 +348,14 @@ class Study(db.Model):
 	completion_date_type = db.Column(db.Enum(completion_date_type))
 	stopped_reason = db.Column(db.String(251))
 	status = db.Column(db.Enum(study_status))
+
+	design_allocation = db.Column(db.Enum(design_allocation))
+	design_masking = db.Column(db.Enum(design_masking))
+	design_time_perspective = db.Column(db.Enum(design_time_perspective))
+	who_masked = db.Column(db.ARRAY(db.Enum(who_masked)))
+	observational_model = db.Column(db.Enum(observational_model))
+	masking_description = db.Column(db.String(1200))
+	model_description = db.Column(db.String(1100))
 
 	criteria = db.relationship('Criteria', lazy='dynamic')
 
@@ -456,6 +508,7 @@ class Condition(db.Model):
 		'Study',
 		secondary='study_conditions',
 		back_populates='conditions')
+	
 	treatment_scores = db.relationship('ConditionScore', lazy='dynamic')
 
 	def to_dict(self):

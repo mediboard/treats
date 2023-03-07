@@ -49,7 +49,8 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
         'verified_date': [], 'responsible_party': [], 'sponsor': [], 'phase': [], 'type': [], 'description': [],
         'interventions': [], 'purpose': [], 'intervention_type': [], 'mesh_terms': [],
         'criteria': [], 'min_age': [], 'max_age': [], 'gender': [], 'completion_date': [], 'completion_date_type':[],
-        'status': [], 'stopped_reason': []}
+        'status': [], 'stopped_reason': [], 'design_allocation': [], 'design_masking': [], 'design_time_perspective': [],
+        'who_masked': [], 'observational_model': [], 'masking_description': [], 'model_description': []}
     for _, study in enumerate(studies):
         try:
             buffer['nct_id'].append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
@@ -176,6 +177,42 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
         except KeyError as e:
             buffer['stopped_reason'].append('NA')
 
+        try:
+            buffer['design_allocation'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignAllocation'])
+        except KeyError as e:
+            buffer['design_allocation'].append('NA')
+        
+        try:
+            buffer['design_masking'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMasking'])
+        except KeyError as e:
+            buffer['design_masking'].append('NA')
+
+        try:
+            buffer['design_time_perspective'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignTimePerspectiveList']['DesignTimePerspective'])
+        except KeyError as e:
+            buffer['design_time_perspective'].append('NA')
+            
+        try:
+            buffer['who_masked'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignWhoMaskedList']['DesignWhoMasked'])
+        except KeyError as e:
+            buffer['who_masked'].append('NA')
+                        
+        try:
+            buffer['observational_model'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModel'])
+        except KeyError as e:
+            buffer['observational_model'].append('NA')
+                                    
+        try:
+            buffer['masking_description'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMaskingDescription'])
+        except KeyError as e:
+            buffer['masking_description'].append('NA')
+                                    
+        try:
+            buffer['model_description'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModelDescription'])
+        except KeyError as e:
+            buffer['model_description'].append('NA')
+            
+
     return pd.DataFrame.from_dict(buffer).reset_index(drop=True)
 
 
@@ -263,6 +300,12 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['gender'] = db_studies_table['gender'].str.upper()
     db_studies_table['status'] = db_studies_table['status'].str.upper().str.replace(' ', '_').str.replace(',','')
     db_studies_table['completion_date_type'] = db_studies_table['completion_date_type'].str.upper().str.replace(' ', '_')
+
+    db_studies_table['design_allocation'] = db_studies_table['design_allocation'].str.upper().str.replace(' ','_').str.replace('/','').str.replace('-','_')
+    db_studies_table['design_masking'] = db_studies_table['design_masking'].apply(lambda x: 'None' if x == 'None (Open Label)' else x ).str.upper().str.replace(' ','_')
+    db_studies_table['design_time_perspective'] = db_studies_table['design_time_perspective'].str.upper().str.replace(' ', '_')
+    db_studies_table['who_masked'] = db_studies_table['who_masked'].apply(lambda x: [y.upper().replace(' ', '_') for y in x if x != 'NA'])
+    db_studies_table['observational_model'] = db_studies_table['observational_model'].str.upper().str.replace(' ', '_')
 
     return db_studies_table
 

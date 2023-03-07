@@ -50,11 +50,13 @@ def get_treatment_effects(name):
 @cross_origin(supports_credentials=True)
 @token_auth.login_required
 def search_studies():
-    query = request.args.get('q')
-    limit = request.args.get('limit')
-    studies = studies_controller.search(query, limit)
-    
-    return {'studies': [x.to_core_dict() for x in studies]}
+    limit = int(request.args.get('limit') or '10')
+    studies, next_page, total = studies_controller.get_studies(
+            request.args,
+            int(request.args.get('page')),
+            limit=limit)
+
+    return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
 
 @bp.route('/studies/<string:study_id>')

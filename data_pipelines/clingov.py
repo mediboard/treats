@@ -47,14 +47,14 @@ def run_clingov_pipelines():
   # groups_workflow(connection)
   # effects_workflow(connection, True)
   # conditions_workflow(connection)
-  baselines_workflow(connection)
+  # baselines_workflow(connection)
 
-  measures_workflow(connection)
-  outcomes_workflow(connection)
+  # measures_workflow(connection)
+  # outcomes_workflow(connection)
 
   # This takes a while
-  # run_treatments_workflow(connection)
-  study_treatments_workflow(connection)
+  run_treatments_workflow(connection)
+  # study_treatments_workflow(connection)
 
 
 if __name__ == '__main__':

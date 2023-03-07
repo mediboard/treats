@@ -95,7 +95,7 @@ def get_unique_treatments(string, model, tokenizer):
 
 def get_groups(connection):
     print("Reading groups...")
-    groups = pd.read_sql("select id, title, description from groups", connection)
+    groups = pd.read_sql("select id, title, description from temp_schema.groups", connection)
     groups['text'] = 'Title: ' + groups['title'] + ' Description: ' + groups['description']
 
     return groups
@@ -103,14 +103,14 @@ def get_groups(connection):
 
 def get_treatments(connection):
     print("Reading treatments...")
-    treats = pd.read_sql('select id as treat_id, name as treatments from treatments', connection)
+    treats = pd.read_sql('select id as treat_id, name as treatments from temp_schema.treatments', connection)
 
     return treats 
 
 
 def get_effect_groups(connection):
     print("Reading effects groups...")
-    effect_groups = pd.read_sql("select id, title, description from effectsgroups", connection)
+    effect_groups = pd.read_sql("select id, title, description from temp_schema.effectsgroups", connection)
     effect_groups['text'] = 'Title: ' + effect_groups['title'] + ' Description: ' + effect_groups['description']
 
     return effect_groups
@@ -143,7 +143,7 @@ def load_tokenizer():
 
 
 def upload_to_db(data: pd.DataFrame, table_name, connection):
-    data.to_sql(table_name, connection, index=False, if_exists='append')   
+    data.to_sql(table_name, connection, index=False, if_exists='append', )   
 
 
 def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
