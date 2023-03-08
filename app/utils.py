@@ -7,6 +7,20 @@ def removekey_oop(d, key):
     return r
 
 
+def count_items(lst):
+    """
+    Counts the occurrence of each item in a list and returns it as a dictionary.
+    """
+    count_dict = {}
+    for item in lst:
+        if item in count_dict:
+            count_dict[item] += 1
+        else:
+            count_dict[item] = 1
+    return count_dict
+
+
+
 def get_embedding(text, model="text-embedding-ada-002"):
     import openai
 

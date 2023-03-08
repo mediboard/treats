@@ -59,6 +59,19 @@ def search_studies():
     return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
 
+@bp.route('/studies/data')
+@cross_origin(supports_credentials=True)
+@token_auth.login_required
+def search_studies():
+    limit = int(request.args.get('limit') or '10')
+    studies, next_page, total = studies_controller.get_studies(
+            request.args,
+            int(request.args.get('page')),
+            limit=limit)
+
+    return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
+
+
 @bp.route('/studies/<string:study_id>')
 @cross_origin(supports_credentials=True)
 @token_auth.login_required

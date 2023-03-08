@@ -138,11 +138,11 @@ def clean_measures_table(measures_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def upload_to_db(measures_table: pd.DataFrame, connection):
-    measures_table.to_sql("measures", connection, index=False, if_exists="append", schema='temp_schema')
+    measures_table.to_sql("measures", connection, index=False, if_exists="append", schema='public')
 
 
 def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
+    study_ids = pd.read_sql("select id as std_id, nct_id from public.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study', 'nct_id'], axis=1)\
         .rename(columns={ 'std_id': 'study' })

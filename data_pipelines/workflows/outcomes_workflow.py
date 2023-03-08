@@ -87,7 +87,7 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
 
 
 def get_study_ids(outcomes, connection):
-    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
+    study_ids = pd.read_sql("select id as std_id, nct_id from public.studies", connection)
     merged_table = outcomes.merge(study_ids, left_on="study_id", right_on="nct_id")\
         .drop(columns=['study_id', 'nct_id'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -98,7 +98,7 @@ def get_study_ids(outcomes, connection):
 
 
 def get_group_ids(outcomes, connection):
-    groups = pd.read_sql("select id as grp_id, study as std_id, title as grp_title, study_id from temp_schema.groups", connection)
+    groups = pd.read_sql("select id as grp_id, study as std_id, title as grp_title, study_id from public.groups", connection)
     merged_table = outcomes.merge(groups, left_on=["study", "group_title", "group_no"], right_on=["std_id", "grp_title", "study_id"])\
         .drop(columns=['group_title', 'group_no', 'std_id', 'study_id', 'grp_title'], axis=1)\
         .rename(columns={'grp_id': 'group' })
@@ -109,7 +109,7 @@ def get_group_ids(outcomes, connection):
 
 
 def get_measure_ids(outcomes, connection):
-    study_ids = pd.read_sql("select id as msr_id, title as msr_title, study as std_id from temp_schema.measures", connection)
+    study_ids = pd.read_sql("select id as msr_id, title as msr_title, study as std_id from public.measures", connection)
     merged_table = outcomes.merge(study_ids, left_on=["study", "measure"], right_on=["std_id", "msr_title"])\
         .drop(columns=['measure', 'std_id', 'msr_title'], axis=1)\
         .rename(columns={ 'msr_id': 'measure' })
@@ -165,7 +165,7 @@ def string2int(string):
 
 
 def upload_to_db(outcomes_table: pd.DataFrame, connection):
-    outcomes_table.to_sql("outcomes", connection, index=False, if_exists="append", schema='temp_schema')
+    outcomes_table.to_sql("outcomes", connection, index=False, if_exists="append", schema='public')
 
 
 # requires studies + groups + measures

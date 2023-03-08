@@ -243,7 +243,7 @@ def clean_baselines_table(baselines_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_study_id(baselines_table: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql('select id, nct_id from temp_schema.studies', connection)
+    study_ids = pd.read_sql('select id, nct_id from public.studies', connection)
     merged_table = baselines_table.merge(study_ids, left_on='study', right_on='nct_id')
 
     return merged_table[['id','base','clss','category','param_type','dispersion',
@@ -280,7 +280,7 @@ def delete_old_studies():
 
         
 def upload_to_db(baselines_table: pd.DataFrame, connection):
-    baselines_table.to_sql('baselines', connection, index=False, if_exists='append', schema='temp_schema')
+    baselines_table.to_sql('baselines', connection, index=False, if_exists='append', schema='public')
 
 
 def baselines_workflow(connection, update_studies=False):

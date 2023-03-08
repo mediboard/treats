@@ -3,7 +3,7 @@ from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, I
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
-from app.utils import enum2String
+from app.utils import enum2String, count_items
 
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -47,6 +47,14 @@ def get_all_study_values(study_value):
 	values = db.session.query(getattr(Study, study_value)).distinct().all()
 
 	return values
+
+
+def aggregate_study_data(studies):
+	# Sponsor
+	sponsors = count_items([study.sponsor for study in studies])
+
+	# Responsible party
+	parties = count_items([study.responsible_party for study in studies])
 
 
 def get_studies(args, page=1, subquery=False, limit=10):

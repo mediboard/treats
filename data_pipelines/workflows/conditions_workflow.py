@@ -63,7 +63,7 @@ def create_study_conditions_table(conditions: pd.DataFrame) -> pd.DataFrame:
 
 def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
     db = create_engine(DATABASE_URL)
-    study_ids = pd.read_sql("select id, nct_id from temp_schema.studies", connection)
+    study_ids = pd.read_sql("select id, nct_id from public.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")
     print(merged_table)
 
@@ -76,7 +76,7 @@ def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
 
 
 def upload_to_db(table_name: str, table: pd.DataFrame, connection):
-    table.to_sql(table_name, connection, index=False, if_exists="append", schema='temp_schema')
+    table.to_sql(table_name, connection, index=False, if_exists="append", schema='public')
 
 
 # requires studies_workflow to write pre_cleaned studies_table to disk
