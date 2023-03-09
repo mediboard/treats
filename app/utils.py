@@ -7,6 +7,20 @@ def removekey_oop(d, key):
     return r
 
 
+def create_function(name, args, body):
+    # Build the function definition string
+    func_def = "def {}({}):\n{}\n".format(name, args, body)
+
+    # Create a new namespace to hold the function
+    ns = {}
+
+    # Execute the function definition in the new namespace
+    exec(func_def, ns)
+
+    # Extract the newly created function from the namespace
+    return ns[name]
+
+
 def count_items(lst):
     """
     Counts the occurrence of each item in a list and returns it as a dictionary.
