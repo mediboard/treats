@@ -25,13 +25,24 @@ AGG_ATTRIBUTES = [
 @bp.route('/<string:attr>')
 @cross_origin(supports_credentials=True)
 def agg_attr(attr):
-  if attr not in AGG_ATTRIBUTES:
-    return create_notfound_error(f"{attr} not aggregateable")
-    
+  # if attr not in AGG_ATTRIBUTES:
+  #   return create_notfound_error(f"{attr} not aggregateable")
+
   from app.studies import controller as study_controller
   study_query = study_controller.get_studies(request.args, subquery=True)
 
-  attr_counts = controller.query_attr(attr, study_query, limit=request.args.get('limit', 10))
+  attr_counts = None
+  if (attr == 'treatments'):
+    attr_counts = controller.agg_treatments(study_query, limit=request.args.get('limit', 10))
+
+  elif (attr == 'conditions'):
+    attr_counts = controller.agg_conditions(study_query, limit=request.args.get('limit', 10))
+
+  elif (attr == 'baselines'):
+    attr_counts = controller.agg_baselines(study_query, limit=request.args.get('limit', 10))
+
+  else: 
+    attr_counts = controller.query_attr(attr, study_query, limit=request.args.get('limit', 10))
 
   return_dict = {}
   counts = {}
@@ -46,3 +57,5 @@ def agg_attr(attr):
   return_dict[attr] = counts
 
   return return_dict
+
+

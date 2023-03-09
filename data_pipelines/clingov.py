@@ -13,6 +13,7 @@ from workflows.conditions_workflow import conditions_workflow
 from workflows.baselines_workflow import baselines_workflow 
 from workflows.study_treatments_workflow import study_treatments_workflow
 from workflows.outcomes_workflow import outcomes_workflow 
+from workflows.upload_treatments import upload_treatments_workflow
 
 
 engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditreats")
@@ -42,19 +43,19 @@ engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditr
 
 def run_clingov_pipelines():
   connection = engine.connect()
-  studies_workflow(connection, False)
+  # studies_workflow(connection, False)
 
-  groups_workflow(connection)
-  effects_workflow(connection, True)
-  conditions_workflow(connection)
-  baselines_workflow(connection)
+  # groups_workflow(connection)
+  # effects_workflow(connection, True)
+  # conditions_workflow(connection)
+  # baselines_workflow(connection)
 
-  measures_workflow(connection)
-  outcomes_workflow(connection)
+  # measures_workflow(connection)
+  # outcomes_workflow(connection)
 
   # This takes a while
-  # run_treatments_workflow(connection)
-  # study_treatments_workflow(connection)
+  # upload_treatments_workflow(connection)
+  study_treatments_workflow(connection)
 
 
 if __name__ == '__main__':

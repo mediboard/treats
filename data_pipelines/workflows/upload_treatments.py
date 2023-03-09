@@ -151,11 +151,13 @@ def parse_unique_treatments(treat_groups):
     return unique_treats
 
 
-def run_treatments_workflow(connection):
+def upload_treatments_workflow(connection):
     treat_groups = pd.read_pickle(DATA_PATH+'/all_treat_groups.pkl')
 
     treatments = parse_unique_treatments(treat_groups)
     upload_to_db(treatments, 'treatments', connection)
+
+    treats = get_treatments(connection)
 
     group_admins = create_groups_admins(treat_groups, treats)
     upload_to_db(group_admins, 'administrations', connection)
@@ -166,4 +168,4 @@ def run_treatments_workflow(connection):
 
 if (__name__ == '__main__'):
     connection = create_engine(DATABASE_URL).connect()
-    run_treatments_workflow(connection)
+    upload_treatments_workflow(connection)
