@@ -18,6 +18,18 @@ def main():
 	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
 
+@bp.route('/data')
+@cross_origin(supports_credentials=True)
+def get_study_data():
+	study_query = controller.get_studies(
+			request.args,
+			partial=True)
+
+	agg_data = controller.aggregate_study_data(study_query)
+
+	return {'data': agg_data}
+
+
 @bp.route('/search')
 @cross_origin(supports_credentials=True)
 def search():

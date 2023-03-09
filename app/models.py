@@ -432,8 +432,8 @@ class Study(db.Model):
 			'type': enum2String(self.type),
 			'purpose': enum2String(self.purpose),
 			'intervention_type': str(self.intervention_type),
-			'min_age': self.min_age,
 			'phase': enum2String(self.phase),
+			'min_age': self.min_age,
 			'min_age_units': str(self.min_age_units),
 			'max_age': self.max_age,
 			'min_age_units': str(self.max_age_units),
@@ -524,8 +524,8 @@ class StudyCondition(db.Model):
 	__tablename__ = 'study_conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
-	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'), index=True)
 
 
 class TreatmentGroup(db.Model):
@@ -543,8 +543,8 @@ class StudyTreatment(db.Model):
 	__tablename__ = 'study_treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
-	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'), index=True)
 
 
 class MeasureGroup(db.Model):
@@ -968,7 +968,7 @@ class Baseline(db.Model):
 	__tablename__ = 'baselines'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
 	base = db.Column(db.String(100))
 	clss = db.Column(db.String(100))
 	category = db.Column(db.String(100))
@@ -1019,7 +1019,7 @@ class Effect(db.Model):
 	__tablename__ = 'effects'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
 	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
 	cluster = db.Column(db.Integer, db.ForeignKey('effects_cluster.id'))
 	cluster_name = db.Column(db.String(100))

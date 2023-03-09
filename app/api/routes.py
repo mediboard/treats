@@ -62,7 +62,7 @@ def search_studies():
 @bp.route('/studies/data')
 @cross_origin(supports_credentials=True)
 @token_auth.login_required
-def search_studies():
+def get_study_data():
     limit = int(request.args.get('limit') or '10')
     studies, next_page, total = studies_controller.get_studies(
             request.args,

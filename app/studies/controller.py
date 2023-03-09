@@ -1,3 +1,5 @@
+import asyncio
+
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, Insight, \
 	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
@@ -49,15 +51,66 @@ def get_all_study_values(study_value):
 	return values
 
 
-def aggregate_study_data(studies):
-	# Sponsor
-	sponsors = count_items([study.sponsor for study in studies])
+def aggregate_study_data(study_query):
+	studies = study_query.all()
+	study_subquery = study_query.subquery()
 
-	# Responsible party
-	parties = count_items([study.responsible_party for study in studies])
+	count_attributes = [
+		'sponsor',
+		'responsible_party',
+		'type',
+		'purpose',
+		'intervention_type',
+		'phase',
+		'completion_date',
+		'status'
+	]
+
+	counts = {}
+	for attr in count_attributes:
+		counts[attr] = count_items([getattr(study, attr) for study in studies])
+
+	# Treatments and Conditions
+	counts['treatments'] = count_items([item.name for sublist in [study.treatments for study in studies] for item in sublist])
+	counts['conditions'] = count_items([item.name for sublist in [study.conditions for study in studies] for item in sublist])
+
+	# Now race and gender
+	baseline_vals = db.session.query(Baseline.sub_type, func.sum(Baseline.value))\
+		.join(study_subquery, study_subquery.c.id == Baseline.study)\
+		.group_by(Baseline.sub_type)\
+		.limit(10)\
+		.all()
+
+	baseline_counts = {}
+	for name, val in baseline_vals:
+		if name not in baseline_counts:
+			baseline_counts[name] = 0
+
+		baseline_counts[name] += val
+
+	counts['baselines'] = baseline_counts
+
+	# Side effects
+	effect_vals = db.session.query(Effect.name, func.sum(Effect.no_at_risk), func.sum(Effect.no_effected))\
+		.join(study_subquery, study_subquery.c.id == Baseline.study)\
+		.group_by(Effect.name)\
+		.limit(10)\
+		.all()
+
+	effect_counts = {}
+	for name, at_risk, effected in effect_vals:
+		if name not in effect_counts:
+			effect_counts[name] = {'no_at_risk': 0, 'no_effected': 0}
+
+		effect_counts[name]['no_at_risk'] += at_risk
+		effect_counts[name]['no_effected'] += effected 
+
+	counts['effects']	= effect_counts
+
+	return counts
 
 
-def get_studies(args, page=1, subquery=False, limit=10):
+def get_studies(args, page=1, subquery=False, partial=False, limit=10):
 	# Need to filter by search string, condition(s), treatment(s), size, kids
 	studies = db.session.query(Study)
 
@@ -144,6 +197,9 @@ def get_studies(args, page=1, subquery=False, limit=10):
 		joinedload(Study.conditions),
 		joinedload(Study.treatments),
 		raiseload('*'))
+
+	if (partial):
+		return studies
 
 	if (subquery):
 		return studies.subquery()
