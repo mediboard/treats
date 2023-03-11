@@ -2,7 +2,8 @@ import asyncio
 
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, Insight, \
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, \
+	EffectAdministration, ConditionGroup, Administration, measure_type, Search
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
 from app.utils import enum2String, count_items
@@ -20,6 +21,37 @@ def search(query, limit=10):
 
 	return studies
 
+
+def create_search(search_data):
+	new_search = Search()
+	new_search.from_dict(search_data)
+
+	db.session.add(new_search)
+	db.session.commit()
+
+	return new_search
+
+
+def get_search(search_id):
+	search = db.session.query(Search).filter(Searc.id == search_id).first()
+
+	return search
+
+
+def edit_search(search_data):
+	Search.query.filter_by(id = search_data['id']).update(search_data)
+	db.session.commit()
+
+	return  get_search(search_data['id'])
+
+
+def delete_search(search_id):
+	to_delete = db.session.query(Search)\
+		.filter(Search.id == search_id)\
+		.first()
+
+	db.session.delete(to_delete)
+	db.session.commit()
 
 def get_banner_studies():
 	banner_studies = db.session.query(Study)\

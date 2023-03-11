@@ -18,6 +18,30 @@ def main():
 	return {'studies': [study.to_summary_dict() for study in studies], 'next': next_page, 'total': total}
 
 
+@bp.route('/search_value/<string:search_id>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@cross_origin(supports_credentials=True)
+def search_value(search_id):
+	if request.method == 'POST':
+		data = request.get_json()
+		data['id'] = search_id
+
+		return {'search': controller.create_search(data).to_dict()}
+
+	if request.method == 'GET':
+		return {'search': controller.get_search(search_id).to_dict()}
+
+	if request.method == 'PUT':
+		data = request.get_json()
+		data['id'] = search_id
+
+		return {'search': controller.edit_search(data).to_dict()}
+
+	if request.method == 'DELETE':
+		controller.delete_search(search_id)
+
+		return {'status': 'success'}
+
+
 # @bp.route('/data')
 # @cross_origin(supports_credentials=True)
 # def get_study_data():

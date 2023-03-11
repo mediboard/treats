@@ -1,8 +1,10 @@
 from app import db 
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import func, select
 from app.utils import enum2String
+import uuid
 import enum
 
 
@@ -443,6 +445,29 @@ class Study(db.Model):
 			'stopped_reason': self.stopped_reason,
 			'external_ids': [self.nct_id]
 		}
+
+
+class Search(db.Model):
+
+	__tablename__ = 'searches'
+
+	id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+	name = db.Column(db.String(300), nullable=False)
+	search_string = db.Column(db.String(2000))
+	original_user = db.Column(db.String(1000), index=True)
+
+	def to_dict(self):
+		# Not going to return the original user
+		return {
+			'id': self.id,
+			'name': self.name,
+			'search_string': self.search_string
+		}
+
+
+	def from_dict(self, data):
+		for field, value in data.items():
+			setattr(self, field, value)
 
 
 class Insight(db.Model):
