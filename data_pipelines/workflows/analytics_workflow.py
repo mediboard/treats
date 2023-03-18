@@ -1,4 +1,4 @@
-from scipy.stats import t
+from scipy.stats import t, f
 import re
 
 def extract_percent(string):
@@ -73,12 +73,118 @@ def get_pval(row_a, row_b):
   return float(p_val)
 
 
-def get_grouped_pvalue(outcomes):
+def get_grouped_pvalue(outcome_measures):
+  # Assume incoming dataframe
   # Normal ANOVA or mixed ANOVA
   # Assume all outcomes are done per-measure
-  if (outcomes[0]['title'] == 'NA'):
+  ranges = outcome_measures.apply(lambda row: get_ranges(row))
+  outcome_measures['sd'] = outcome_measures.apply(lambda row: get_sd(row.outcome_spread, row.range, row.mean, row.nobs))
+
+  if (outcome_measures[0]['title'] == 'NA'):
+    data_df = pd.concat([
+      outcome_measures['outcome_id'],
+      ranges,
+      outcome_measures['values'],
+      outcome_measures['sd'],
+      outcome_measures['participants']], axis=1)
+
+    return welch_anova(data_df, 'outcome_id', 'values', 'sd', 'participants')
+    # data_df['pooled'] = data_df['mean'].mean()
+    # ssb = (((data_df['mean'] - data_df['pooled']) * 
+    #   (data_df['mean'] - data_df['pooled'])) * data_df['nobs']).sum()
+
+    # ssw = ((data_df['nobs'] - 1) * (data_df['sd'] * data_df['sd'])).sum()
+
+    # dfB = len(outcome_measures) - 1
+    # dfW = data_df['nobs'].sum() - len(outcome_measures)
+
+    # msB = ssb / dfB
+    # msw = ssw / dfW
+
+    # f_stat = msB / msW
+
+    # return 1 - f.cdf(f_stat, dfB, dfW)
+
+  data_df = pd.concat([
+    outcome_measures['outcome_id'],
+    outcome_measures['group'],
+    outcome_measures['title'],
+    ranges,
+    outcome_measures['values'],
+    outcome_measures['sd'],
+    outcome_measures['participants']], axis=1)
+
+  return mixed_whelch_anova(data_df, 'title', 'group', 'values', 'sd', 'participants')
 
 
+def welch_anova(dataframe, group_col, mean_col, sd_col, n_col):
+  # Compute the mean and standard error for each group
+  group_means = dataframe.groupby(group_col)[mean_col].mean()
+  group_sd = dataframe.groupby(group_col)[sd_col].mean()
+  group_n = dataframe.groupby(group_col)[n_col].sum()
+  group_se = group_sd / group_n**0.5
+
+  # Compute the overall mean and the total degrees of freedom
+  overall_mean = dataframe[mean_col].mean()
+  total_df = len(dataframe) - 1
+
+  # Compute the sum of squares for the between-group factor
+  ss_between = ((group_means - overall_mean)**2 / (group_sd**2 / group_n)).sum()
+  df_between = ((group_sd**2 / group_n)**2 / ((group_sd**2 / group_n)**2 / (group_n - 1))).sum()
+
+  # Compute the sum of squares for the within-group factor
+  ss_within = ((dataframe[mean_col] - dataframe[group_col].map(group_means))**2).sum()
+  df_within = total_df - df_between
+
+  # Compute the Welch's F-statistic and p-value
+  f_stat = ss_between / df_between / (ss_within / df_within)
+  p_value = 1 - f.cdf(f_stat, df_between, df_within)
+
+  return p_value
+
+
+def mixed_whelch_anova(dataframe, time_col, group_col, mean_col, sd_col, n_col):
+  # Compute the mean and standard error for each time, group combination
+  group_means = dataframe.groupby([time_col, group_col])[mean_col].mean().unstack()
+  group_sd = dataframe.groupby([time_col, group_col])[sd_col].mean().unstack()
+  group_n = dataframe.groupby([time_col, group_col])[n_col].sum().unstack()
+  group_se = group_sd / group_n**0.5
+
+  # Compute the overall mean and the total degrees of freedom
+  grand_mean = dataframe[mean_col].mean()
+  total_df = len(dataframe) - 1
+
+  # Compute the sum of squares for the between-group factor
+  ss_between = (group_means.mean() - grand_mean)**2 * np.sum(group_n)
+
+  # Compute the sum of squares for the within-subjects factor
+  ss_within = ((group_means - group_means.mean(axis=1, keepdims=True))**2 / group_n * group_se**2).sum().sum()
+
+  # Compute the sum of squares for the interaction effect
+  ss_interaction = ((group_means - group_means.mean(axis=1, keepdims=True) - group_means.mean(axis=0, keepdims=True) + grand_mean)**2 / group_n * group_se**2).sum().sum()
+
+  # Compute the degrees of freedom for each factor
+  df_between = len(group_means.columns) - 1
+  df_within = np.sum(group_n) - len(group_means.columns)
+  df_interaction = df_between * df_within
+
+  # Compute the mean squares for each factor
+  ms_between = ss_between / df_between
+  ms_within = ss_within / df_within
+  ms_interaction = ss_interaction / df_interaction
+
+  # Compute the F-statistic and p-value for the between-group factor
+  f_stat_between = ms_between / ms_within
+  p_value_between = 1 - f.cdf(f_stat_between, df_between, df_within)
+
+  # Compute the F-statistic and p-value for the interaction effect
+  f_stat_interaction = ms_interaction / ms_within
+  p_value_interaction = 1 - f.cdf(f_stat_interaction, df_interaction, df_within)
+
+  # Combine the p-values for the between-group factor and the interaction effect
+  p_value = 1 - (1 - p_value_between) * (1 - p_value_interaction)
+
+  return p_value
 
 
 def create_analytics_outside_studies():
