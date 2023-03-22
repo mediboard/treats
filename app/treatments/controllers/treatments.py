@@ -457,7 +457,7 @@ def get_placebo_group_outcomes(treatment_id, condition_group_id, measure_group_i
 		.filter(Condition.condition_group == condition_group_id)\
 		.options(
 			contains_eager(Measure.outcomes),
-			joinedload(Group.administrations).joinedload(Administration.treatments),
+			joinedload(Group.treatments),
 			raiseload('*'))\
 		.order_by(case([
 			(Measure.type == measure_type.PRIMARY, 1),

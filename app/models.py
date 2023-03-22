@@ -2,6 +2,7 @@ from app import db
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.schema import CheckConstraint
 from sqlalchemy import func, select
 from app.utils import enum2String
 import uuid
@@ -350,6 +351,7 @@ class Study(db.Model):
 	completion_date_type = db.Column(db.Enum(completion_date_type))
 	stopped_reason = db.Column(db.String(251))
 	status = db.Column(db.Enum(study_status))
+	primary_success = db.Column(db.SmallInteger, nullable=False, server_default='-1')
 
 	design_allocation = db.Column(db.Enum(design_allocation))
 	design_masking = db.Column(db.Enum(design_masking))
@@ -443,7 +445,8 @@ class Study(db.Model):
 			'completion_date': str(self.completion_date),
 			'status': enum2String(self.status),
 			'stopped_reason': self.stopped_reason,
-			'external_ids': [self.nct_id]
+			'external_ids': [self.nct_id],
+			'primary_success': self.primary_success
 		}
 
 

@@ -42,16 +42,12 @@ def search_value(search_id):
 		return {'status': 'success'}
 
 
-# @bp.route('/data')
-# @cross_origin(supports_credentials=True)
-# def get_study_data():
-# 	study_query = controller.get_studies(
-# 			request.args,
-# 			partial=True)
+@bp.route('/user/<string:username>/search_values', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def list_search_values(username):
+	searches = controller.list_searches(username)
 
-# 	agg_data = controller.aggregate_study_data(study_query)
-
-# 	return {'data': agg_data}
+	return {'searches': [x.to_dict() for x in searches]}
 
 
 @bp.route('/search')

@@ -33,16 +33,22 @@ def create_search(search_data):
 
 
 def get_search(search_id):
-	search = db.session.query(Search).filter(Searc.id == search_id).first()
+	search = db.session.query(Search).filter(Search.id == search_id).first()
 
 	return search
+
+
+def list_searches(username):
+	searches = db.session.query(Search).filter(Search.original_user == username).all()
+
+	return searches
 
 
 def edit_search(search_data):
 	Search.query.filter_by(id = search_data['id']).update(search_data)
 	db.session.commit()
 
-	return  get_search(search_data['id'])
+	return get_search(search_data['id'])
 
 
 def delete_search(search_id):
@@ -174,6 +180,10 @@ def get_studies(args, page=1, subquery=False, partial=False, limit=10):
 	if (status):
 		status_values= status.split(',')
 		studies = studies.filter(Study.status.in_(status_values))
+
+	primary_success = args.get('primary_success')
+	if (primary_success):
+		studies = studies.filter(Study.primary_success == primary_success)
 
 	start_date = args.get('completion_date_start')
 	end_date = args.get('completion_date_end')
