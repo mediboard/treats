@@ -13,9 +13,12 @@ from workflows.conditions_workflow import conditions_workflow
 from workflows.baselines_workflow import baselines_workflow 
 from workflows.study_treatments_workflow import study_treatments_workflow
 from workflows.outcomes_workflow import outcomes_workflow 
+from workflows.upload_treatments import upload_treatments_workflow
+from workflows.analytics_workflow import analytics_workflow 
+from workflows.study_success_workflow import study_success_workflow 
 
 
-engine = create_engine("postgresql://meditreats:meditreats@df-treats-db-2.cs6hxh6ocizm.us-west-2.rds.amazonaws.com:5432")
+engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditreats")
 #session_maker = sessionmaker(bind=engine)
 
 # def prep_new_schema():
@@ -53,9 +56,10 @@ def run_clingov_pipelines():
   # outcomes_workflow(connection)
 
   # This takes a while
-  run_treatments_workflow(connection)
+  # upload_treatments_workflow(connection)
   # study_treatments_workflow(connection)
-
+  # analytics_workflow(connection)
+  study_success_workflow(connection)
 
 if __name__ == '__main__':
   run_clingov_pipelines()

@@ -65,7 +65,7 @@ def parse_study_treatments(studies: typing.List[dict]) -> pd.DataFrame:
 
 
 def get_study_id(study_treats: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
+    study_ids = pd.read_sql("select id as std_id, nct_id from public.studies", connection)
     merged_table = study_treats.merge(study_ids, left_on="study_id", right_on="nct_id")\
         .drop(columns=['study_id', 'nct_id'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -79,13 +79,13 @@ def get_study_id(study_treats: pd.DataFrame, connection) -> pd.DataFrame:
 
 
 def upload_to_db(data: pd.DataFrame, table_name, connection):
-    data.to_sql(table_name, connection, index=False, if_exists='append', schema='temp_schema')   
+    data.to_sql(table_name, connection, index=False, if_exists='append', schema='public')   
 
 
 def fill_in_treatments(study_treats: pd.DataFrame, connection) -> pd.DataFrame:
     study_treats['treatments'] = study_treats['treatments'].str.lower()
 
-    treatments = pd.read_sql("select id as treat_id, name from temp_schema.treatments", connection)
+    treatments = pd.read_sql("select id as treat_id, name from public.treatments", connection)
     merged_table = study_treats.merge(treatments, how='left', left_on="treatments", right_on="name")\
         .drop(columns=['name'], axis=1)\
         .rename(columns={ 
@@ -108,7 +108,7 @@ def fill_in_treatments(study_treats: pd.DataFrame, connection) -> pd.DataFrame:
     upload_to_db(new_treatments, 'treatments', connection)
 
     # Do it again
-    treatments = pd.read_sql("select id as treat_id, name from temp_schema.treatments", connection)
+    treatments = pd.read_sql("select id as treat_id, name from public.treatments", connection)
     merged_table = study_treats.merge(treatments, how='left', left_on="treatments", right_on="name")\
         .drop(columns=['name', 'treatments'], axis=1)\
         .rename(columns={'treat_id': 'treatment'})

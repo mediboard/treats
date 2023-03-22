@@ -1,8 +1,11 @@
 from app import db 
 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.schema import CheckConstraint
 from sqlalchemy import func, select
 from app.utils import enum2String
+import uuid
 import enum
 
 
@@ -348,6 +351,7 @@ class Study(db.Model):
 	completion_date_type = db.Column(db.Enum(completion_date_type))
 	stopped_reason = db.Column(db.String(251))
 	status = db.Column(db.Enum(study_status))
+	primary_success = db.Column(db.SmallInteger, nullable=False, server_default='-1')
 
 	design_allocation = db.Column(db.Enum(design_allocation))
 	design_masking = db.Column(db.Enum(design_masking))
@@ -432,8 +436,8 @@ class Study(db.Model):
 			'type': enum2String(self.type),
 			'purpose': enum2String(self.purpose),
 			'intervention_type': str(self.intervention_type),
-			'min_age': self.min_age,
 			'phase': enum2String(self.phase),
+			'min_age': self.min_age,
 			'min_age_units': str(self.min_age_units),
 			'max_age': self.max_age,
 			'min_age_units': str(self.max_age_units),
@@ -441,8 +445,32 @@ class Study(db.Model):
 			'completion_date': str(self.completion_date),
 			'status': enum2String(self.status),
 			'stopped_reason': self.stopped_reason,
-			'external_ids': [self.nct_id]
+			'external_ids': [self.nct_id],
+			'primary_success': self.primary_success
 		}
+
+
+class Search(db.Model):
+
+	__tablename__ = 'searches'
+
+	id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+	name = db.Column(db.String(300), nullable=False)
+	search_string = db.Column(db.String(2000))
+	original_user = db.Column(db.String(1000), index=True)
+
+	def to_dict(self):
+		# Not going to return the original user
+		return {
+			'id': self.id,
+			'name': self.name,
+			'search_string': self.search_string
+		}
+
+
+	def from_dict(self, data):
+		for field, value in data.items():
+			setattr(self, field, value)
 
 
 class Insight(db.Model):
@@ -524,8 +552,8 @@ class StudyCondition(db.Model):
 	__tablename__ = 'study_conditions'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
-	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
+	condition = db.Column(db.Integer, db.ForeignKey('conditions.id'), index=True)
 
 
 class TreatmentGroup(db.Model):
@@ -543,8 +571,8 @@ class StudyTreatment(db.Model):
 	__tablename__ = 'study_treatments'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
-	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'), index=True)
 
 
 class MeasureGroup(db.Model):
@@ -968,7 +996,7 @@ class Baseline(db.Model):
 	__tablename__ = 'baselines'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
 	base = db.Column(db.String(100))
 	clss = db.Column(db.String(100))
 	category = db.Column(db.String(100))
@@ -1019,7 +1047,7 @@ class Effect(db.Model):
 	__tablename__ = 'effects'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
 	group = db.Column(db.Integer, db.ForeignKey('effectsgroups.id'))
 	cluster = db.Column(db.Integer, db.ForeignKey('effects_cluster.id'))
 	cluster_name = db.Column(db.String(100))

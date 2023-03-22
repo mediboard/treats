@@ -71,7 +71,7 @@ def create_outcomes_table_helper(studies) -> pd.DataFrame:
 
 
 def add_study_id(table: pd.DataFrame, connection) -> pd.DataFrame:
-    study_ids = pd.read_sql("select id as std_id, nct_id from temp_schema.studies", connection)
+    study_ids = pd.read_sql("select id as std_id, nct_id from public.studies", connection)
     merged_table = table.merge(study_ids, left_on="study", right_on="nct_id")\
         .drop(columns=['study'], axis=1)\
         .rename(columns={ 'std_id': 'study' })
@@ -109,7 +109,7 @@ def clean_groups_table(groups_table: pd.DataFrame) -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame, connection):
-    studies_table.to_sql("groups", connection, index=False, if_exists="append", schema='temp_schema')
+    studies_table.to_sql("groups", connection, index=False, if_exists="append", schema='public')
 
 
 def groups_workflow(connection) -> None:

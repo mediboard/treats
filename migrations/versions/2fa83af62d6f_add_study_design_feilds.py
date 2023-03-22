@@ -36,6 +36,7 @@ def upgrade():
     observational_model_type = sa.Enum('COHORT', 'CASE_CONTROL', 'CASE_ONLY', 'OTHER', 'ECOLOGIC_OR_COMMUNITY', 'CASE_CROSSOVER', 'DEFINED_POPULATION', 'FAMILY_BASED', 'NATURAL_HISTORY', 'NA', name='observational_model')
     observational_model_type.create(op.get_bind())
     op.add_column('studies', sa.Column('observational_model', observational_model_type, nullable=True))
+    
     op.add_column('studies', sa.Column('masking_description', sa.String(length=1200), nullable=True))
     op.add_column('studies', sa.Column('model_description', sa.String(length=1100), nullable=True))
 

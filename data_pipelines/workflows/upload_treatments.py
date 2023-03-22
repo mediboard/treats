@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 DATABASE_URL = os.environ.get('DATABASE_URL', default="postgresql://meditreats@localhost:5432")
 MODEL_PATH = os.environ.get('MODEL_PATH', default="/Users/porterhunley/models")
+DATA_PATH = os.environ.get('DATA_PATH', default='/Users/porterhunley/datasets')
 
 cred = boto3.Session().get_credentials()
 ACCESS_KEY = cred.access_key
@@ -52,45 +53,6 @@ tag2idx = {
     'PAD': 3
 }
 idx2tag = {v: k for k,v in tag2idx.items()}
-
-def get_ner_from_string(string, model, tokenizer):
-    tokenized_sentence = tokenizer.encode(string)
-    input_ids = torch.tensor([tokenized_sentence]).to(DEVICE)
-
-    with torch.no_grad():
-        output = model(input_ids)
-
-    label_indices = np.argmax(output[0].to('cpu').numpy(), axis=2)
-    tokens = tokenizer.convert_ids_to_tokens(input_ids.to('cpu').numpy()[0])
-
-    # Join the split tokens
-    new_tokens, new_labels = [], []
-    for token, label_idx in zip(tokens, label_indices[0]):
-        if token.startswith("##"):
-            new_tokens[-1] = new_tokens[-1] + token[2:]
-
-        else:
-            new_labels.append(idx2tag[label_idx])
-            new_tokens.append(token)
-
-    return new_tokens, new_labels
-
-
-def get_unique_treatments(string, model, tokenizer):
-  tokens, labels = get_ner_from_string(string, model, tokenizer)
-  treatments = []
-
-  for i in range(len(tokens)):
-    token = tokens[i]
-    label = labels[i]
-
-    if label == 'B':
-      treatments.append(token)
-
-    if label == 'I' and treatments:
-      treatments[-1] += token
-  
-  return list(set(treatments))
 
 
 def get_groups(connection):
@@ -146,30 +108,6 @@ def upload_to_db(data: pd.DataFrame, table_name, connection):
     data.to_sql(table_name, connection, index=False, if_exists='append', )   
 
 
-def parse_treatments(groups: pd.DataFrame, effect_groups: pd.DataFrame):
-    # TODO - this should be batched
-    model = load_ner_model()
-    tokenizer = load_tokenizer()
-
-    tqdm.pandas()
-
-    groups['treatments'] = groups['text'].progress_apply(lambda x: get_unique_treatments(x, model, tokenizer))
-    print(groups['treatments'])
-    effect_groups['treatments'] = effect_groups['text'].progress_apply(lambda x: get_unique_treatments(x, model, tokenizer))
-
-    unique_treatments = pd.concat([groups['treatments'], effect_groups['treatments']], axis=0)\
-        .explode('treatments')\
-        .str.lower()\
-        .drop_duplicates()\
-        .to_frame()
-
-    unique_treatments = unique_treatments.rename(columns={ 'treatments': 'name'})
-    unique_treatments['id'] = range(1, len(unique_treatments) + 1)
-    unique_treatments = unique_treatments.reset_index(drop=True)
-
-    return unique_treatments, groups, effect_groups
-
-
 def create_groups_admins(groups: pd.DataFrame, treats):
     print("Creating admins table")
     exploded = groups.explode('treatments')
@@ -204,24 +142,30 @@ def create_effects_admins(effect_groups: pd.DataFrame, treats):
     return admins
 
 
-def run_treatments_workflow(connection):
-    groups = get_groups(connection)
-    effect_groups = get_effect_groups(connection)
+def parse_unique_treatments(treat_groups):
+    print("Parsing unique treatments")
+    unique_treats = treat_groups['treatments'].explode('treatments').unique()
+    unique_treats = pd.DataFrame({'name': unique_treats})
+    unique_treats['id'] = range(1, len(unique_treats) + 1)
 
-    treats, treat_groups, treat_effect_groups = parse_treatments(groups, effect_groups)
-    upload_to_db(treats, 'treatments', connection)
+    return unique_treats
 
-    # Need to refresh with id
+
+def upload_treatments_workflow(connection):
+    treat_groups = pd.read_pickle(DATA_PATH+'/all_treat_groups.pkl')
+
+    treatments = parse_unique_treatments(treat_groups)
+    upload_to_db(treatments, 'treatments', connection)
+
     treats = get_treatments(connection)
 
     group_admins = create_groups_admins(treat_groups, treats)
     upload_to_db(group_admins, 'administrations', connection)
 
-    effects_admins = create_effects_admins(treat_effect_groups, treats)
-    upload_to_db(effects_admins, 'effectsadministrations', connection)
-
+    # effects_admins = create_effects_admins(treat_effect_groups, treats)
+    # upload_to_db(effects_admins, 'effectsadministrations', connection)
 
 
 if (__name__ == '__main__'):
     connection = create_engine(DATABASE_URL).connect()
-    run_treatments_workflow(connection)
+    upload_treatments_workflow(connection)

@@ -1,9 +1,12 @@
+import asyncio
+
 from app import db
 from app.models import Study, Criteria, Measure, Analytics, Baseline, Outcome, Insight, \
-	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, EffectAdministration, ConditionGroup, Administration, measure_type
+	Group, StudyTreatment, StudyCondition, Condition, Treatment, Effect, EffectGroup, \
+	EffectAdministration, ConditionGroup, Administration, measure_type, Search
 from sqlalchemy.orm import joinedload, raiseload
 from sqlalchemy import and_, func, or_
-from app.utils import enum2String
+from app.utils import enum2String, count_items
 
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -18,6 +21,43 @@ def search(query, limit=10):
 
 	return studies
 
+
+def create_search(search_data):
+	new_search = Search()
+	new_search.from_dict(search_data)
+
+	db.session.add(new_search)
+	db.session.commit()
+
+	return new_search
+
+
+def get_search(search_id):
+	search = db.session.query(Search).filter(Search.id == search_id).first()
+
+	return search
+
+
+def list_searches(username):
+	searches = db.session.query(Search).filter(Search.original_user == username).all()
+
+	return searches
+
+
+def edit_search(search_data):
+	Search.query.filter_by(id = search_data['id']).update(search_data)
+	db.session.commit()
+
+	return get_search(search_data['id'])
+
+
+def delete_search(search_id):
+	to_delete = db.session.query(Search)\
+		.filter(Search.id == search_id)\
+		.first()
+
+	db.session.delete(to_delete)
+	db.session.commit()
 
 def get_banner_studies():
 	banner_studies = db.session.query(Study)\
@@ -49,7 +89,66 @@ def get_all_study_values(study_value):
 	return values
 
 
-def get_studies(args, page=1, subquery=False, limit=10):
+def aggregate_study_data(study_query):
+	studies = study_query.all()
+	study_subquery = study_query.subquery()
+
+	count_attributes = [
+		'sponsor',
+		'responsible_party',
+		'type',
+		'purpose',
+		'intervention_type',
+		'phase',
+		'completion_date',
+		'status'
+	]
+
+	counts = {}
+	for attr in count_attributes:
+		counts[attr] = count_items([getattr(study, attr) for study in studies])
+
+	# Treatments and Conditions
+	counts['treatments'] = count_items([item.name for sublist in [study.treatments for study in studies] for item in sublist])
+	counts['conditions'] = count_items([item.name for sublist in [study.conditions for study in studies] for item in sublist])
+
+	# Now race and gender
+	baseline_vals = db.session.query(Baseline.sub_type, func.sum(Baseline.value))\
+		.join(study_subquery, study_subquery.c.id == Baseline.study)\
+		.group_by(Baseline.sub_type)\
+		.limit(10)\
+		.all()
+
+	baseline_counts = {}
+	for name, val in baseline_vals:
+		if name not in baseline_counts:
+			baseline_counts[name] = 0
+
+		baseline_counts[name] += val
+
+	counts['baselines'] = baseline_counts
+
+	# Side effects
+	effect_vals = db.session.query(Effect.name, func.sum(Effect.no_at_risk), func.sum(Effect.no_effected))\
+		.join(study_subquery, study_subquery.c.id == Baseline.study)\
+		.group_by(Effect.name)\
+		.limit(10)\
+		.all()
+
+	effect_counts = {}
+	for name, at_risk, effected in effect_vals:
+		if name not in effect_counts:
+			effect_counts[name] = {'no_at_risk': 0, 'no_effected': 0}
+
+		effect_counts[name]['no_at_risk'] += at_risk
+		effect_counts[name]['no_effected'] += effected 
+
+	counts['effects']	= effect_counts
+
+	return counts
+
+
+def get_studies(args, page=1, subquery=False, partial=False, limit=10):
 	# Need to filter by search string, condition(s), treatment(s), size, kids
 	studies = db.session.query(Study)
 
@@ -81,6 +180,10 @@ def get_studies(args, page=1, subquery=False, limit=10):
 	if (status):
 		status_values= status.split(',')
 		studies = studies.filter(Study.status.in_(status_values))
+
+	primary_success = args.get('primary_success')
+	if (primary_success):
+		studies = studies.filter(Study.primary_success == primary_success)
 
 	start_date = args.get('completion_date_start')
 	end_date = args.get('completion_date_end')
@@ -136,6 +239,9 @@ def get_studies(args, page=1, subquery=False, limit=10):
 		joinedload(Study.conditions),
 		joinedload(Study.treatments),
 		raiseload('*'))
+
+	if (partial):
+		return studies
 
 	if (subquery):
 		return studies.subquery()

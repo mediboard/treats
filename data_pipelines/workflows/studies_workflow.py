@@ -5,6 +5,8 @@ import os
 import glob
 import pandas as pd
 import pickle
+import enum
+
 
 # TODO move this to a utils file
 # --------------------- #
@@ -33,6 +35,13 @@ s3_client = boto3.client('s3',
 
 # --------------------- #
 
+class who_masked(enum.Enum):
+    PARTICIPANT='participant'
+    INVESTIGATOR='investigator'
+    OUTCOMES_ASSESSOR='outcomes assessor'
+    CARE_PROVIDER='care provider'
+    NA='NA'
+
 
 def update_studies_pkl() -> None:
     print(f"Downloading parsed studies from S3...")
@@ -50,7 +59,7 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
         'interventions': [], 'purpose': [], 'intervention_type': [], 'mesh_terms': [],
         'criteria': [], 'min_age': [], 'max_age': [], 'gender': [], 'completion_date': [], 'completion_date_type':[],
         'status': [], 'stopped_reason': [], 'design_allocation': [], 'design_masking': [], 'design_time_perspective': [],
-        'who_masked': [], 'observational_model': [], 'masking_description': [], 'model_description': []}
+        'who_masked': [], 'masking_description': [], 'model_description': []}
     for _, study in enumerate(studies):
         try:
             buffer['nct_id'].append(study['Study']['ProtocolSection']['IdentificationModule']['NCTId'])
@@ -198,11 +207,6 @@ def create_studies_table_helper(studies: typing.List[dict]) -> pd.DataFrame:
             buffer['who_masked'].append('NA')
                         
         try:
-            buffer['observational_model'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModel'])
-        except KeyError as e:
-            buffer['observational_model'].append('NA')
-                                    
-        try:
             buffer['masking_description'].append(study['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMaskingDescription'])
         except KeyError as e:
             buffer['masking_description'].append('NA')
@@ -235,7 +239,13 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
          'completion_date',
          'completion_date_type',
          'status',
-         'stopped_reason']
+         'stopped_reason',
+         'design_allocation',
+         'design_masking',
+         'design_time_perspective',
+         'who_masked',
+         'masking_description',
+         'model_description']
     ].rename(
         columns={
             'verified_date': 'upload_date'
@@ -304,8 +314,11 @@ def clean_studies_table(studies_table: pd.DataFrame) -> pd.DataFrame:
     db_studies_table['design_allocation'] = db_studies_table['design_allocation'].str.upper().str.replace(' ','_').str.replace('/','').str.replace('-','_')
     db_studies_table['design_masking'] = db_studies_table['design_masking'].apply(lambda x: 'None' if x == 'None (Open Label)' else x ).str.upper().str.replace(' ','_')
     db_studies_table['design_time_perspective'] = db_studies_table['design_time_perspective'].str.upper().str.replace(' ', '_')
+
     db_studies_table['who_masked'] = db_studies_table['who_masked'].apply(lambda x: [y.upper().replace(' ', '_') for y in x if x != 'NA'])
-    db_studies_table['observational_model'] = db_studies_table['observational_model'].str.upper().str.replace(' ', '_')
+    db_studies_table['who_masked'] = db_studies_table['who_masked'].apply(lambda x: str(x).replace('[','{').replace(']', '}').replace("'", ""))
+
+    # db_studies_table['observational_model'] = db_studies_table['observational_model'].str.upper().str.replace(' ', '_')
 
     return db_studies_table
 
@@ -325,7 +338,7 @@ def create_studies_table() -> pd.DataFrame:
 
 
 def upload_to_db(studies_table: pd.DataFrame, connection):
-    studies_table.to_sql('studies', connection, index=False, if_exists='append', schema='temp_schema')
+    studies_table.to_sql('studies', connection, index=False, if_exists='append', schema='public')
 
 
 def delete_old_studies():
