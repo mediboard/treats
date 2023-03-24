@@ -16,6 +16,8 @@ from workflows.outcomes_workflow import outcomes_workflow
 from workflows.upload_treatments import upload_treatments_workflow
 from workflows.analytics_workflow import analytics_workflow 
 from workflows.study_success_workflow import study_success_workflow 
+from workflows.measure_emb_workflow import measure_emb_workflow
+from workflows.measure_clustering_workflow import measure_clustering_workflow 
 
 
 engine = create_engine("postgresql://meditreats:meditreats@localhost:5432/meditreats")
@@ -59,7 +61,10 @@ def run_clingov_pipelines():
   # upload_treatments_workflow(connection)
   # study_treatments_workflow(connection)
   # analytics_workflow(connection)
-  study_success_workflow(connection)
+  # study_success_workflow(connection)
+
+  # measure_emb_workflow(connection)
+  measure_clustering_workflow(connection)
 
 if __name__ == '__main__':
   run_clingov_pipelines()
