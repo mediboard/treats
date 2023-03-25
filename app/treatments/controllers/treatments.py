@@ -26,6 +26,41 @@ def search_treatments(query, limit=5):
 	return results
 
 
+def analyze_treatments(treatment_ids, measure_group):
+	# get the paired outcomes of each treatment and the measure group
+	# I think I can create a strang
+
+	# How do we deal with the zero treatments
+	# Measure, outcome query one
+	treatment_outcomes_1 = aliased(Outcome)
+	treatment_outcomes_2 = aliased(Outcome)
+
+	treatment_outcomes_1_query = db.session.query(treatment_outcomes_1)\
+		.join(Administration, Administration.group == treatment_outcomes_1.group)\
+		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == treatment_outcomes_1.measure)\
+		.filter(MeasureGroupMeasure.measureGroup == measure_group)\
+		.filter(Administration.treatment == treatment_ids[0])\
+		.subquery()
+
+	treatment_outcomes_2_query = db.session.query(treatment_outcomes_2)\
+		.join(Administration, Administration.group == treatment_outcomes_2.group)\
+		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == treatment_outcomes_2.measure)\
+		.filter(MeasureGroupMeasure.measureGroup == measure_group)\
+		.filter(Administration.treatment == treatment_ids[1])\
+		.subquery()
+
+	treatment_outcomes_1 = aliased(Outcome, treatment_outcomes_1_query)
+	treatment_outcomes_2 = aliased(Outcome, treatment_outcomes_2_query)
+
+	results = db.session.query(treatment_outcomes_1, treatment_outcomes_2)\
+		.filter(treatment_outcomes_1.measure == treatment_outcomes_2.measure)\
+		.filter(treatment_outcomes_1.id != treatment_outcomes_2.id)\
+
+	print(str(results))
+
+	return results.all()
+
+
 def search_measures(treatment_name, condition_id, query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 
