@@ -30,9 +30,8 @@ def analyze_treatments(treatment_ids, measure_group):
 	# Let's only do it within a search group
 	# Search group + (treatments compare) + (measure group)
 	results = treatments.analyze_treatments(treatment_ids, measure_group)
-	print(results)
 
-	return results
+	return {'results': results}
 
 
 @bp.route('/<int:treatment_id>/scan')
