@@ -1,5 +1,6 @@
 import scipy.stats as stats
 import math
+import re
 
 from app.models import measure_dispersion_param 
 
@@ -66,18 +67,26 @@ def cohen_d(outcome_a, outcome_b, dispersion_type):
 
   return mean_diff / pooled_sd
 
+def extract_percent(string):
+  pattern = r'^([\d\.]+)% Confidence Interval$'
+  match = re.match(pattern, string)
+  if match:
+    percent = float(match.group(1))
+    return percent / 100
+  else:
+    return None
 
 def get_sd(outcome, outcome_spread):
   no_obs = outcome.no_participants
 
   if outcome_spread == 'Standard Error':
-    return sqrt(no_obs) * float(outcome.dispersion)  # assuming ranges is one number in this case
+    return math.sqrt(no_obs) * float(outcome.dispersion)  # assuming ranges is one number in this case
 
   if 'Confidence' in outcome_spread:
     percent_value = extract_percent(outcome_spread)
-    critical_value = t.ppf((1 + percent_value) / 2, no_obs-1)
+    critical_value = stats.t.ppf((1 + percent_value) / 2, no_obs-1)
 
-    return sqrt(int(no_obs)) * ((float(outcome.upper) - float(outcome.lower)) / (2*critical_value))
+    return math.sqrt(int(no_obs)) * ((float(outcome.upper) - float(outcome.lower)) / (2*critical_value))
 
   if outcome_spread == 'Inter-Quartile Range':
     return (float(outcome.upper) - float(outcome.lower)) / 1.35  # Assuming the distribution is normal

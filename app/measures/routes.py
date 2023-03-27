@@ -24,6 +24,14 @@ def search_measures_by_vector():
   return {'measures': [{**x[0].to_small_dict(), 'score': x[1]} for x in results]}
 
 
+@bp.route('/groups/treatments/<int_list:treatment_ids>/condition/<int:condition_id>')
+@cross_origin(supports_credentials=True)
+def get_measure_groups(treatment_ids, condition_id):
+  measure_groups = controller.get_measure_groups(treatment_ids, condition_id)
+
+  return {'measure_groups': [group.to_dict() for group in measure_groups]}
+
+
 @bp.route('<int:measure_id>/data')
 @cross_origin(supports_credentials=True)
 def get_data(measure_id):
