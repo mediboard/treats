@@ -26,6 +26,69 @@ def search_treatments(query, limit=5):
 	return results
 
 
+def analyze_treatments(treatment_ids, measure_group):
+	# get the paired outcomes of each treatment and the measure group
+	# I think I can create a strang
+
+	single_groups = db.session.query(Group, func.count(Administration.id))\
+		.join(Administration, Administration.group == Group.id)\
+		.group_by(Group.id)\
+		.having(func.count(Administration.id) <= 3)\
+		.subquery()
+
+	# How do we deal with the zero treatments
+	# Measure, outcome query one
+	treatment_outcomes_1 = aliased(Outcome)
+	treatment_outcomes_2 = aliased(Outcome)
+
+	treatment_outcomes_1_query = db.session.query(treatment_outcomes_1)\
+		.join(Administration, Administration.group == treatment_outcomes_1.group)\
+		.join(single_groups, single_groups.c.id == treatment_outcomes_1.group)\
+		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == treatment_outcomes_1.measure)\
+		.filter(MeasureGroupMeasure.measureGroup == measure_group)\
+		.filter(Administration.treatment == treatment_ids[0])\
+		.subquery()
+
+	treatment_outcomes_2_query = db.session.query(treatment_outcomes_2)\
+		.join(Administration, Administration.group == treatment_outcomes_2.group)\
+		.join(single_groups, single_groups.c.id == treatment_outcomes_2.group)\
+		.join(MeasureGroupMeasure, MeasureGroupMeasure.measure == treatment_outcomes_2.measure)\
+		.filter(MeasureGroupMeasure.measureGroup == measure_group)\
+		.filter(Administration.treatment == treatment_ids[1])\
+		.subquery()
+
+	treatment_outcomes_1 = aliased(Outcome, treatment_outcomes_1_query)
+	treatment_outcomes_2 = aliased(Outcome, treatment_outcomes_2_query)
+
+	results = db.session.query(Measure, treatment_outcomes_1, treatment_outcomes_2)\
+		.filter(treatment_outcomes_1.measure == treatment_outcomes_2.measure)\
+		.filter(treatment_outcomes_1.id != treatment_outcomes_2.id)\
+		.join(Measure, Measure.id == treatment_outcomes_1.measure)\
+		.all()
+
+	# Now we need to do a stats test 
+	# What hapens when the outcomes have titles 
+	# We're going to ignore that for now
+	measure2results = {}
+	for result in results:
+		measure = result[0]
+		if measure.dispersion in non_calculable:
+			continue
+
+		if measure.id not in measure2results:
+			measure2results[measure.id] = {**measure.to_small_dict(), 'results': []}
+
+		results_obj = {
+			f"{treatment_ids[0]}_outcome": result[1].id,
+			f"{treatment_ids[1]}_outcome": result[2].id,
+			"d_value": cohen_d(result[1], result[2], result[0].dispersion)
+		}
+
+		measure2results[measure.id]['results'].append(results_obj)
+
+	return [measure2results[key] for key in measure2results] 
+
+
 def search_measures(treatment_name, condition_id, query, limit=5):
 	processedQuery = query.replace(' ', ' & ') if query[-1] != ' ' else query
 

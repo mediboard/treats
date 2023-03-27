@@ -603,8 +603,8 @@ class MeasureGroupMeasure(db.Model):
 	__tablename__ = 'measure_group_measures'
 
 	id = db.Column(db.Integer, primary_key=True)
-	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
-	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'))
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'), index=True)
+	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'), index=True)
 
 
 class Measure(db.Model):
@@ -612,7 +612,7 @@ class Measure(db.Model):
 	__tablename__ = 'measures'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
 	title = db.Column(db.String(256))
 	description = db.Column(db.String(1005))
 	dispersion = db.Column(db.String(50))
@@ -794,9 +794,9 @@ class Outcome(db.Model):
 	__tablename__ = 'outcomes'
 
 	id = db.Column(db.Integer, primary_key=True)
-	study = db.Column(db.Integer, db.ForeignKey('studies.id'))
-	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
-	measure = db.Column(db.Integer, db.ForeignKey('measures.id'))
+	study = db.Column(db.Integer, db.ForeignKey('studies.id'), index=True)
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'), index=True)
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'), index=True)
 	title = db.Column(db.String(225))
 	value = db.Column(db.Float)
 	dispersion = db.Column(db.Float)
@@ -824,8 +824,8 @@ class Administration(db.Model):
 	__tablename__ = 'administrations'
 
 	id = db.Column(db.Integer, primary_key=True)
-	group = db.Column(db.Integer, db.ForeignKey('groups.id'))
-	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'))
+	group = db.Column(db.Integer, db.ForeignKey('groups.id'), index=True)
+	treatment = db.Column(db.Integer, db.ForeignKey('treatments.id'), index=True)
 	description = db.Column(db.String(1500))
 	annotated = db.Column(db.Boolean)
 

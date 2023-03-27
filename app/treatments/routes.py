@@ -23,6 +23,17 @@ def search_treatments():
 	return {'results': [x.to_dict() for x in results]}
 
 
+@bp.route('/<int_list:treatment_ids>/group/<int:measure_group>')
+@cross_origin(supports_credentials=True)
+def analyze_treatments(treatment_ids, measure_group):
+	# Should this compare between search groups (or within a search group)
+	# Let's only do it within a search group
+	# Search group + (treatments compare) + (measure group)
+	results = treatments.analyze_treatments(treatment_ids, measure_group)
+
+	return {'results': results}
+
+
 @bp.route('/<int:treatment_id>/scan')
 @cross_origin(supports_credentials=True)
 def scan_treatments(treatment_id):
