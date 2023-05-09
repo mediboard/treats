@@ -69,8 +69,6 @@ def find_reciprocal_nearest_neighbors(clusters):
 
     cluster.will_merge = False
     if cluster.nn:
-      # Need a way to finding reciprocal NN
-      # How can nn.nn be None?
       cluster.will_merge = cluster.nn.nn.id == cluster.id
 
   # Find the reciprocal nearest neighbors and add them to the merge list
@@ -97,61 +95,91 @@ def calculate_weighted_dissimilarity(points_a, points_b): # These are numpy arra
   return np.mean(cosines)
 
 
+def merge_cluster(merge, clusters, base_arr):
+  main_cluster = merge[0] if merge[0].id < merge[1].id else merge[1]
+  secondary_cluster = merge[1] if merge[0].id < merge[1].id else merge[0]
+
+  new_neighbors = set()
+
+  # Look at all the neighbors - minus themselves
+  possible_neighbors = [c for c in main_cluster.neighbors.union(secondary_cluster.neighbors) if c.id not in [main_cluster.id, secondary_cluster.id]]
+  for other_cluster in possible_neighbors:
+    new_dissimilarity = calculate_weighted_dissimilarity(
+      base_arr[main_cluster.indices + secondary_cluster.indices],
+      base_arr[other_cluster.indices]
+    )
+
+    main_cluster.update_dissimilarity(other_cluster, new_dissimilarity)
+    other_cluster.update_dissimilarity(main_cluster, new_dissimilarity)
+
+    other_cluster.neighbors.discard(secondary_cluster)
+    if new_dissimilarity > MIN_DISTANCE:
+      other_cluster.neighbors.discard(main_cluster)
+      continue
+
+    other_cluster.neighbors.add(main_cluster)
+    new_neighbors.add(other_cluster)
+
+  # Update the main cluster - remove secondary cluster
+  main_cluster.indices += secondary_cluster.indices
+  main_cluster.neighbors = new_neighbors
+  clusters.remove(secondary_cluster)
+
+
+def update_cluster_dissimilarities(merges, clusters, base_arr):
+  for merge in merges:
+    merge_cluster(merge, clusters, base_arr)
+
+
 # Or do the merge right before this step so we don't have to do weird fetches
 # This does seem to affect parallelization
-def update_cluster_dissimilarities(clusters, base_arr):
-  for cluster in [c for c in clusters if c.will_merge and c.id < c.nn.id]:
-    new_neighbors = set()
+# def update_cluster_dissimilarities(clusters, base_arr):
+#   for cluster in [c for c in clusters if c.will_merge and c.id < c.nn.id]:
+#     new_neighbors = set()
 
-    for other_cluster in cluster.neighbors.union(cluster.nn.neighbors):
+#     for other_cluster in cluster.neighbors.union(cluster.nn.neighbors):
 
-      if other_cluster.will_merge and other_cluster.id < other_cluster.nn.id and other_cluster.id != cluster.id:
-        new_dissimilarity = calculate_weighted_dissimilarity(
-          base_arr[cluster.indices + cluster.nn.indices], 
-          base_arr[other_cluster.indices + other_cluster.nn.indices]
-        )
+#       if other_cluster.will_merge and other_cluster.id != cluster.id:
+#         new_dissimilarity = calculate_weighted_dissimilarity(
+#           base_arr[cluster.indices + cluster.nn.indices], 
+#           base_arr[other_cluster.indices + other_cluster.nn.indices]
+#         )
 
-        cluster.update_dissimilarity(other_cluster, new_dissimilarity)
-        other_cluster.update_dissimilarity(cluster, new_dissimilarity)
+#         cluster.update_dissimilarity(other_cluster, new_dissimilarity)
+#         other_cluster.update_dissimilarity(cluster, new_dissimilarity)
 
-        other_cluster.neighbors.discard(cluster.nn)
-        if new_dissimilarity > MIN_DISTANCE:
-          other_cluster.neighbors.discard(cluster)
-          continue
+#         other_cluster.neighbors.discard(cluster.nn)
+#         if new_dissimilarity > MIN_DISTANCE:
+#           other_cluster.neighbors.discard(cluster)
+#           continue
 
-        other_cluster.neighbors.add(cluster)
+#         other_cluster.neighbors.add(cluster)
 
-        new_neighbors.add(other_cluster)
+#         new_neighbors.add(other_cluster)
 
-      elif not other_cluster.will_merge and other_cluster.id != cluster.id:
-        new_dissimilarity = calculate_weighted_dissimilarity(
-          base_arr[cluster.indices + cluster.nn.indices],
-          base_arr[other_cluster.indices]
-        )
+#       elif not other_cluster.will_merge and other_cluster.id != cluster.id:
+#         new_dissimilarity = calculate_weighted_dissimilarity(
+#           base_arr[cluster.indices + cluster.nn.indices],
+#           base_arr[other_cluster.indices]
+#         )
 
-        cluster.update_dissimilarity(other_cluster, new_dissimilarity)
-        other_cluster.update_dissimilarity(cluster, new_dissimilarity)
+#         cluster.update_dissimilarity(other_cluster, new_dissimilarity)
+#         other_cluster.update_dissimilarity(cluster, new_dissimilarity)
 
-        other_cluster.neighbors.discard(cluster.nn)
-        if new_dissimilarity > MIN_DISTANCE:
-          other_cluster.neighbors.discard(cluster)
-          continue
+#         other_cluster.neighbors.discard(cluster.nn)
+#         if new_dissimilarity > MIN_DISTANCE:
+#           other_cluster.neighbors.discard(cluster)
+#           continue
 
-        other_cluster.neighbors.add(cluster)
+#         other_cluster.neighbors.add(cluster)
 
-        new_neighbors.add(other_cluster)
+#         new_neighbors.add(other_cluster)
 
-    cluster.neighbors = new_neighbors
+#     cluster.neighbors = new_neighbors
 
-  for cluster in [c for c in clusters if c.will_merge and c.id > c.nn.id]:
-    clusters.remove(cluster) 
-    cluster.nn.indices += cluster.indices 
-
-# What is this doing here? Don't we need to add a check on nn.id??
-  # for cluster in clusters:
-  #   if cluster.will_merge:
-  #     for other_cluster in cluster.neighbors:
-  #       other_cluster.update_dissimilarity(cluster, cluster.get_dissimilarity(other_cluster))
+#   for cluster in [c for c in clusters if c.will_merge and c.id > c.nn.id]:
+#     clusters.remove(cluster) 
+#     cluster.nn.indices += cluster.indices 
 
 
 def update_nearest_neighbors(clusters):
@@ -199,7 +227,7 @@ def RAC_r(clusters, X):
   if not merges:
     return clusters
 
-  update_cluster_dissimilarities(clusters, X)
+  update_cluster_dissimilarities(merges, clusters, X)
   update_nearest_neighbors(clusters)
 
   return RAC_r(clusters, X)
@@ -207,14 +235,16 @@ def RAC_r(clusters, X):
 
 if __name__=='__main__':
   # Let's run through a full test
-  random_array = np.random.rand(20, 768)
+  # np.random.seed(49)  # Set the seed for reproducibility
+
+  random_array = np.random.rand(500, 768)
   labels = RAC(random_array)
   print(len(list(set(labels))))
 
   from sklearn.cluster import AgglomerativeClustering
   clustering = AgglomerativeClustering(
     n_clusters=None, 
-    linkage='complete',
+    linkage='average',
     distance_threshold=MIN_DISTANCE, 
     metric='cosine').fit(random_array)
   
