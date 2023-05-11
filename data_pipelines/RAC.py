@@ -12,6 +12,7 @@ class Cluster:
     self.indices = ind or [] # The indicies in the array - these need to be thread safe, though we can control it
     self.base_arr = base_arr # Need to make sure this is just a reference and not a copy
     self.dissimilarities = {}
+    self.neighbors_needing_updates = set() 
 
 
   def __str__(self):
@@ -80,6 +81,8 @@ def merge_cluster(merge, base_arr):
   secondary_cluster = merge[1]
 
   new_neighbors = set()
+  new_dissimilarities = {}
+  needs_updating = set()
 
   possible_neighbors = [
     c for c in main_cluster.neighbors.union(secondary_cluster.neighbors) if c.id not in [main_cluster.id, secondary_cluster.id]
@@ -97,8 +100,7 @@ def merge_cluster(merge, base_arr):
 
       other_cluster_main = other_cluster if other_cluster.id < other_cluster.nn.id else other_cluster.nn
 
-      main_cluster.update_dissimilarity(other_cluster_main, new_dissimilarity)
-
+      new_dissimilarities[other_cluster_main.id] = new_dissimilarity
       if new_dissimilarity <= MIN_DISTANCE:
         new_neighbors.add(other_cluster_main)
 
@@ -109,31 +111,42 @@ def merge_cluster(merge, base_arr):
       base_arr[other_cluster.indices]
     )
 
-    main_cluster.update_dissimilarity(other_cluster, new_dissimilarity)
-    other_cluster.update_dissimilarity(main_cluster, new_dissimilarity)
+    new_dissimilarities[other_cluster.id] = new_dissimilarity
+    needs_updating.add(other_cluster)
+    if new_dissimilarity <= MIN_DISTANCE:
+      new_neighbors.add(other_cluster)
 
-    other_cluster.neighbors.discard(secondary_cluster)
-    if new_dissimilarity > MIN_DISTANCE:
-      other_cluster.neighbors.discard(main_cluster)
-      continue
-
-    other_cluster.neighbors.add(main_cluster)
-    new_neighbors.add(other_cluster)
-
-  # Update the main cluster - remove secondary cluster
-  # This should be done after all of the merge calls
-  # main_cluster.indices += secondary_cluster.indices
   main_cluster.neighbors = new_neighbors
-  # clusters.remove(secondary_cluster)
+  main_cluster.dissimilarities = new_dissimilarities
+  main_cluster.neighbors_needing_updates = needs_updating
 
 
 def update_cluster_dissimilarities(merges, clusters, base_arr):
   for merge in merges:
     merge_cluster(merge, base_arr)
 
+  needs_update = []
   for main, secondary in merges:
     main.indices += secondary.indices
     clusters.remove(secondary)
+
+    needs_update.append(main.neighbors_needing_updates)
+
+  for cluster in set.union(*needs_update):
+    update_cluster_neighbors(cluster)
+
+def update_cluster_neighbors(cluster):
+  for merged_neighbor in [c for c in cluster.neighbors if c.will_merge]:
+    main_neighbor = merged_neighbor if merged_neighbor.id < merged_neighbor.nn.id else merged_neighbor.nn
+    secondary_neighbor = merged_neighbor if merged_neighbor.id > merged_neighbor.nn.id else merged_neighbor.nn
+
+    dissimilarity = main_neighbor.get_dissimilarity(cluster)
+    cluster.neighbors.discard(secondary_neighbor)
+    cluster.neighbors.discard(main_neighbor)
+
+    if dissimilarity <= MIN_DISTANCE:
+      cluster.neighbors.add(main_neighbor)
+      cluster.update_dissimilarity(main_neighbor, dissimilarity)
 
 
 def update_nearest_neighbors(clusters):
