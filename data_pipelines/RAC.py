@@ -1,40 +1,32 @@
 import numpy as np
 import concurrent.futures
+from multiprocessing import Process, Manager
+from cython.parallel import prange
+from cython import nogil
 
 
 MIN_DISTANCE = .24
-
 CLUSTERS = []
-NO_DELETED_CLUSTERS = 0 
+NO_DELETED_CLUSTERS = 0
 
-# We need to switch all of these to ID references instead of the actual cluster
 class Cluster:
-  def __init__(self, id, base_arr, ind, neighbors=None, conn_matrix=None):
+  def __init__(self, id, ind, neighbors=None, conn_matrix=None):
     self.id = id
     self.will_merge = False
     self.nn = None  # Nearest neighbor
     self.neighbors = neighbors
     self.indices = ind or [] # The indicies in the array - these need to be thread safe, though we can control it
-    self.base_arr = base_arr # Need to make sure this is just a reference and not a copy
     self.dissimilarities = {}
     self.neighbors_needing_updates = set() 
-
 
   def __str__(self):
     return f"Cluster: {self.id}, NN: {self.nn.id if self.nn else None}, indices: {self.indices}"
 
-
   def update_dissimilarity(self, other_cluster_id, new_dissimilarity):
     self.dissimilarities[other_cluster_id] = new_dissimilarity
 
-
   def get_dissimilarity(self, other_cluster_id):
     return self.dissimilarities[other_cluster_id]
-
-
-  def get_points(self):
-    return self.base_arr[self.indices]
-
 
   def update_nn(self):
     if not self.neighbors:
@@ -133,14 +125,16 @@ def parallel_merge_clusters(merges, base_arr, num_workers=1):
 
 
 def update_cluster_dissimilarities(merges, base_arr):
-  # new_merges = parallel_merge_clusters(merges, base_arr, num_workers=4)
-  for merge in merges:
-    merge_cluster(merge, base_arr)
+  # parallel_merge_clusters(merges, base_arr, num_workers=4)
+  with nogil:
+    for i in prange(len(merges), nogil=True, chunksize=len(merges) // 8):
+      merge_cluster(merges[i], base_arr)
+  # for merge in merges:
+  #   merge_cluster(merge, base_arr)
 
   needs_update = []
   for main, secondary in merges:
     CLUSTERS[main].indices += CLUSTERS[secondary].indices
-
     needs_update.append(CLUSTERS[main].neighbors_needing_updates)
 
   for cluster_id in set.union(*needs_update):
@@ -171,10 +165,9 @@ def update_nearest_neighbors():
       cluster.update_nn()
 
 
-def calculate_initial_disimilarities():
-  base_arr = CLUSTERS[0].base_arr
+def calculate_initial_disimilarities(base_arr):
   for cluster in CLUSTERS:
-    distance_vec = pairwise_cosine(base_arr, cluster.get_points()).flatten()
+    distance_vec = pairwise_cosine(base_arr, base_arr[cluster.indices]).flatten()
     neighbors = np.where(distance_vec <= MIN_DISTANCE)[0]
 
     if (len(neighbors) > 1):
@@ -192,9 +185,9 @@ def calculate_initial_disimilarities():
 
 def RAC(X):
   for i in range(X.shape[0]):
-    CLUSTERS.append(Cluster(i, X, [i]))
+    CLUSTERS.append(Cluster(i, [i]))
 
-  calculate_initial_disimilarities()
+  calculate_initial_disimilarities(X)
 
   RAC_r(X)
 
@@ -218,10 +211,10 @@ def RAC_r(X):
 
 
 if __name__=='__main__':
-  # Let's run through a full test
   # np.random.seed(43)  # Set the seed for reproducibility
 
-  random_array = np.random.rand(200, 768)
+  random_array = np.random.rand(3000, 768)
+
   labels = RAC(random_array)
   print(len(list(set(labels))))
 
@@ -233,5 +226,3 @@ if __name__=='__main__':
     metric='cosine').fit(random_array)
   
   print(len(list(set(clustering.labels_))))
-
-
