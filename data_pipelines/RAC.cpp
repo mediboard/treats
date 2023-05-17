@@ -1,3 +1,4 @@
+#include <chrono>
 #include <vector>
 #include <set>
 #include <map>
@@ -9,6 +10,10 @@
 #include <random>
 
 const double MIN_DISTANCE = .035;
+
+int NO_COSINE_CALLS = 0;
+// Store the durations of each call to cosine
+std::vector<long> COSINE_DURATIONS;
 
 // Function to generate a matrix filled with random numbers.
 Eigen::MatrixXd generateRandomMatrix(int rows, int cols, int seed) {
@@ -61,25 +66,24 @@ public:
 };
 
 Eigen::MatrixXd pairwise_cosine(const Eigen::MatrixXd& array_a, const Eigen::MatrixXd& array_b) {
-    Eigen::MatrixXd norm_a = array_a.rowwise().normalized();
-    Eigen::MatrixXd norm_b = array_b.rowwise().normalized();
+    NO_COSINE_CALLS++;
+    // Transpose and normalize the columns
+    Eigen::MatrixXd norm_a = array_a.colwise().normalized();
+    Eigen::MatrixXd norm_b = array_b.colwise().normalized();
+    
+    // Compute the dot product
+    Eigen::MatrixXd result = norm_a.transpose() * norm_b;
 
-    int rows = norm_a.rows();
-    int cols = norm_b.rows();
-
-    Eigen::MatrixXd result(rows, cols);
-
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            result(i, j) = 1 - norm_a.row(i).dot(norm_b.row(j));
-        }
-    }
-
-    return result;
+    return Eigen::MatrixXd::Ones(result.rows(), result.cols()) - result;
 }
 
 float calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixXd points_b) {
+    auto start = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXd dissimilarity_matrix = pairwise_cosine(points_a, points_b);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    COSINE_DURATIONS.push_back(duration);
 
     return static_cast<float>(dissimilarity_matrix.mean());
 }
@@ -112,8 +116,8 @@ void merge_cluster(std::pair<int, int> merge, Eigen::MatrixXd& base_arr, std::ve
             Cluster* other_cluster_secondary = other_cluster->id > other_cluster->nn ? other_cluster : clusters[other_cluster->nn];
 
             float new_dissimilarity = calculate_weighted_dissimilarity(
-                base_arr.block(main_cluster->indices[0], 0, main_cluster->indices.size() + secondary_cluster->indices.size(), base_arr.cols()),
-                base_arr.block(other_cluster_main->indices[0], 0, other_cluster_main->indices.size() + other_cluster_secondary->indices.size(), base_arr.cols())
+                base_arr.block(0, main_cluster->indices[0], base_arr.rows(), main_cluster->indices.size() + secondary_cluster->indices.size()),
+                base_arr.block(0, other_cluster_main->indices[0], base_arr.rows(), other_cluster_main->indices.size() + other_cluster_secondary->indices.size())
             );
 
             new_dissimilarities[other_cluster_main->id] = new_dissimilarity;
@@ -125,8 +129,8 @@ void merge_cluster(std::pair<int, int> merge, Eigen::MatrixXd& base_arr, std::ve
         }
 
         float new_dissimilarity = calculate_weighted_dissimilarity(
-            base_arr.block(main_cluster->indices[0], 0, main_cluster->indices.size() + secondary_cluster->indices.size(), base_arr.cols()),
-            base_arr.block(other_cluster->indices[0], 0, other_cluster->indices.size(), base_arr.cols())
+            base_arr.block(0, main_cluster->indices[0], base_arr.rows(), main_cluster->indices.size() + secondary_cluster->indices.size()),
+            base_arr.block(0, other_cluster->indices[0], base_arr.rows(), other_cluster->indices.size())
         );
 
         new_dissimilarities[other_cluster->id] = new_dissimilarity;
@@ -195,36 +199,72 @@ void update_cluster_nn(std::vector<Cluster*>& clusters) {
 }
 
 void calculate_initial_disimilarities(Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters, float min_distance) {
-    for (Cluster* cluster : clusters) {
-        Eigen::VectorXd distance_vec = pairwise_cosine(base_arr, base_arr.block(cluster->indices[0], 0, cluster->indices.size(), base_arr.cols())).array().abs();
+    // Compute the batch size
+    int batchSize = 100;  // Adjust this to fit in memory
 
-        std::set<int> neighbors;
-        std::map<int, float> dissimilarities;
-        for (int i = 0; i < distance_vec.size(); ++i) {
-            if (distance_vec[i] <= min_distance && i != cluster->id) {
-                neighbors.insert(i);
-                dissimilarities[i] = distance_vec[i];
+    for (int batchStart = 0; batchStart < clusters.size(); batchStart += batchSize) {
+        int batchEnd = std::min(batchStart + batchSize, static_cast<int>(clusters.size()));
+
+        // Create a block view of the clusters in the current batch
+        Eigen::MatrixXd batch = base_arr.block(0, clusters[batchStart]->indices[0], base_arr.rows(), clusters[batchEnd - 1]->indices[0] - clusters[batchStart]->indices[0] + 1);
+
+        // Compute the pairwise cosine dissimilarity
+        Eigen::MatrixXd distance_mat = pairwise_cosine(base_arr, batch).array().abs();
+
+        for (int i = batchStart; i < batchEnd; ++i) {
+            Cluster* cluster = clusters[i];
+            Eigen::VectorXd distance_vec = distance_mat.col(i - batchStart);
+
+            std::set<int> neighbors;
+            std::map<int, float> dissimilarities;
+            for (int j = 0; j < distance_vec.size(); ++j) {
+                if (distance_vec[j] <= min_distance && j != cluster->id) {
+                    neighbors.insert(j);
+                    dissimilarities[j] = distance_vec[j];
+                }
             }
-        }
 
-        if (neighbors.size() > 0) {
-            cluster->neighbors = neighbors;
-            cluster->dissimilarities = dissimilarities;
+            if (!neighbors.empty()) {
+                cluster->neighbors = neighbors;
+                cluster->dissimilarities = dissimilarities;
 
-            Eigen::VectorXd masked_distance_vec = distance_vec;
-            masked_distance_vec[cluster->id] = std::numeric_limits<float>::max(); // Masking
-            auto min_position = std::min_element(masked_distance_vec.data(), masked_distance_vec.data() + masked_distance_vec.size());
+                distance_vec[cluster->id] = std::numeric_limits<float>::max(); // Masking
+                auto min_position = std::min_element(distance_vec.data(), distance_vec.data() + distance_vec.size());
 
-            int nearest_neighbor = std::distance(masked_distance_vec.data(), min_position);
-            // std::cout  << masked_distance_vec << std::endl;
-            // if (nearest_neighbor >= cluster->id) {
-            //     nearest_neighbor += 1;
-            // }
-
-            cluster->nn = nearest_neighbor;
+                int nearest_neighbor = std::distance(distance_vec.data(), min_position);
+                cluster->nn = nearest_neighbor;
+            }
         }
     }
 }
+
+
+// void calculate_initial_disimilarities(Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters, float min_distance) {
+//     for (Cluster* cluster : clusters) {
+//         Eigen::VectorXd distance_vec = pairwise_cosine(base_arr, base_arr.block(0, cluster->indices[0], base_arr.rows(), cluster->indices.size())).array().abs();
+
+//         std::set<int> neighbors;
+//         std::map<int, float> dissimilarities;
+//         for (int i = 0; i < distance_vec.size(); ++i) {
+//             if (distance_vec[i] <= min_distance && i != cluster->id) {
+//                 neighbors.insert(i);
+//                 dissimilarities[i] = distance_vec[i];
+//             }
+//         }
+
+//         if (neighbors.size() > 0) {
+//             cluster->neighbors = neighbors;
+//             cluster->dissimilarities = dissimilarities;
+
+//             Eigen::VectorXd masked_distance_vec = distance_vec;
+//             masked_distance_vec[cluster->id] = std::numeric_limits<float>::max(); // Masking
+//             auto min_position = std::min_element(masked_distance_vec.data(), masked_distance_vec.data() + masked_distance_vec.size());
+
+//             int nearest_neighbor = std::distance(masked_distance_vec.data(), min_position);
+//             cluster->nn = nearest_neighbor;
+//         }
+//     }
+// }
 
 std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clusters) {
     std::vector<std::pair<int, int> > reciprocal_nn;
@@ -269,15 +309,18 @@ void RAC_r(Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
 }
 
 std::vector<int> RAC(Eigen::MatrixXd& base_arr) {
+    // Transpose bare array for column access
+    Eigen::MatrixXd new_base_arr = base_arr.transpose();
+
     std::vector<Cluster*> clusters;
-    for (int i = 0; i < base_arr.rows(); ++i) {
+    for (int i = 0; i < new_base_arr.cols(); ++i) {
         Cluster* cluster = new Cluster(i);
         clusters.push_back(cluster);
     }
 
-    calculate_initial_disimilarities(base_arr, clusters, MIN_DISTANCE);
+    calculate_initial_disimilarities(new_base_arr, clusters, MIN_DISTANCE);
 
-    RAC_r(base_arr, clusters);
+    RAC_r(new_base_arr, clusters);
 
     std::vector<std::pair<int, int> > cluster_idx;
     for (Cluster* cluster : clusters) {
@@ -301,8 +344,8 @@ std::vector<int> RAC(Eigen::MatrixXd& base_arr) {
 }
 
 int main() {
-    int no_points = 10;
-    Eigen::MatrixXd test = generateRandomMatrix(no_points, 768, 12);
+    int no_points = 1000;
+    Eigen::MatrixXd test = generateRandomMatrix(no_points, 768, 10);
 
     // Shift and scale the values to the range 0-1
     test = (test + Eigen::MatrixXd::Constant(no_points, 768, 1.)) / 2.;
@@ -315,4 +358,13 @@ int main() {
     // Output number of clusters
     std::set<int> unique_labels(labels.begin(), labels.end());
     std::cout << unique_labels.size() << std::endl;
+
+    // Output number of cosine calls
+    std::cout << NO_COSINE_CALLS << std::endl;
+
+    // Output max cosine duration
+    std::cout << std::max_element(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end())[0] << std::endl;
+
+    // Output average cosine duration
+    std::cout << std::accumulate(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end(), 0.0) / COSINE_DURATIONS.size() << std::endl;
 }
