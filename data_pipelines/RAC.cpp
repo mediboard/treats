@@ -19,7 +19,7 @@ const double MIN_DISTANCE = .035;
 const int NO_POINTS = 10000;
 
 int NO_COSINE_CALLS = 0;
-int NO_CORES = 8;
+const int NO_CORES = 4;
 
 
 // Store update neighbor times
@@ -34,7 +34,7 @@ std::vector<long> INDICES_DURATIONS;
 std::vector<long> MERGE_DURATIONS;
 std::vector<long> MISC_MERGE_DURATIONS;
 
-std::array<int, NO_POINTS> MERGING_ARRAY;
+std::array<std::array<int, NO_POINTS>, NO_CORES> MERGING_ARRAYS;
 
 // Function to generate a matrix filled with random numbers.
 Eigen::MatrixXd generateRandomMatrix(int rows, int cols, int seed) {
@@ -104,7 +104,12 @@ float calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixXd
     return static_cast<float>(dissimilarity_matrix.mean());
 }
 
-void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
+void merge_cluster(
+    std::pair<int, int>& merge,
+    Eigen::MatrixXd& base_arr,
+    std::vector<Cluster*>& clusters,
+    std::array<int, NO_POINTS>& merging_array) {
+
     Cluster* main_cluster = clusters[merge.first];
     Cluster* secondary_cluster = clusters[merge.second];
 
@@ -131,12 +136,12 @@ void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::v
         if (id != main_cluster->id && id != secondary_cluster->id) {
             int smallest_id = id < clusters[id]->nn ? id : clusters[id]->nn;
             if (clusters[id]->will_merge) {
-                if (MERGING_ARRAY[smallest_id] != 1) {
-                    MERGING_ARRAY[smallest_id] = 1;
+                if (merging_array[smallest_id] != 1) {
+                    merging_array[smallest_id] = 1;
                     merging_neighbors.push_back(smallest_id);
                 }
             } else {
-                MERGING_ARRAY[id] = 1;
+                merging_array[id] = 1;
                 static_neighbors.push_back(id);
             }
         }
@@ -147,13 +152,13 @@ void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::v
             int smallest_id = id < clusters[id]->nn ? id : clusters[id]->nn;
 
             if (clusters[id]->will_merge) {
-                if (MERGING_ARRAY[smallest_id] != 1) {
-                    MERGING_ARRAY[smallest_id] = 1;
+                if (merging_array[smallest_id] != 1) {
+                    merging_array[smallest_id] = 1;
                     merging_neighbors.push_back(smallest_id);
                 }
             } else {
-                if (MERGING_ARRAY[id] != 1) {
-                    MERGING_ARRAY[id] = 1;
+                if (merging_array[id] != 1) {
+                    merging_array[id] = 1;
                     static_neighbors.push_back(id);
                 }
             }
@@ -205,20 +210,14 @@ void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::v
         int id = static_sizes[i].first;
         int size = static_sizes[i].second;
 
-        MERGING_ARRAY[id] = 0; // Reset merging array
+        merging_array[id] = 0; // Reset merging array
 
         float dissimilarity = dissimilarities.segment(true_i, size).mean();
-        auto start = std::chrono::high_resolution_clock::now();
         if (dissimilarity <= MIN_DISTANCE) {
             new_dissimilarities[id] = dissimilarity;
             new_neighbors.push_back(id);
         }
-
         needs_update.push_back(std::make_tuple(main_cluster->id, id, dissimilarity));
-
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-        MISC_MERGE_DURATIONS.push_back(duration);
 
         true_i += size;
     }
@@ -228,7 +227,7 @@ void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::v
         int id = merging_sizes[i].first;
         int size = merging_sizes[i].second;
 
-        MERGING_ARRAY[id] = 0; // Reset merging array
+        merging_array[id] = 0; // Reset merging array
 
         float dissimilarity = dissimilarities.segment(true_i, size).mean();
         if (dissimilarity <= MIN_DISTANCE) {
@@ -245,9 +244,13 @@ void merge_cluster(std::pair<int, int>& merge, Eigen::MatrixXd& base_arr, std::v
     main_cluster->neighbors_needing_updates = needs_update;
 }
 
-void merge_clusters(std::vector<std::pair<int, int> >& merges, Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
+void merge_clusters(
+    std::vector<std::pair<int, int> >& merges,
+    Eigen::MatrixXd& base_arr,
+    std::vector<Cluster*>& clusters,
+    std::array<int, NO_POINTS>& merging_array) {
     for (std::pair<int, int> merge : merges) {
-        merge_cluster(merge, base_arr, clusters);
+        merge_cluster(merge, base_arr, clusters, merging_array);
     }
 }
 
@@ -280,7 +283,13 @@ void parallel_merge_clusters(
     }
 
     for (int i=0; i<no_threads; i++) {
-        std::thread merge_thread = std::thread(merge_clusters, std::ref(merge_chunks[i]), std::ref(base_arr), std::ref(clusters));
+        std::thread merge_thread = std::thread(
+            merge_clusters,
+            std::ref(merge_chunks[i]),
+            std::ref(base_arr),
+            std::ref(clusters),
+            std::ref(MERGING_ARRAYS[i]));
+
         threads.push_back(std::move(merge_thread));
     }
 
@@ -369,13 +378,13 @@ std::array<std::pair<int, std::vector<std::pair<int, float> > >, NO_POINTS> SORT
 
 void update_cluster_dissimilarities(std::vector<std::pair<int, int> >& merges, Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
     auto start = std::chrono::high_resolution_clock::now();
-    // if (merges.size() / 8 > 10) {
-    //     parallel_merge_clusters(merges, base_arr, clusters, 8);
-    // } else {
-    for (std::pair<int, int> merge : merges) {
-        merge_cluster(merge, base_arr, clusters);
+    if (merges.size() / NO_CORES > 10) {
+        parallel_merge_clusters(merges, base_arr, clusters, NO_CORES);
+    } else {
+        for (std::pair<int, int> merge : merges) {
+            merge_cluster(merge, base_arr, clusters, MERGING_ARRAYS[0]);
+        }
     }
-    // }
     auto end = std::chrono::high_resolution_clock::now();
     MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
 
@@ -517,9 +526,11 @@ std::vector<int> RAC(Eigen::MatrixXd& base_arr) {
         clusters.push_back(cluster);
     }
 
+    //set eigen threads
+    Eigen::setNbThreads(8);
     calculate_initial_disimilarities(new_base_arr, clusters, MIN_DISTANCE);
 
-    // Eigen::setNbThreads(1);
+    Eigen::setNbThreads(2);
     RAC_r(new_base_arr, clusters);
 
     std::vector<std::pair<int, int> > cluster_idx;
