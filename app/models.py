@@ -607,6 +607,40 @@ class MeasureGroupMeasure(db.Model):
 	measureGroup = db.Column(db.Integer, db.ForeignKey('measure_groups.id'), index=True)
 
 
+class Instrument(db.Model):
+
+	__tablename__ = 'instruments'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(256), unique=True)
+
+
+class MeasureInstrument(db.Model):
+
+	__tablename__ = 'measure_instruments'
+
+	id = db.Column(db.Integer, primary_key=True)
+	instrument = db.Column(db.Integer, db.ForeignKey('instruments.id'), index=True)
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'), index=True)
+
+
+class Biomarker(db.Model):
+
+	__tablename__ = 'biomarkers'
+
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(256), unique=True)
+
+
+class MeasureBiomarker(db.Model):
+
+	__tablename__ = 'measure_biomarkers'
+
+	id = db.Column(db.Integer, primary_key=True)
+	biomarker = db.Column(db.Integer, db.ForeignKey('biomarkers.id'), index=True)
+	measure = db.Column(db.Integer, db.ForeignKey('measures.id'), index=True)
+
+
 class Measure(db.Model):
 
 	__tablename__ = 'measures'
