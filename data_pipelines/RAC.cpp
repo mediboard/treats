@@ -10,7 +10,7 @@
 #include <iostream>
 #include <thread>
 #include <algorithm>
-// #define EIGEN_DONT_PARALLELIZE
+#define EIGEN_DONT_PARALLELIZE
 #include <Eigen/Dense>
 #include <random>
 
@@ -19,7 +19,7 @@ const double MIN_DISTANCE = .035;
 const int NO_POINTS = 10000;
 
 int NO_COSINE_CALLS = 0;
-const int NO_CORES = 4;
+const int NO_CORES = 8;
 
 
 // Store update neighbor times
@@ -92,10 +92,15 @@ public:
 };
 
 Eigen::MatrixXd pairwise_cosine(const Eigen::MatrixXd& array_a, const Eigen::MatrixXd& array_b) {
-    Eigen::MatrixXd norm_a = array_a.colwise().normalized();
-    Eigen::MatrixXd norm_b = array_b.colwise().normalized();
+    // start time
+    // auto start = std::chrono::high_resolution_clock::now();
+    // Eigen::MatrixXd norm_a = array_a.colwise().normalized();
+    // Eigen::MatrixXd norm_b = array_b.colwise().normalized();
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    // MISC_MERGE_DURATIONS.push_back(duration);
 
-    return Eigen::MatrixXd::Ones(norm_a.cols(), norm_b.cols()) - (norm_a.transpose() * norm_b);
+    return Eigen::MatrixXd::Ones(array_a.cols(), array_b.cols()) - (array_a.transpose() * array_b);
 }
 
 float calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixXd points_b) {
@@ -190,11 +195,17 @@ void merge_cluster(
     }
     no_merging_indices = total_indices.size() - no_static_indices;
 
+    // auto start = std::chrono::high_resolution_clock::now();
     // New array for neighbor indices
     Eigen::MatrixXd neighbor_indices = base_arr(Eigen::all, total_indices);
 
     // New array for new indices
     Eigen::MatrixXd new_arr = base_arr(Eigen::all, new_indices);
+
+    // end timer
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    // MISC_MERGE_DURATIONS.push_back(duration);
 
     // Calculate dissimilarities - no batching for now
     Eigen::MatrixXd dissimilarity_matrix = pairwise_cosine(new_arr, neighbor_indices);
@@ -378,13 +389,13 @@ std::array<std::pair<int, std::vector<std::pair<int, float> > >, NO_POINTS> SORT
 
 void update_cluster_dissimilarities(std::vector<std::pair<int, int> >& merges, Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
     auto start = std::chrono::high_resolution_clock::now();
-    if (merges.size() / NO_CORES > 10) {
-        parallel_merge_clusters(merges, base_arr, clusters, NO_CORES);
-    } else {
-        for (std::pair<int, int> merge : merges) {
-            merge_cluster(merge, base_arr, clusters, MERGING_ARRAYS[0]);
-        }
-    }
+    // if (merges.size() / NO_CORES > 10) {
+    parallel_merge_clusters(merges, base_arr, clusters, NO_CORES);
+    // } else {
+    //     for (std::pair<int, int> merge : merges) {
+    //         merge_cluster(merge, base_arr, clusters, MERGING_ARRAYS[0]);
+    //     }
+    // }
     auto end = std::chrono::high_resolution_clock::now();
     MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
 
@@ -518,7 +529,7 @@ void RAC_r(Eigen::MatrixXd& base_arr, std::vector<Cluster*>& clusters) {
 std::vector<int> RAC(Eigen::MatrixXd& base_arr) {
     // Eigen::setNbThreads(8);
     // Transpose bare array for column access
-    Eigen::MatrixXd new_base_arr = base_arr.transpose();
+    Eigen::MatrixXd new_base_arr = base_arr.transpose().colwise().normalized();
 
     std::vector<Cluster*> clusters;
     for (int i = 0; i < new_base_arr.cols(); ++i) {
@@ -530,9 +541,10 @@ std::vector<int> RAC(Eigen::MatrixXd& base_arr) {
     Eigen::setNbThreads(8);
     calculate_initial_disimilarities(new_base_arr, clusters, MIN_DISTANCE);
 
-    Eigen::setNbThreads(2);
+    Eigen::setNbThreads(1);
     RAC_r(new_base_arr, clusters);
 
+    Eigen::setNbThreads(8);
     std::vector<std::pair<int, int> > cluster_idx;
     for (Cluster* cluster : clusters) {
         if (cluster == nullptr) {
