@@ -527,42 +527,51 @@ void update_cluster_neighbors(
     other_cluster->neighbors = new_neighbors;
 }
 
-// void update_cluster_neighbors_p(std::vector<std::pair<int, int> >& updates, std::vector<Cluster*>& clusters) {
-//     for (std::pair<int, int> update_pair : updates) {
-//         update_cluster_neighbors(update_pair, clusters);
-//     }
-// }   
+void update_cluster_neighbors_p(
+    std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
+    std::vector<Cluster*>& clusters) {
+    for (auto& update: updates) {
+        update_cluster_neighbors(update, clusters);
+    }
+}   
 
-// void parallel_update_clusters(std::vector<std::pair<int, int> >& updates, std::vector<Cluster*>& clusters, int no_threads) {
-//     std::vector<std::thread> threads;
+void parallel_update_clusters(
+    std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
+    std::vector<Cluster*>& clusters,
+    int no_threads) {
 
-//     std::vector<std::vector<std::pair<int, int>>> update_chunks(no_threads);
+    std::vector<std::thread> threads;
+    std::vector<std::vector<std::pair<int, std::vector<std::pair<int, double> > > > > update_chunks(no_threads);
 
-//     int chunk_size = updates.size() / no_threads;
-//     int remainder = updates.size() % no_threads; 
+    int chunk_size = updates.size() / no_threads;
+    int remainder = updates.size() % no_threads; 
 
-//     int start = 0, end = 0;
-//     for (int i = 0; i < no_threads; i++) {
-//         end = start + chunk_size;
-//         if (i < remainder) { // distribute the remainder among the first "remainder" chunks
-//             end++;
-//         }
+    int start = 0, end = 0;
+    for (int i = 0; i < no_threads; i++) {
+        end = start + chunk_size;
+        if (i < remainder) { // distribute the remainder among the first "remainder" chunks
+            end++;
+        }
 
-//         if (end <= updates.size()) {
-//             update_chunks[i] = std::vector<std::pair<int, int>>(updates.begin() + start, updates.begin() + end);
-//         }
-//         start = end;
-//     }
+        if (end <= updates.size()) {
+            update_chunks[i] = std::vector<std::pair<int, std::vector<std::pair<int, double> > > >(updates.begin() + start, updates.begin() + end);
+        }
+        start = end;
+    }
 
-//     for (int i=0; i<no_threads; i++) {
-//         std::thread update_thread = std::thread(update_cluster_neighbors_p, std::ref(update_chunks[i]), std::ref(clusters));
-//         threads.push_back(std::move(update_thread));
-//     }
+    for (int i=0; i<no_threads; i++) {
+        std::thread update_thread = std::thread(
+            update_cluster_neighbors_p,
+            std::ref(update_chunks[i]),
+            std::ref(clusters));
 
-//     for (int i=0; i<no_threads; i++) {
-//         threads[i].join();
-//     }
-// }
+        threads.push_back(std::move(update_thread));
+    }
+
+    for (int i=0; i<no_threads; i++) {
+        threads[i].join();
+    }
+}
 
 std::array<std::pair<int, std::vector<std::pair<int, double> > >, NO_POINTS> SORT_NEIGHBOR;
 void update_cluster_dissimilarities(std::vector<std::pair<int, int> >& merges, std::vector<Cluster*>& clusters) {
@@ -746,11 +755,8 @@ void calculate_initial_dissimilarities(
 
     for (int batchStart = 0; batchStart < clusters.size(); batchStart += batchSize) {
         int batchEnd = std::min(batchStart + batchSize, static_cast<int>(clusters.size()));
-
-        // Create a block view of the clusters in the current batch
         Eigen::MatrixXd batch = base_arr.block(0, clusters[batchStart]->indices[0], base_arr.rows(), clusters[batchEnd - 1]->indices[0] - clusters[batchStart]->indices[0] + 1);
 
-        // Compute the pairwise cosine dissimilarity
         Eigen::MatrixXd distance_mat = pairwise_cosine(base_arr, batch).array();
         for (int i = batchStart; i < batchEnd; ++i) {
             Cluster* cluster = clusters[i];
@@ -759,7 +765,6 @@ void calculate_initial_dissimilarities(
             std::vector<int> neighbors;
             std::unordered_map<int, float> dissimilarities;
             for (int j = 0; j < distance_vec.size(); ++j) {
-                // Check connectivity matrix before adding neighbor
                 // if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
                 if (j != cluster->id) {
                     dissimilarities[j] = distance_vec[j];
